@@ -11,7 +11,7 @@ function isPreviewHost(){
   return host==='loopforge-test.example.com'||domain==='loopforge-test.example.com'||host.includes('-test.')||isLoopbackHost(host);
 }
 function renderObsTabs(){state.obsTab=obsNormalizeTab(state.obsTab)}
-function obsNormalizeTab(tab){return tab==='delivery'?'delivery':'overview'}
+function obsNormalizeTab(tab){return tab==='delivery'?'delivery':tab==='runs'?'runs':'overview'}
 function obsScope(){return state.obsScope==='project'?'project':'user'}
 function obsTrendGrain(){return ['day','week','month','all'].includes(state.obsTrendGrain)?state.obsTrendGrain:'all'}
 function obsApiGrain(){return obsTrendGrain()==='all'?'month':obsTrendGrain()}
@@ -347,6 +347,9 @@ async function switchObsTab(tab){
   tab=obsNormalizeTab(tab);
   state.obsTab=tab;
   $$('#obsTabs .obs-tab').forEach(x=>x.classList.toggle('active',x.dataset.obsTab===tab));
+  if(tab==='runs'&&!(state.data?.runs||[]).length){
+    try{const runs=await api('/api/runs',{silent:true});if(Array.isArray(runs))state.data.runs=runs}catch(e){}
+  }
   if(tab==='delivery'&&!state.obsAnalyticsFull){
     const host=$('#obsBody');
     if(host)host.innerHTML=`<div class="obs-pane active"><div class="detail-empty">正在加载交付数据…</div></div>`;
@@ -547,6 +550,38 @@ function obsEnhanceSelects(root,panelHost){
 }
 let obsCardBuilders={};
 let obsExpandState=null;
+
+// 「运行记录」兜底视图：全局按时间倒序查看所有运行。
+// 主导航不再单独放置运行记录入口，任务详情由工作台/任务页承载；
+// 这里仅用于运维排障时按时间线快速定位某次运行。
+function obsRunsBackup(){
+  const runs=(state.data?.runs||[]).slice().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+  if(!runs.length)return '<div class="obs-pane-inner"><div class="detail-empty">还没有运行记录。任务启动后会出现在这里。</div></div>';
+  const rows=runs.slice(0,200).map(r=>{
+    const issue=(state.data?.issues||[]).find(i=>i.id===r.issueId);
+    const title=escapeHTML(issue?.title||r.input||r.workflowName||r.id);
+    const st=runDisplayStatus(r);
+    const cls=runDisplayStatusClass(r);
+    const when=r.createdAt?new Date(r.createdAt).toLocaleString():'—';
+    const nodes=Object.keys(r.nodes||{});
+    const done=nodes.filter(id=>r.nodes[id]?.status==='succeeded').length;
+    return `<tr>
+      <td><span class="status ${escapeHTML(cls)}">${escapeHTML(st)}</span></td>
+      <td class="obs-run-title"><button type="button" class="link" data-obs-open-run="${escapeHTML(r.id)}">${title}</button></td>
+      <td>${escapeHTML(r.workflowName||'—')}</td>
+      <td>${nodes.length?`${done}/${nodes.length}`:'—'}</td>
+      <td class="muted">${escapeHTML(when)}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="obs-pane-inner">
+    <p class="muted obs-runs-hint">共 ${runs.length} 次运行，按启动时间倒序。点标题查看运行详情；日常查看任务进度请从「工作台」或「需求」进入。</p>
+    <div class="obs-table-card"><table class="obs-table">
+      <thead><tr><th>状态</th><th>需求 / 输入</th><th>流程</th><th>节点</th><th>启动时间</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  </div>`;
+}
+
 function obsChartFormatters(theme,reduced){return {theme,reduced,fmtTokens:formatTokens,fmtCost:v=>'¥'+Number(v||0).toFixed(2),label:obsTrendLabel}}
 function renderObservability(){
   ensureObsUserFilter();
@@ -565,8 +600,13 @@ function renderObservability(){
   obsCardBuilders={};
   const tab=state.obsTab;
   {
-    const html=tab==='delivery'?obsDelivery():obsOverview();
-    host.innerHTML=`<div class="obs-pane active">${obsFilterBar()}${html}</div>`;
+    const html=tab==='delivery'?obsDelivery():tab==='runs'?obsRunsBackup():obsOverview();
+    const filterBar=tab==='runs'?'':obsFilterBar();
+    host.innerHTML=`<div class="obs-pane active">${filterBar}${html}</div>`;
+    host.querySelectorAll('[data-obs-open-run]').forEach(b=>b.onclick=()=>{
+      switchView('runs');
+      if(typeof showRunDetail==='function')showRunDetail(b.dataset.obsOpenRun);
+    });
     state.obsSelects=obsEnhanceSelects(host);
     host.querySelectorAll('[data-obs-scope]').forEach(b=>b.onclick=()=>setObsScope(b.dataset.obsScope));
     host.querySelectorAll('[data-obs-grain]').forEach(b=>b.onclick=()=>setObsTrendGrain(b.dataset.obsGrain));
