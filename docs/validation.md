@@ -155,7 +155,6 @@ The repository modal opened by the checklist had no submit handler, so saving re
 
 - [Platform API/UI instructions](../e2e/README.md)
 - [Public browser regression instructions](../e2e/public/README.md)
-- [Local deterministic and real-host tests](../local/tests/e2e/README.md)
 - `bash scripts/test-container.sh` for an isolated clean container installation
 - [Contribution checks](../CONTRIBUTING.md)
 

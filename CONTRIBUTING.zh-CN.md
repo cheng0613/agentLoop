@@ -17,21 +17,6 @@ bash scripts/scan-secrets.sh
 
 平台的 pull request 会跑 `core`、`browser` 和 `first-run` 三个作业。稳定检查名 `platform-required` 只有三者都成功时才通过。仓库管理员需要在 GitHub 分支保护里把 `platform-required` 手动勾成必须通过的检查。这次代码改动不会修改 GitHub 上的分支保护设置。
 
-LoopForge Local 请在 `local/` 内修改，遵循[本地开发约定](local/AGENTS.md)。先明确改动属于 Classic、Portable 或共享行为合同；三者与平台运行资产保持清晰边界。Portable 修改 `local/skills/`；Classic 的 Cursor/Claude 包在 `local/` 内运行 `python3 scripts/build-classic-hosts.py --write` 生成。工作流模板保持通用，可选工具放在 `local/tools/`，单独分发。
-
-在 `local/` 内执行本地版检查：
-
-```bash
-python3 scripts/build-classic-hosts.py --check
-bash scripts/validate.sh
-bash scripts/smoke-install.sh
-bash scripts/smoke-npm.sh
-bash scripts/smoke-curl-install.sh
-bash scripts/e2e.sh
-bash scripts/test-observability.sh
-bash scripts/scan-secrets.sh
-```
-
-[本地 E2E](local/tests/e2e/README.md) 使用模拟宿主与录制产物，无需模型凭据。分别说明对各工作流的影响，保留既有权限语义和用户文件保护；提交信息遵循 Conventional Commits。
+工作流模板保持通用，保留既有权限语义和用户文件保护；提交信息遵循 Conventional Commits。
 
 PR 不应包含凭据、内部基础设施、员工权限默认值或生产数据。保留用户文件和第三方许可，并记录贡献来源。PR 说明应写清问题、最终行为和实际验证结果。

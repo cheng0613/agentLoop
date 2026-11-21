@@ -14,7 +14,6 @@ The platform keeps the upstream Go module name `agentflow`, package boundaries a
 | `internal/tracker` | Remote issue/PR adapters |
 | `web` | Embedded upstream web interface, preferences and public sign-in |
 | `migrations` | Explicit data migrations and optional public catalog |
-| `local` | Local workflows and host integrations; user guides live in `docs/local/` |
 
 The public edition adds account/password login and GitHub adapters. These feed the existing user, token, repository and delivery contracts; there is no separate public engine or in-memory production store. A remote repository identity beginning `github:` distinguishes GitHub owner/repository names from legacy tracker identities. The upstream `gongfengProjectId` JSON field carries this identity for compatibility.
 

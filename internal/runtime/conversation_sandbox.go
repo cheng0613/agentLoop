@@ -276,7 +276,7 @@ except KeyError:
                 passwd.seek(0)
                 previous = passwd.read()
                 prefix = "" if not previous or previous.endswith("\n") else "\n"
-                passwd.write(prefix + f"{name}:!:{uid}:{gid}:LoopForge CLI:{home}:/bin/false\n")
+                passwd.write(prefix + f"{name}:!:{uid}:{gid}:AgentLoop CLI:{home}:/bin/false\n")
                 passwd.flush()
     except OSError as err:
         sys.exit(f"Native CLI UID {uid} has no passwd entry; add it to the workspace image or allow /etc/passwd writes during preparation: {err}")

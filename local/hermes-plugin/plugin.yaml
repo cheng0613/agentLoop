@@ -1,9 +1,0 @@
-name: loopforge
-version: 0.1.0
-description: "LoopForge Local workflow controls for Hermes Agent"
-author: Tencent LoopForge
-kind: standalone
-platforms:
-  - linux
-  - macos
-  - windows

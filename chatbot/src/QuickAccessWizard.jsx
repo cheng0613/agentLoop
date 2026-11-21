@@ -581,9 +581,9 @@ function parseGitHubRepo(raw) {
 // SSH preview first (it leaves github.com to the GitHub parser, matching the
 // server); self-hosted legacy repositories keep the git.example.com form.
 export function parseGongfengRepo(raw) {
-  const httpsInfo = globalThis.LoopForgeGitHTTPS(raw);
+  const httpsInfo = globalThis.AgentLoopGitHTTPS(raw);
   if (httpsInfo) return httpsInfo;
-  const sshInfo = globalThis.LoopForgeGitSSH(raw);
+  const sshInfo = globalThis.AgentLoopGitSSH(raw);
   if (sshInfo) return sshInfo;
   const github = parseGitHubRepo(raw);
   if (github) return github;
@@ -1190,7 +1190,7 @@ export default function QuickAccessWizard({
   const selectedSSHRepo = parsedRepo || parseGongfengRepo(defaultRepo?.cloneUrl);
   const sshKeysLoaded = sshCredentials.userId === user?.id && sshCredentials.keys !== null;
   const hasSSHKey = (remote) => sshKeysLoaded && !sshCredentials.error && sshCredentials.keys.some(
-    (key) => globalThis.LoopForgeGitSSHHost(key.host) === remote?.host,
+    (key) => globalThis.AgentLoopGitSSHHost(key.host) === remote?.host,
   );
   const sshReady = hasSSHKey(selectedSSHRepo);
   const sshRepository = (parsedRepo || defaultRepo)?.provider === "ssh";

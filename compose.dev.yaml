@@ -9,5 +9,10 @@ services:
       args:
         LOOPFORGE_BUILD_JOBS: ${LOOPFORGE_BUILD_JOBS:-}
         LOOPFORGE_COMMIT: ${LOOPFORGE_COMMIT:-}
+        # Optional build mirrors; see scripts/configure-mirrors.sh. Empty keeps
+        # the upstream registries.
+        APT_MIRROR: ${LOOPFORGE_APT_MIRROR:-}
+        NPM_REGISTRY: ${NPM_REGISTRY:-}
+        GOPROXY: ${GOPROXY:-}
     environment:
       AGENTFLOW_ISOLATED_IMAGE: loopforge-platform:local

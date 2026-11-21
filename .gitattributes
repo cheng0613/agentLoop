@@ -1,2 +1,19 @@
 web/monaco/** linguist-vendored -whitespace
 web/vscode-web/** linguist-vendored -whitespace
+
+# Shell and Go sources must keep LF: they run inside Linux containers.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.go text eol=lf
+
+# Markdown, YAML and other text stay LF so diffs match what editors show.
+*.md text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.html text eol=lf
+*.py text eol=lf
+*.sql text eol=lf

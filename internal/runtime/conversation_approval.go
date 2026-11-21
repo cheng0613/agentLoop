@@ -228,7 +228,7 @@ export default function(pi) {
 }
 `
 const conversationOpenCodeApproval = conversationApprovalJS + `
-export const LoopForgeApproval=async()=>({"tool.execute.before":async(input,output)=>{await approve(input.tool,output.args)}});
+export const AgentLoopApproval=async()=>({"tool.execute.before":async(input,output)=>{await approve(input.tool,output.args)}});
 `
 const conversationDSHApproval = conversationApprovalJS + `
 export const inject=["tools"];
