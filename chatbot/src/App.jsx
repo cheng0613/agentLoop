@@ -73,6 +73,7 @@ import { useLocalConversations } from "./useLocalConversations.js";
 import SessionContextMenu from "./SessionContextMenu";
 import { usePanelPresence } from "./usePanelPresence";
 import HomeWelcome from "./HomeWelcome";
+import TaskBoard from "./TaskBoard";
 import ModelPicker from "./ModelPicker";
 import ModelProviderIcon, { hasProviderLogo } from "./ModelProviderIcon";
 import PermissionPicker, { rememberApprovalMode, storedApprovalMode } from "./PermissionPicker";
@@ -767,6 +768,20 @@ export default function App() {
     else location.href = `/${options.projectId ? "?projectId=" + encodeURIComponent(options.projectId) : ""}#/${view}${options.action === "create" ? "/__new__" : ""}`;
     closeDialog();
     closeMenu();
+  }
+  // 工作台任务卡片点开：交给父窗口切到运行详情。
+  // 运行详情在 web/runs.js，chatbot 是 iframe，只能通过 postMessage 请求。
+  function openTask(task) {
+    if (!task) return;
+    if (task.runId && window.parent !== window) {
+      window.parent.postMessage(
+        { type: "agentflow-chat-open-view", view: "runs", runId: task.runId },
+        location.origin,
+      );
+      return;
+    }
+    // iframe 外或无 runId 时退回需求页，至少能看到任务上下文。
+    navigate("issues", { projectId: task.projectId || chat.projectId });
   }
   async function submit() {
     if (uploading) return;
@@ -1782,7 +1797,10 @@ export default function App() {
             </div>
           </div>
         ) : (
-          <HomeWelcome />
+          <>
+            <HomeWelcome />
+            <TaskBoard projectId={chat.projectId} onOpenTask={openTask} />
+          </>
         )}
         <div className="composer-region">
           <div className="composer-column">
