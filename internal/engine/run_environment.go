@@ -235,8 +235,10 @@ func (e *Engine) resolveRunCredentials(run domain.Run) runtime.RunCredentials {
 	credentials.GitUserName = identity.name
 	credentials.GitUserEmail = identity.email
 	if user, ok := e.repo.User(userID); ok {
-		credentials.Codex = runtime.ProviderCredential{APIKey: user.CodexAPIKey, BaseURL: user.CodexBaseURL}
-		credentials.ClaudeCode = runtime.ProviderCredential{APIKey: user.ClaudeCodeAPIKey, BaseURL: user.ClaudeCodeBaseURL}
+		// 个人凭据优先，平台共享凭据补齐（团队统一网关场景）。
+		// 个人凭据优先，平台共享凭据补齐（团队统一网关部署）。
+		credentials.Codex = runtime.ResolveProviderCredential("codex", user.CodexAPIKey, user.CodexBaseURL)
+		credentials.ClaudeCode = runtime.ResolveProviderCredential("claude-code", user.ClaudeCodeAPIKey, user.ClaudeCodeBaseURL)
 		credentials.AgentCLI = runtime.AgentCLIUserCredentials(user)
 	}
 	scriptAssets, _, _ := runtime.PrepareMCPServers(e.resolveScriptMCPAssets(run.ExecutionContext.ProjectID, userID), runtime.MCPTarget{

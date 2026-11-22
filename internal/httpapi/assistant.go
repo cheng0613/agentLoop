@@ -1513,12 +1513,29 @@ func runAssistantCLI(ctx context.Context, req assistantCLIRequest, user domain.U
 	switch engine {
 	case assistantEngineClaude:
 		if !req.RunnerLogin {
+			// 个人 Key 优先，平台共享凭据补齐（团队统一网关部署）。
 			engineOpts.User = runtime.ProviderCredential{APIKey: user.ClaudeCodeAPIKey, BaseURL: user.ClaudeCodeBaseURL}
+			if strings.TrimSpace(user.ClaudeCodeAPIKey) == "" {
+				if shared, ok := runtime.SharedProviderCredential("claude-code"); ok {
+					if strings.TrimSpace(user.ClaudeCodeBaseURL) != "" {
+						shared.BaseURL = user.ClaudeCodeBaseURL
+					}
+					engineOpts.User = shared
+				}
+			}
 		}
 		inv, err = prepareAssistantClaudeInvocation(engineOpts)
 	case assistantEngineCodex:
 		if !req.RunnerLogin {
 			engineOpts.User = runtime.ProviderCredential{APIKey: user.CodexAPIKey, BaseURL: user.CodexBaseURL}
+			if strings.TrimSpace(user.CodexAPIKey) == "" {
+				if shared, ok := runtime.SharedProviderCredential("codex"); ok {
+					if strings.TrimSpace(user.CodexBaseURL) != "" {
+						shared.BaseURL = user.CodexBaseURL
+					}
+					engineOpts.User = shared
+				}
+			}
 		}
 		inv, err = prepareAssistantCodexInvocation(engineOpts)
 	default:

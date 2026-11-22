@@ -613,15 +613,57 @@ func insertBeforeFlag(argv []string, flag string, values ...string) []string {
 
 // AgentCLIUserCredentials maps a user's saved agent CLI credentials onto the
 // form command bindings use.
-func AgentCLIUserCredentials(user domain.User) map[string]ProviderCredential {
-	if len(user.AgentCLICredentials) == 0 {
-		return nil
-	}
-	out := make(map[string]ProviderCredential, len(user.AgentCLICredentials))
+// AgentCLIUserCredentials maps a user's saved agent CLI credentials onto the
+// per-CLI credential map a run uses.
+//
+// shared 为平台级共享凭据（团队统一网关场景）：个人没配的 CLI 用它补齐，
+// 已配的个人凭据优先。传入 nil 表示不使用共享凭据，行为与改造前一致。
+//
+// 只补 APIKey / BaseURL / Protocol：个人已验证过的模型列表不被覆盖，因为
+// 那通常来自该账号的实际可见模型，共享列表未必适用。
+func AgentCLIUserCredentialsWith(user domain.User, shared func(kind string) (ProviderCredential, bool)) map[string]ProviderCredential {
+	out := make(map[string]ProviderCredential, len(user.AgentCLICredentials)+len(AgentCLIKinds))
 	for kind, cred := range user.AgentCLICredentials {
 		out[kind] = ProviderCredential{APIKey: cred.APIKey, BaseURL: cred.BaseURL, Protocol: cred.Protocol, Models: cred.Models}
 	}
+	if shared == nil {
+		if len(out) == 0 {
+			return nil
+		}
+		return out
+	}
+	for _, kind := range AgentCLIKinds {
+		current, exists := out[kind]
+		if exists && strings.TrimSpace(current.APIKey) != "" {
+			continue
+		}
+		sharedCred, ok := shared(kind)
+		if !ok {
+			continue
+		}
+		// 个人已填的地址优先：用户可能自己指向另一个网关。
+		if strings.TrimSpace(current.BaseURL) == "" && strings.TrimSpace(sharedCred.BaseURL) != "" {
+			current.BaseURL = sharedCred.BaseURL
+		}
+		if strings.TrimSpace(current.Protocol) == "" && strings.TrimSpace(sharedCred.Protocol) != "" {
+			current.Protocol = sharedCred.Protocol
+		}
+		current.APIKey = sharedCred.APIKey
+		if len(current.Models) == 0 {
+			current.Models = sharedCred.Models
+		}
+		out[kind] = current
+	}
+	if len(out) == 0 {
+		return nil
+	}
 	return out
+}
+
+// AgentCLIUserCredentials 用进程注册的共享凭据来源补齐个人配置。
+// 这是日常调用的入口；需要指定来源时用 AgentCLIUserCredentialsWith。
+func AgentCLIUserCredentials(user domain.User) map[string]ProviderCredential {
+	return AgentCLIUserCredentialsWith(user, SharedProviderCredentials())
 }
 
 // AgentCLILabel is the product name shown in errors and settings.

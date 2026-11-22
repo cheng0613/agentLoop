@@ -138,6 +138,8 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Printf("storage driver=%v database=%v role=%s", s.StorageInfo()["driver"], s.StorageInfo()["database"], role)
+	// 平台共享凭据：团队统一网关部署下，成员不各自填写模型 Key。
+	repo.RegisterPlatformProviderCredentials(s)
 	e := engine.New(s, runtime.NewManagerWithLimit(root, *workerConcurrency))
 	runtime.PrebuildIsolatedImage()
 	host, _ := os.Hostname()
