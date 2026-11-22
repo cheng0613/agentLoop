@@ -267,6 +267,10 @@ func newWithNotifications(s *repo.Store, e *engine.Engine, syncSvc *tracker.Serv
 	g.GET("/api/platform/codebuddy-key", api.users.platformCodeBuddyKey)
 	g.PUT("/api/platform/codebuddy-key", api.users.platformCodeBuddyKey)
 	g.DELETE("/api/platform/codebuddy-key", api.users.platformCodeBuddyKey)
+	// 平台共享凭据按 provider 管理（统一网关场景）。旧接口保留可用。
+	g.GET("/api/platform/providers", api.users.platformProviders)
+	g.Any("/api/platform/providers/:provider", api.users.platformProvider)
+	g.POST("/api/platform/providers/:provider/probe", api.users.platformProviderProbe)
 	// master(net/http) 的 /api/users/ 子树只接受 PUT /api/users/<id>/credentials
 	// 一种形态，其余任何方法/子路径都走 method(w) → 405 JSON。
 	g.Any("/api/users/:id/credentials", func(c *gin.Context) {

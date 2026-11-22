@@ -36,6 +36,10 @@ type SharedCodeBuddyKey struct {
 	InternetEnvironment string
 	// Models are the models it may run; the first is the default.
 	Models []string
+	// BaseURL 非空时指向自建网关，为空表示 CodeBuddy 官方端点。
+	BaseURL string
+	// Protocol 是 BaseURL 使用的协议；为空由 CLI 默认处理。
+	Protocol string
 	// SponsorID is the lending account under AGENTFLOW_ASSISTANT_SPONSOR_LOGIN,
 	// 0 for the key configured under 平台管理.
 	SponsorID int64
@@ -134,7 +138,20 @@ func (r *UsersRepo) legacyCodeBuddySponsor() (domain.User, bool) {
 
 // SharedCodeBuddyKey returns the key users without their own borrow: the one
 // configured under 平台管理, else the legacy sponsor account's.
+//
+// 查表顺序：新表 platform_provider_keys 的 codebuddy 行优先，其次旧表
+// platform_codebuddy_keys，最后回退到旧版的借用账号。旧表在新表写入后会
+// 自然被越过，保留一个版本周期供回滚。
 func (r *UsersRepo) SharedCodeBuddyKey() (SharedCodeBuddyKey, bool) {
+	if key, ok := r.SharedProviderKey("codebuddy"); ok {
+		return SharedCodeBuddyKey{
+			APIKey:              key.APIKey,
+			InternetEnvironment: r.codeBuddyInternetEnvironment(),
+			Models:              key.Models,
+			BaseURL:             key.BaseURL,
+			Protocol:            key.Protocol,
+		}, true
+	}
 	if row, ok := r.platformCodeBuddyKey(); ok {
 		models := decodeSharedModels(row.Models)
 		if strings.TrimSpace(row.APIKey) != "" && len(models) > 0 {
@@ -146,6 +163,15 @@ func (r *UsersRepo) SharedCodeBuddyKey() (SharedCodeBuddyKey, bool) {
 		return SharedCodeBuddyKey{}, false
 	}
 	return SharedCodeBuddyKey{APIKey: sponsor.CodeBuddyAPIKey, InternetEnvironment: sponsor.CodeBuddyInternetEnvironment, Models: []string{SponsoredCodeBuddyModel}, SponsorID: sponsor.ID}, true
+}
+
+// codeBuddyInternetEnvironment 从旧表读取网络环境。新表不存这个字段：
+// 统一网关下 CodeBuddy 的环境由 BaseURL 决定，不再靠环境标签区分。
+func (r *UsersRepo) codeBuddyInternetEnvironment() string {
+	if row, ok := r.platformCodeBuddyKey(); ok {
+		return row.InternetEnvironment
+	}
+	return ""
 }
 
 // SharedCodeBuddyModels returns the models users without their own key may
