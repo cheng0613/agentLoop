@@ -1,4 +1,9 @@
 // ================= Issue 详情抽屉 =================
+// 抽屉只有 3 个 tab，但列表页与历史深链仍可能带旧 id。
+// 这里把旧 id 映射到合并后的 tab，高亮与渲染都走同一个判定。
+const ISSUE_TAB_ALIAS={clarify:'execute',sop:'execute',artifacts:'execute',delivery:'execute',acceptance:'execute',activity:'history',operations:'history'};
+function issueDetailTabOf(tab){const t=String(tab||'');return ISSUE_TAB_ALIAS[t]||t}
+
 const issueClarifyJobs=new Map();
 let renderedIssueClarifyKey='';
 let submittedClarifyDraft=null;
@@ -52,7 +57,7 @@ async function openIssueDetail(id,tab){
     state.issueDetailData={issue,comments,run,task,requirement,deletionTask};
     const health=issueRunHealth(issue),stage=issueCurrentStage(issue),needsConfirm=clarificationNeedsConfirm(issue);
     state.issueDetailTab=tab||(issueClarifying(issueId)||needsConfirm?'clarify':((health==='attention'||health==='active'||stage.key==='waiting')?'sop':'overview'));
-    $$('#issueDetailTabs .drawer-tab').forEach(b=>b.classList.toggle('active',b.dataset.dtab===state.issueDetailTab));
+    $$('#issueDetailTabs .drawer-tab').forEach(b=>b.classList.toggle('active',b.dataset.dtab===issueDetailTabOf(state.issueDetailTab)));
     renderIssueDetailTab();
     if(issueClarifying(issueId)){
       restoreIssueClarifyThinking(issueId);
@@ -168,10 +173,38 @@ function renderIssueDetailTab(){
   $('#issueDetailTitle').textContent=issue.title||'';
   $('#issueDetailSubtitle').textContent=`${project?.name||'—'} · ${issuePriorityLabel(issue.priority)} · ${issueStatusText(issue)} · 更新于 ${new Date(issue.updatedAt).toLocaleString()}`;
   // 答案只存在输入框里。问题没变时跳过重绘，避免轮询和运行推送把正在填的内容清掉。
-  const clarifyKey=state.issueDetailTab==='clarify'?issueClarifyViewKey(issue,project):'';
+  const clarifyKey=issueDetailTabOf(state.issueDetailTab)==='execute'?issueClarifyViewKey(issue,project):'';
   if(clarifyKey&&clarifyKey===renderedIssueClarifyKey&&host.querySelector?.('.clarify-workspace'))return;
   const clarifyDraft=clarifyKey?captureIssueClarifyDraft(host):null;
-  const panes={conversations:'<div class="detail-empty">正在加载关联会话…</div>',overview:overviewPane(issue,data),operations:operationsPane(issue),clarify:clarifyPane(issue,project),sop:sopPane(issue,data),artifacts:artifactsPane(data),delivery:deliveryPane(issue,data),acceptance:acceptancePane(issue,data),activity:activityPane(issue,data)};
+  // 抽屉从 9 个 tab 收敛为 3 个：概览 / 执行 / 历史。
+  // 「执行」按 澄清 -> 进展 -> 产物 -> 代码交付 -> 验收 的顺序纵向串起原
+  // 来的五个 tab；「历史」把「活动」（讨论、运行轨迹）与「操作日志」合并。
+  // 旧 tab id 仍保留映射，深链与列表页的 data-dtab 跳转不会失效。
+  const executeBody=[
+    clarifyPane(issue,project),
+    sopPane(issue,data),
+    artifactsPane(data),
+    deliveryPane(issue,data),
+    acceptancePane(issue,data),
+  ].filter(Boolean).join('');
+  const historyBody=[
+    activityPane(issue,data),
+    operationsPane(issue),
+  ].filter(Boolean).join('');
+  const panes={
+    conversations:'<div class="detail-empty">正在加载关联会话…</div>',
+    overview:overviewPane(issue,data),
+    execute:executeBody,
+    history:historyBody,
+    // 兼容：旧 id 落到合并后的 pane
+    clarify:executeBody,
+    sop:executeBody,
+    artifacts:executeBody,
+    delivery:executeBody,
+    acceptance:executeBody,
+    activity:historyBody,
+    operations:historyBody,
+  };
   host.innerHTML=panes[state.issueDetailTab]||'<div class="detail-empty">暂无内容</div>';
   if(state.issueDetailTab==='conversations')void renderIssueConversations(issue,host);
   renderedIssueClarifyKey=clarifyKey;
@@ -225,7 +258,7 @@ function renderIssueDetailTab(){
   });
   host.querySelectorAll('[data-clarify-model]').forEach(bindClarifyModelPicker);
   bindWaitingActions(host);
-  if(state.issueDetailTab==='clarify'&&issueClarifying(issue.id))restoreIssueClarifyThinking(issue.id);
+  if(issueDetailTabOf(state.issueDetailTab)==='execute'&&issueClarifying(issue.id))restoreIssueClarifyThinking(issue.id);
   if(clarifyDraft)restoreIssueClarifyDraft(host,clarifyDraft);
 }
 function drawerFact(label,value,title){return `<div class="detail-fact"><span>${label}</span><b title="${escapeHTML(title||value||'')}">${value===''||value==null?'—':value}</b></div>`}
@@ -248,7 +281,7 @@ function clarificationOverviewCard(issue){
 }
 function setIssueClarifyTab(){
   state.issueDetailTab='clarify';
-  $$('#issueDetailTabs .drawer-tab').forEach(b=>b.classList.toggle('active',b.dataset.dtab==='clarify'));
+  $$('#issueDetailTabs .drawer-tab').forEach(b=>b.classList.toggle('active',b.dataset.dtab===issueDetailTabOf('clarify')));
 }
 const CLARIFY_AUTO_PROMPTS=['请先检查这张工作项的描述和相关代码，告诉我还缺哪些关键信息。','请基于已有澄清结论继续检查，还有哪些重要信息需要补充？'];
 function clarifyKickoffPending(issue){
