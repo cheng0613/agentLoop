@@ -13,6 +13,47 @@
   gap: 18px;
 }
 
+/* ---- 顶部统计条 ----
+ * 一屏看清「有多少在跑、多少在等我」。数量为 0 的项不渲染。 */
+
+.task-board-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.task-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.task-stat b {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 待确认项优先被注意到，用强调色描边 */
+.task-stat-waiting {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--line));
+  background: color-mix(in oklab, var(--accent) 10%, var(--surface));
+}
+
+.task-stat-waiting b,
+.task-stat-waiting span {
+  color: var(--accent);
+}
+
 /* ---- 分组标题 ---- */
 
 .task-board-group {
@@ -35,6 +76,16 @@
 
 .task-board-heading-muted {
   opacity: 0.75;
+}
+
+/* 需要确认的分组标题用强调色，和普通进度区分开 */
+.task-board-group-waiting .task-board-heading {
+  color: var(--accent);
+}
+
+.task-board-group-waiting .task-board-count {
+  background: color-mix(in oklab, var(--accent) 15%, transparent);
+  color: var(--accent);
 }
 
 .task-board-count {

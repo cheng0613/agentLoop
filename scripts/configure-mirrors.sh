@@ -60,5 +60,5 @@ printf '  LOOPFORGE_APT_MIRROR=%s\n' "${APT:-(upstream)}"
 printf '  NPM_REGISTRY=%s\n' "${NPM:-(upstream)}"
 printf '  GOPROXY=%s\n' "${GO:-(upstream)}"
 printf '\nBuild with:\n'
-printf '  docker build --build-arg APT_MIRROR="$LOOPFORGE_APT_MIRROR" --build-arg NPM_REGISTRY="$NPM_REGISTRY" --build-arg GOPROXY="$GOPROXY" -t loopforge-platform:local .\n'
+printf '  docker build --build-arg APT_MIRROR="$LOOPFORGE_APT_MIRROR" --build-arg NPM_REGISTRY="$NPM_REGISTRY" --build-arg GOPROXY="$GOPROXY" -t agentloop-platform:local .\n'
 printf 'or run ./start.sh dev, which reads these from .env.\n'

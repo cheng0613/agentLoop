@@ -45,6 +45,7 @@ function TaskCard({ task, issue, run, onOpen }) {
     ? Object.values(run.nodes).find((n) => n?.status === "waiting_approval")
     : null;
   const tone = taskTone(task);
+  const nodeName = current?.name || "";
 
   return (
     <button
@@ -58,7 +59,7 @@ function TaskCard({ task, issue, run, onOpen }) {
         <span className="task-card-title">{title}</span>
         <span className="task-card-meta">
           <span>{workflow}</span>
-          {current?.name ? <span>· {current.name}</span> : null}
+          {nodeName ? <span>· {nodeName}</span> : null}
           <span>· {elapsedLabel(task.createdAt || run?.createdAt)}</span>
         </span>
         {total > 0 ? (
@@ -128,7 +129,7 @@ export default function TaskBoard({ projectId, onOpenTask }) {
     return () => clearInterval(timer);
   }, [load]);
 
-  const { active, done: finished } = useMemo(() => {
+  const { active, waiting: awaiting, done: finished } = useMemo(() => {
     const scoped = projectId
       ? tasks.filter((t) => {
           const issue = issues.find((i) => i.id === t.issueId);
@@ -138,11 +139,18 @@ export default function TaskBoard({ projectId, onOpenTask }) {
     const byTime = (a, b) =>
       new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     const sorted = scoped.slice().sort(byTime);
+    const isWaiting = (t) => {
+      const run = runs.find((r) => r.id === t.runId);
+      if (!run?.nodes) return false;
+      return Object.values(run.nodes).some((n) => n?.status === "waiting_approval");
+    };
+    const running = sorted.filter((t) => ACTIVE.has(t.status));
     return {
-      active: sorted.filter((t) => ACTIVE.has(t.status)),
+      active: running.filter((t) => !isWaiting(t)),
+      waiting: running.filter(isWaiting),
       done: sorted.filter((t) => !ACTIVE.has(t.status)).slice(0, 3),
     };
-  }, [tasks, issues, projectId]);
+  }, [tasks, issues, projectId, runs]);
 
   const issueById = useMemo(
     () => Object.fromEntries(issues.map((i) => [i.id, i])),
@@ -176,7 +184,7 @@ export default function TaskBoard({ projectId, onOpenTask }) {
     );
   }
 
-  if (!active.length && !finished.length) {
+  if (!active.length && !awaiting.length && !finished.length) {
     return (
       <section className="task-board" aria-label="任务看板">
         <div className="task-board-empty">
@@ -196,8 +204,33 @@ export default function TaskBoard({ projectId, onOpenTask }) {
     />
   );
 
+  const stats = [
+    { key: "running", label: "进行中", value: active.length, tone: "active" },
+    { key: "waiting", label: "待我确认", value: awaiting.length, tone: "waiting" },
+    { key: "done", label: "已完成", value: finished.length, tone: "done" },
+  ].filter((s) => s.value > 0);
+
   return (
     <section className="task-board" aria-label="任务看板">
+      {stats.length > 0 ? (
+        <div className="task-board-stats" role="list">
+          {stats.map((s) => (
+            <span key={s.key} className={`task-stat task-stat-${s.tone}`} role="listitem">
+              <b>{s.value}</b>
+              <span>{s.label}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {awaiting.length > 0 ? (
+        <div className="task-board-group task-board-group-waiting">
+          <h2 className="task-board-heading">
+            需要你确认
+            <span className="task-board-count">{awaiting.length}</span>
+          </h2>
+          <div className="task-board-list">{awaiting.map(renderCard)}</div>
+        </div>
+      ) : null}
       {active.length > 0 ? (
         <div className="task-board-group">
           <h2 className="task-board-heading">

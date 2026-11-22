@@ -3,7 +3,7 @@
 # The fixed local tag keeps source builds from overwriting the pinned GHCR image.
 services:
   platform:
-    image: loopforge-platform:local
+    image: agentloop-platform:local
     build:
       context: .
       args:
@@ -15,4 +15,4 @@ services:
         NPM_REGISTRY: ${NPM_REGISTRY:-}
         GOPROXY: ${GOPROXY:-}
     environment:
-      AGENTFLOW_ISOLATED_IMAGE: loopforge-platform:local
+      AGENTFLOW_ISOLATED_IMAGE: agentloop-platform:local
