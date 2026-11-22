@@ -21,10 +21,24 @@ import (
 // 与脚本失效。
 
 // platformProviderKinds 返回可配置的 provider 清单，顺序即界面展示顺序。
-// CodeBuddy / Codex / Claude Code 在 AgentCLIExecutorKinds 之外，需单独补齐。
+//
+// 覆盖范围：CodeBuddy 加 AgentCLIExecutorKinds 里的通用 CLI。
+//
+// 暂不含 Codex / Claude Code：这两者在本部署中不参与统一网关。它们的协议
+// 也没有列进 domain.AgentCLIProtocolOptions，所以即使这里放开，BaseURL 与
+// 协议也无法配置。将来要支持时，把它们的协议补进那张表再在这里加进来。
+//
+// cursor 虽然属于通用 CLI，但它只连官方端点（不在协议表里），配置共享
+// BaseURL 没有意义，因此从清单里剔除。
 func platformProviderKinds() []string {
-	// 三大件不在 AgentCLIExecutorKinds 里，需单独补齐。
-	return append([]string{"codebuddy", "codex", "claude-code"}, domain.AgentCLIExecutorKinds...)
+	out := []string{"codebuddy"}
+	for _, kind := range domain.AgentCLIExecutorKinds {
+		if kind == "cursor" {
+			continue
+		}
+		out = append(out, kind)
+	}
+	return out
 }
 
 // platformProviderProtocols 返回该 CLI 在自建 BaseURL 下可选的协议。

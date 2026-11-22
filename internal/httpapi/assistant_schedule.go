@@ -218,7 +218,9 @@ func scheduleCredentialUser(r *repo.Store, user domain.User, engine string) (dom
 		return user, key.Models, true
 	}
 
-	// Codex / Claude Code 走独立字段。
+	// Codex / Claude Code 走独立字段。当前部署不为这两者配置共享凭据
+	// （见 platformProviderKinds 的说明），这里保留分支是为了将来放开时
+	// 不必再改一遍；查不到配置时会正常返回 false。
 	if engine == assistantEngineCodex || engine == assistantEngineClaude {
 		provider := engine
 		shared, ok := r.SharedProviderKey(provider)

@@ -669,6 +669,12 @@ func AgentCLIUserCredentials(user domain.User) map[string]ProviderCredential {
 // AgentCLILabel is the product name shown in errors and settings.
 func AgentCLILabel(kind string) string {
 	switch kind {
+	case "codebuddy":
+		return "CodeBuddy"
+	case "codex":
+		return "Codex"
+	case "claude-code":
+		return "Claude Code"
 	case AgentCLIOpenCode:
 		return "OpenCode"
 	case AgentCLICursor:
