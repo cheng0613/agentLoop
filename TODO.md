@@ -45,3 +45,26 @@
 
 - `startAgentChat` 用 `state.projectFilter` 取当前项目，变量名未验证
   （若跳转后 projectId 不对，需改为实际的全局变量名）
+
+## 平台共享凭据（provider keys）
+
+已完成（分支 `feat/platform-provider-keys`）：
+- [x] Phase 1 存储 + API（`platform_provider_keys` 表，3 个端点）
+- [x] Phase 2 运行时「个人优先、共享补齐」注入
+- [x] Phase 3 平台管理「共享模型凭据」页
+- [x] Phase 4 定时任务与引擎列表放开限制
+- 支持 7 个 CLI：CodeBuddy / OpenCode / Antigravity / Kimi / Pi / DSH / ZCode
+
+入口位置备忘：设置 → 开放与平台 → 平台管理 → 第 4 个 tab「共享模型凭据」
+
+待办：
+- [ ] **提升「平台管理」入口**：目前在设置侧栏最底，三层之下。
+      建议放到 rail 一级（仅管理员可见），与管理职责相称。
+- [ ] **Codex / Claude Code 接入**：暂不考虑。将来若需要，先补
+      `domain.AgentCLIProtocolOptions`（codex→responses，claude-code→messages），
+      再把它们加回 `platformProviderKinds`。
+- [ ] **沙箱网络验证**：连通性测试从平台容器发起，SOP 沙箱是嵌套容器。
+      若测试通但实际运行失败，需单独检查沙箱网络策略。
+- [ ] **CodeBuddy 网关化不可行**：它没有 BaseURL 字段，只能连官方三个端点
+      （国际站 / 国内站 internal / iOA）。共享机制只能共用同一把 Key，
+      无法指向自建网关。需要走网关时改用 OpenCode / Pi / DSH 等。
