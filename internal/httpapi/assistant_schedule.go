@@ -8,6 +8,7 @@ import (
 
 	"agentflow/internal/domain"
 	"agentflow/internal/repo"
+	"agentflow/internal/runtime"
 )
 
 // scheduledSessionPolicy carries how a schedule job's AI run uses Studio
@@ -192,22 +193,64 @@ func scheduleHasPersonalCredential(r *repo.Store, user domain.User, engine strin
 	return key != "" || scheduleLoginRunner(r, user.ID, engine).ID != ""
 }
 
-// scheduleCredentialUser keeps the actor's identity, substituting only the
-// CodeBuddy key and its environment when the platform sponsors the run.
+// scheduleCredentialUser keeps the actor's identity, substituting the
+// platform's shared credential when the actor has none of their own.
+//
+// 团队统一网关部署下，管理员为每个 CLI 配一次共享凭据，定时任务因此不必
+// 要求成员各自填写 Key：个人有就用个人的，没有就用平台共享的（限管理员
+// 允许的模型）。CodeBuddy 维护自己的网络环境字段，其余 CLI 直接落到
+// AgentCLICredentials。
 func scheduleCredentialUser(r *repo.Store, user domain.User, engine string) (domain.User, []string, bool) {
 	if scheduleHasPersonalCredential(r, user, engine) {
 		return user, nil, true
 	}
-	if engine != assistantEngineCodeBuddy || r == nil {
+	if r == nil {
 		return user, nil, false
 	}
-	key, found := r.SharedCodeBuddyKey()
-	if !found || strings.TrimSpace(key.APIKey) == "" || len(key.Models) == 0 || (key.SponsorID != 0 && key.SponsorID == user.ID) {
+
+	if engine == assistantEngineCodeBuddy {
+		key, found := r.SharedCodeBuddyKey()
+		if !found || strings.TrimSpace(key.APIKey) == "" || len(key.Models) == 0 || (key.SponsorID != 0 && key.SponsorID == user.ID) {
+			return user, nil, false
+		}
+		user.CodeBuddyAPIKey = key.APIKey
+		user.CodeBuddyInternetEnvironment = key.InternetEnvironment
+		return user, key.Models, true
+	}
+
+	// Codex / Claude Code 走独立字段。
+	if engine == assistantEngineCodex || engine == assistantEngineClaude {
+		provider := engine
+		shared, ok := r.SharedProviderKey(provider)
+		if !ok {
+			return user, nil, false
+		}
+		if engine == assistantEngineCodex {
+			user.CodexAPIKey = shared.APIKey
+			user.CodexBaseURL = shared.BaseURL
+		} else {
+			user.ClaudeCodeAPIKey = shared.APIKey
+			user.ClaudeCodeBaseURL = shared.BaseURL
+		}
+		return user, shared.Models, true
+	}
+
+	// 其余 Agent CLI 落到 AgentCLICredentials。
+	if !runtime.IsAgentCLI(engine) {
 		return user, nil, false
 	}
-	user.CodeBuddyAPIKey = key.APIKey
-	user.CodeBuddyInternetEnvironment = key.InternetEnvironment
-	return user, key.Models, true
+	shared, ok := r.SharedProviderKey(engine)
+	if !ok {
+		return user, nil, false
+	}
+	if user.AgentCLICredentials == nil {
+		user.AgentCLICredentials = map[string]domain.AgentCLICredential{}
+	}
+	user.AgentCLICredentials[engine] = domain.AgentCLICredential{
+		APIKey:  shared.APIKey,
+		BaseURL: shared.BaseURL, Protocol: shared.Protocol,
+	}
+	return user, shared.Models, true
 }
 
 // scheduleProjectWriter mirrors scheduleProjectAllowed for a stored user.

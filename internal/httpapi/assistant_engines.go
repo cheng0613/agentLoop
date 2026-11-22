@@ -72,17 +72,28 @@ func assistantEngineCredentialField(engine string) string {
 }
 
 // assistantEngineOptions lists every CLI, configured or not, so the switch
-// also shows where to add a key. CodeBuddy counts as configured when the
-// platform sponsors chats without one.
+// also shows where to add a key.
+//
+// 团队统一网关部署下，管理员可能只为部分 CLI 配了共享凭据。一个 CLI 只要
+// 「个人有 Key」或「平台有共享 Key」就算可用，否则界面会提示去配置——而
+// 那种提示在共享部署里是误导。
 func assistantEngineOptions(user domain.User, sponsored bool) []assistantEngineOption {
 	engines := append([]string{assistantEngineCodeBuddy}, assistantCLIEngines()...)
 	out := make([]assistantEngineOption, 0, len(engines))
 	for _, engine := range engines {
 		key, _ := assistantEngineCredential(user, engine)
+		configured := key != ""
+		if !configured {
+			if engine == assistantEngineCodeBuddy {
+				configured = sponsored
+			} else if _, ok := runtime.SharedProviderCredential(engine); ok {
+				configured = true
+			}
+		}
 		out = append(out, assistantEngineOption{
 			ID:         engine,
 			Name:       assistantEngineLabel(engine),
-			Configured: key != "" || (engine == assistantEngineCodeBuddy && sponsored),
+			Configured: configured,
 			Credential: assistantEngineCredentialField(engine),
 		})
 	}
