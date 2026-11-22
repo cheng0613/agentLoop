@@ -3357,7 +3357,7 @@ html[data-theme="dark"] #runnersView .runner-runtime-icon:is(.codex,.claude-code
 /* --- 角色定义页：单行列表 --- */
 #agentsView .agent-list-table{display:block;width:100%;margin:4px 0 0}
 #agentsView .agent-row{
-  display:grid;grid-template-columns:minmax(0,1fr) 180px 220px 76px 32px;align-items:center;gap:16px;
+  display:grid;grid-template-columns:minmax(0,1fr) 180px 220px 76px 84px 32px;align-items:center;gap:16px;
   height:72px;padding:0 14px;border-radius:var(--hu-r);color:var(--hu-text);font-size:14px;cursor:pointer;outline:0;
   transition:background-color var(--hu-dur);
 }
@@ -3381,6 +3381,15 @@ html[data-theme="dark"] #runnersView .runner-runtime-icon:is(.codex,.claude-code
 #agentsView .agent-row-config .empty{color:var(--hu-faint)}
 #agentsView .agent-row-uses{color:var(--hu-muted);font-size:13px;text-align:right}
 #agentsView .agent-row-uses.zero{color:var(--hu-faint)}
+#agentsView .agent-row-chat{display:flex;justify-content:flex-end;overflow:visible}
+#agentsView .agent-chat-btn{
+  display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border:1px solid var(--hu-border);
+  border-radius:999px;background:transparent;color:var(--hu-muted);font:inherit;font-size:12px;line-height:1;
+  cursor:pointer;white-space:nowrap;transition:background-color var(--hu-dur),color var(--hu-dur),border-color var(--hu-dur);
+}
+#agentsView .agent-chat-btn svg{flex:none}
+#agentsView .agent-chat-btn:hover{background:var(--hu-hover);color:var(--hu-text);border-color:var(--hu-accent)}
+#agentsView .agent-chat-btn:focus-visible{outline:2px solid var(--hu-accent-soft);outline-offset:2px}
 #agentsView .agent-row-more{display:flex;justify-content:flex-end;overflow:visible}
 #agentsView .agent-more-btn{
   width:28px;height:28px;display:inline-grid;place-items:center;padding:0;border:0;border-radius:var(--hu-r);

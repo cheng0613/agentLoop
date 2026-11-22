@@ -304,6 +304,14 @@ function readIssueMention() {
   return issueId ? { issueId, projectId: params.get("projectId") || "" } : null;
 }
 
+// 角色页「发起会话」带过来的角色 ID。与 mentionIssue 同一套机制：
+// 打开一个空白草稿，把角色写成 @ 引用并聚焦输入框。
+function readRoleMention() {
+  const params = new URLSearchParams(location.search);
+  const roleId = params.get("mentionRole") || "";
+  return roleId ? { roleId, projectId: params.get("projectId") || "" } : null;
+}
+
 export default function App() {
   const realChat = useChat();
   const chat = useLocalConversations(realChat);
@@ -338,6 +346,7 @@ export default function App() {
     [imagePreview, setImagePreview] = useState(null),
     [references, setReferences] = useState([]),
     [issueMention, setIssueMention] = useState(readIssueMention),
+    [roleMention, setRoleMention] = useState(readRoleMention),
     [issueDraft, setIssueDraft] = useState(readIssueMention),
     [mention, setMention] = useState(null),
     [repositorySelections, setRepositorySelections] = useState({}),
@@ -643,6 +652,49 @@ export default function App() {
       current = false;
     };
   }, [issueMention, chat.user, chat.activeId, chat.projectId, newDraftSlot, draftKey]);
+
+  // 与上面对应：角色页「发起会话」把角色写成 @ 引用。
+  useEffect(() => {
+    if (
+      !roleMention ||
+      !chat.user ||
+      chat.activeId ||
+      (roleMention.projectId && chat.projectId !== roleMention.projectId) ||
+      draftReady.current !== draftKey
+    ) return;
+    let current = true;
+    api(`/api/agents/${encodeURIComponent(roleMention.roleId)}`)
+      .then((agent) => {
+        if (!current || !agent) return;
+        const ref = {
+          type: "agent",
+          id: agent.id,
+          name: agent.name || agent.id,
+          projectId: agent.projectId || roleMention.projectId || "",
+        };
+        const saved = readJSON(draftKey, {});
+        if ((saved.references || []).some((r) => r.type === "agent" && r.id === ref.id)) return;
+        const value = insertMention(saved.text || "", { start: 0, end: 0 }, ref);
+        setText(value.text);
+        setReferences([ref]);
+        setMention(null);
+        requestAnimationFrame(() => {
+          input.current?.focus();
+          input.current?.setSelectionRange(value.caret, value.caret);
+        });
+      })
+      .catch((e) => current && chat.setError(e.message))
+      .finally(() => {
+        if (!current) return;
+        setRoleMention(null);
+        const url = new URL(location.href);
+        url.searchParams.delete("mentionRole");
+        history.replaceState({}, "", url);
+      });
+    return () => {
+      current = false;
+    };
+  }, [roleMention, chat.user, chat.activeId, chat.projectId, draftKey]);
   useEffect(() => {
     let previous = previousArtifacts.current;
     if (previous.id !== chat.activeId) {
