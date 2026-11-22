@@ -39,7 +39,29 @@ function bindUserSearches(root=document){
   });
 }
 // Project admin has two levels: #/projects lists cards, #/projects/<id>[/<tab>] edits one project.
-const PROJECT_ADMIN_TABS=[{id:'basic',label:'基本信息'},{id:'repos',label:'代码仓库'},{id:'members',label:'项目成员'},{id:'tapd',label:'高级设置'}];
+// 项目「默认执行器」的可选项。
+//
+// 只列平台已配置共享凭据的 CLI：项目级不存 Key，选了没有凭据的 CLI
+// 会让运行直接缺凭据失败。平台还没配任何共享凭据时，退回列出全部
+// 内置执行器——那种部署通常让成员各自配 Key，项目仍应能选。
+function paExecutorOptions(current){
+  const shared=typeof sharedProviderSet==='function'?sharedProviderSet():new Set();
+  const all=(state.data?.executors||[]).map(e=>e.id||e.kind).filter(Boolean);
+  let ids=all.length?all:['codebuddy','codex','claude-code','opencode','kimi','pi','dsh','zcode'];
+  let filtered=shared.size?ids.filter(id=>shared.has(id)):[];
+  if(!filtered.length)filtered=ids;
+  const selected=String(current||'').trim();
+  if(selected&&!filtered.includes(selected))filtered=[selected,...filtered];
+  return ['<option value="">默认（CodeBuddy）</option>']
+    .concat(filtered.map(id=>`<option value="${escapeHTML(id)}"${id===selected?' selected':''}>${escapeHTML(paExecutorLabel(id))}</option>`))
+    .join('');
+}
+function paExecutorLabel(id){
+  const hit=(state.data?.executors||[]).find(e=>(e.id||e.kind)===id);
+  return hit?.name||id;
+}
+
+const PROJECT_ADMIN_TABS=[{id:'basic',label:'基本信息'},{id:'repos',label:'代码仓库'},{id:'members',label:'项目成员'},{id:'model',label:'模型配置'},{id:'tapd',label:'高级设置'}];
 // TAPD is a legacy tracker: its settings appear only once the platform has a TAPD integration or the project already uses one.
 function tapdIntegrationAvailable(project){
   if(project&&(String(project.tapdWorkspaceId||'').trim()||String(project.tapdIterationId||'').trim()))return true;
@@ -108,7 +130,7 @@ function blankProjectDraft(){return {id:'',key:'',name:'',description:'',color:P
 function projectDraftFrom(project){const d=clone(project)||{};d.members=(d.members||[]).filter(m=>Number(m.userId)!==Number(d.ownerId)).map(m=>({userId:Number(m.userId)||0,role:'member'}));d.tapdClear=false;return d}
 function projectDraftSignature(d){
   d=d||{};
-  return JSON.stringify({id:String(d.id||''),key:String(d.key||'').trim().toUpperCase(),name:String(d.name||'').trim(),description:String(d.description||''),color:String(d.color||'').toLowerCase(),ownerId:Number(d.ownerId)||0,workflowId:String(d.workflowId||''),defaultRepositoryId:String(d.defaultRepositoryId||''),businessDomainId:String(d.businessDomainId||''),tapdWorkspaceId:String(d.tapdWorkspaceId||'').trim(),tapdIterationId:String(d.tapdIterationId||'').trim(),tapdClear:!!d.tapdClear,members:(d.members||[]).map(m=>Number(m.userId)||0)});
+  return JSON.stringify({id:String(d.id||''),key:String(d.key||'').trim().toUpperCase(),name:String(d.name||'').trim(),description:String(d.description||''),color:String(d.color||'').toLowerCase(),ownerId:Number(d.ownerId)||0,workflowId:String(d.workflowId||''),defaultRepositoryId:String(d.defaultRepositoryId||''),businessDomainId:String(d.businessDomainId||''),defaultExecutorId:String(d.defaultExecutorId||''),defaultModel:String(d.defaultModel||'').trim(),tapdWorkspaceId:String(d.tapdWorkspaceId||'').trim(),tapdIterationId:String(d.tapdIterationId||'').trim(),tapdClear:!!d.tapdClear,members:(d.members||[]).map(m=>Number(m.userId)||0)});
 }
 function projectDraftDirty(draft,base){return !!draft&&!!base&&projectDraftSignature(draft)!==projectDraftSignature(base)}
 function projectAdminDirty(){return !!state.projectAdminDetailId&&state.projectDraftFor===state.projectAdminDetailId&&projectDraftDirty(state.projectDraft,state.projectDraftBase)}
@@ -195,7 +217,14 @@ function projectAdminFormHTML(d,ctx){
       ${paRow('Workspace ID','TAPD 项目 URL 中 /tapd_fe/ 后的数字。',`<input class="pa-input mono" name="tapdWorkspaceId" value="${escapeHTML(d.tapdWorkspaceId||'')}" placeholder="例如 20375341" spellcheck="false">`)}
       ${paRow('Iteration ID','可选，只导入该迭代内的需求。',`<input class="pa-input mono" name="tapdIterationId" value="${escapeHTML(d.tapdIterationId||'')}" placeholder="留空导入全部" spellcheck="false">`)}
     </div>`):'')+paSection('危险操作','',`<div class="pa-rows">${projectDeleteRow(saved)}${configured?paRow(`清除已保存的 TAPD 配置${configured?' <span class="pa-chip">当前已配置</span>':''}`,'保存项目设置时同时清空 Workspace 与 Iteration，已导入的需求不受影响。',`<label class="pa-switch-wrap"><input type="checkbox" name="tapdClear" role="switch" ${d.tapdClear?'checked':''} aria-label="清除已保存的 TAPD 配置"><span class="pa-switch danger"></span></label>`,{attrs:' data-pa-row-inline'}):''}</div>`);
-  const panels={basic,repos:paSection('代码仓库','Agent 执行 SOP 时会克隆这些仓库。仓库保存后立即生效，无需点「保存项目设置」。',`<div data-pa-repo-box>${projectRepoListHTML(repos,saved?.defaultRepositoryId||'')}</div>`,repos.length?'<button type="button" class="button ghost small" data-repo-add>＋ 添加仓库</button>':''),members:memberPanel,tapd:tapdPanel};
+  // 项目级模型默认值：只选「用哪个 CLI 与模型」，不存任何密钥。
+  // 密钥统一来自平台管理里的共享凭据，这样凭据集中管理与审计，
+  // 项目所有者仍能统一本项目的模型口径。
+  const modelPanel=paSection('默认执行器与模型','本项目里没有单独指定执行器的角色和节点，会使用这里的默认值。角色或节点自己配了执行器的，仍以它们为准。',`<div class="pa-rows">
+      ${paRow('默认执行器','留空则用 CodeBuddy。可选范围是平台已配置共享凭据的 CLI。',`<select class="pa-input" name="defaultExecutorId">${paExecutorOptions(d.defaultExecutorId)}</select>`)}
+      ${paRow('默认模型','留空则用执行器自己的默认模型。',`<input class="pa-input mono" name="defaultModel" value="${escapeHTML(d.defaultModel||'')}" placeholder="例如 gpt-4o，留空用执行器默认">`)}
+    </div>`+paSection('密钥来源','',`<div class="pa-rows"><p class="pa-hint">模型密钥由平台管理员在「平台管理 → 共享模型凭据」统一维护，项目里不保存任何密钥。成员若在个人配置里填了自己的 Key，仍优先使用个人的。</p></div>`));
+  const panels={basic,model:modelPanel,repos:paSection('代码仓库','Agent 执行 SOP 时会克隆这些仓库。仓库保存后立即生效，无需点「保存项目设置」。',`<div data-pa-repo-box>${projectRepoListHTML(repos,saved?.defaultRepositoryId||'')}</div>`,repos.length?'<button type="button" class="button ghost small" data-repo-add>＋ 添加仓库</button>':''),members:memberPanel,tapd:tapdPanel};
   const tab=state.projectAdminTab||'basic';
   return PROJECT_ADMIN_TABS.map(t=>`<section class="pa-panel" data-pa-panel="${t.id}" id="paPanel-${t.id}" role="tabpanel" aria-labelledby="paTab-${t.id}"${t.id===tab?'':' hidden'}>${creating&&t.id!=='basic'?'':panels[t.id]}</section>`).join('')
     +`<div class="pa-savebar-dock"><div class="pa-savebar" data-pa-savebar inert><span class="pa-savebar-tx"><i></i><span data-pa-savebar-text>有未保存的修改</span></span><button type="button" class="button ghost" data-pa-discard>放弃修改</button><button type="submit" class="button primary" data-pa-submit>保存项目设置</button></div></div>`;
@@ -266,7 +295,7 @@ function syncProjectIdentity(){
 function captureProjectAdminForm(){
   const form=$('#projectAdminForm'),d=state.projectDraft;if(!form||!d||form.dataset.projectFor!==state.projectDraftFor)return;
   const el=form.elements;
-  ['name','description','color','workflowId','defaultRepositoryId','tapdWorkspaceId','tapdIterationId','key'].forEach(n=>{if(el[n])d[n]=el[n].value});
+  ['name','description','color','workflowId','defaultRepositoryId','defaultExecutorId','defaultModel','tapdWorkspaceId','tapdIterationId','key'].forEach(n=>{if(el[n])d[n]=el[n].value});
   if(state.projectAdminDetailId==='new'&&el.id)d.id=el.id.value.trim();
   if(el.tapdClear)d.tapdClear=!!el.tapdClear.checked;
   if(el.ownerId){

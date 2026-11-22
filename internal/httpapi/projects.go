@@ -33,6 +33,20 @@ func (h *projectsHandlers) projects(c *gin.Context) {
 			c.JSON(400, map[string]string{"error": "id and name are required"})
 			return
 		}
+		// 项目级模型默认值：只校验形态，不校验「平台是否配了这个 provider」。
+		// 平台凭据可能稍后才配好，提前拦住会让所有者无法先存草稿。
+		body.DefaultExecutorID = strings.TrimSpace(body.DefaultExecutorID)
+		body.DefaultModel = strings.TrimSpace(body.DefaultModel)
+		if body.DefaultExecutorID != "" {
+			if _, ok := repo.BuiltInExecutor(body.DefaultExecutorID); !ok {
+				c.JSON(400, gin.H{"error": "默认执行器 " + body.DefaultExecutorID + " 不存在"})
+				return
+			}
+		}
+		if len(body.DefaultModel) > 191 {
+			c.JSON(400, gin.H{"error": "默认模型名过长"})
+			return
+		}
 		v := body.Project
 		existing, exists := h.repo.Project(v.ID)
 		if v.BusinessDomainID != "" && (!exists || v.BusinessDomainID != existing.BusinessDomainID) {

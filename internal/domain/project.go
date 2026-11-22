@@ -24,6 +24,16 @@ type Project struct {
 	OwnerID             int64             `json:"ownerId,omitempty"`
 	Members             []ProjectMember   `json:"members,omitempty"`
 	RunEval             RunEvalPolicy     `json:"runEval,omitempty"`
+	// DefaultExecutorID / DefaultModel 是本项目没指定执行器时的兜底。
+	//
+	// 取值顺序（由内向外）：SOP 节点的 ExecutorID > 角色的 ExecutorID >
+	// 项目这里的默认值 > "codebuddy"。模型同理：角色/节点指定的模型优先。
+	//
+	// 这里只选"用哪个 CLI 与模型"，不存任何密钥：Key 与 BaseURL 一律来自
+	// 平台管理里配置的共享凭据。项目所有者因此可以统一本项目的模型口径，
+	// 而凭据仍由平台集中管理与审计。
+	DefaultExecutorID string `json:"defaultExecutorId,omitempty"`
+	DefaultModel      string `json:"defaultModel,omitempty"`
 	// Deprecated project-level credential fields are kept only so old payloads
 	// can be decoded and scrubbed by the schema migration.
 	GitToken                     string    `json:"-"`

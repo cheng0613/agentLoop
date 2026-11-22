@@ -186,10 +186,28 @@ func (e *Engine) execute(ctx context.Context, runID string) {
 	}
 }
 
+// resolveNodeExecutor 决定一个节点用哪个执行器。
+//
+// 取值顺序见 domain.Project.DefaultExecutorID 的注释：
+// 节点 > 角色 > 项目默认 > codebuddy。
 func resolveNodeExecutor(st *repo.Store, node domain.WorkflowNode, agent domain.AgentDefinition) (domain.ExecutorDefinition, error) {
+	return resolveNodeExecutorForProject(st, node, agent, "")
+}
+
+// resolveNodeExecutorForProject 在 resolveNodeExecutor 的基础上带上项目默认值。
+// projectID 为空时行为与 resolveNodeExecutor 完全一致。
+func resolveNodeExecutorForProject(st *repo.Store, node domain.WorkflowNode, agent domain.AgentDefinition, projectID string) (domain.ExecutorDefinition, error) {
 	executorID := agent.ExecutorID
 	if executorID == "" {
 		executorID = node.ExecutorID
+	}
+	// 项目默认只兜底到「谁都没指定」的情况；角色和节点显式配置永远优先。
+	projectDefaultModel := ""
+	if executorID == "" && projectID != "" {
+		if project, ok := st.Project(projectID); ok {
+			executorID = strings.TrimSpace(project.DefaultExecutorID)
+			projectDefaultModel = strings.TrimSpace(project.DefaultModel)
+		}
 	}
 	if executorID == "" {
 		executorID = "codebuddy"
@@ -214,8 +232,11 @@ func resolveNodeExecutor(st *repo.Store, node domain.WorkflowNode, agent domain.
 	if !found {
 		return domain.ExecutorDefinition{}, fmt.Errorf("executor %q not found (agent %s)", executorID, agent.ID)
 	}
+	// 模型优先级：角色显式配置 > 项目默认 > 执行器自带默认。
 	if strings.TrimSpace(agent.Model) != "" {
 		ex.Model = agent.Model
+	} else if projectDefaultModel != "" {
+		ex.Model = projectDefaultModel
 	}
 	if strings.TrimSpace(agent.Effort) != "" {
 		ex.Effort = agent.Effort
@@ -689,7 +710,7 @@ func (e *Engine) executeNode(ctx context.Context, runID string, wf domain.Workfl
 			err = fmt.Errorf("agent %q not found", node.AgentID)
 			break
 		}
-		ex, errResolve := resolveNodeExecutor(e.repo, node, agent)
+		ex, errResolve := resolveNodeExecutorForProject(e.repo, node, agent, currentLease.ExecutionContext.ProjectID)
 		if errResolve != nil {
 			err = errResolve
 			break
