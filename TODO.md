@@ -68,3 +68,33 @@
 - [ ] **CodeBuddy 网关化不可行**：它没有 BaseURL 字段，只能连官方三个端点
       （国际站 / 国内站 internal / iOA）。共享机制只能共用同一把 Key，
       无法指向自建网关。需要走网关时改用 OpenCode / Pi / DSH 等。
+
+## Trae 接入调研（结论：不接入执行器）
+
+调研时间：本次会话。结论：**Trae 没有独立的 headless CLI，无法作为执行器接入。**
+
+证据：
+- npm 上不存在 `trae` / `trae-cli` 可执行包，只有 `trae`（无关的 HTTP 客户端）。
+- 所有 Trae 相关 npm 包清一色是「把 Trae 当模型 provider」的适配器：
+  · `@magpie-community/opencode-trae-auth` — OpenCode 的 provider 插件
+  · `dsh-connect-trae` — DSH 的模型接入插件
+  · `@hex4c59/pi-ext-trae-cn` — Pi 的 provider 扩展
+  · `trae-cn-provider` — DSH 的 LLM provider
+  · `dsh-trae-api` — 把 Trae 额度转成 OpenAI 兼容 API
+- Trae 本体是 AI IDE（字节跳动，trae.cn / trae.ai），类似 Cursor，无 CLI。
+  社区做法是逆向其客户端凭证，包成 OpenAI/Anthropic 兼容层。
+
+因此：
+- ❌ 不要新增 `AgentCLIExecutorKinds` 条目。平台所有执行器都依赖
+  `NewAgentCLITranslator` 解析 headless JSON 输出（agent_cli_stream.go），
+  没有 CLI 就没有可解析的流。
+- ✅ 若要使用 Trae 的模型，走网关聚合：
+
+| 方式 | 做法 | 工作量 |
+|---|---|---|
+| A. 网关聚合（推荐） | 统一网关把 Trae 作为 upstream，现有 6 个 CLI 直接可用 | 0（纯运维） |
+| B. 单独起转换服务 | 用 `dsh-trae-api` 起本地 OpenAI 兼容服务，平台里配成 OpenCode 的 BaseURL | 0.5 天 |
+
+风险提示：社区包靠复用本机登录的 Trae 凭证工作，团队内部使用可能违反
+Trae 服务条款，落地前建议先确认合规。
+
