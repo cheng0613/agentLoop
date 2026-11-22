@@ -28,6 +28,31 @@ function updateApprovalBadge(){
 
 // ================= 个人凭证 =================
 // One table drives the list rows, the inline editors and the add wizard.
+// 本部署不使用的 CLI：在个人配置与平台共享凭据里都不出现。
+//
+// 原因（当前团队统一网关部署）：
+// - Codex、Claude Code：本部署暂不接入统一网关，也不使用它们的订阅登录。
+// - Cursor CLI、Antigravity：只连官方端点或有独立的登录方式，无法指向自建网关。
+//
+// 隐藏只发生在展示层：后端能力与既有数据都保留，将来要放开时把这个数组清空
+// 即可，不需要改其他代码。保留它们的数据也意味着用户之前存的 Key 不会丢失。
+const HIDDEN_CREDENTIAL_CLIS=['codex','claude-code','cursor','agy'];
+// 个人配置里对应 key 的形式是 codexApiKey / claudeCodeApiKey，与 CLI ID 不同名。
+const HIDDEN_CREDENTIAL_KEYS=['codexApiKey','claudeCodeApiKey'];
+
+function credentialHidden(kind){
+  if(!kind)return false;
+  if(HIDDEN_CREDENTIAL_KEYS.includes(kind.key))return true;
+  if(kind.agentCli&&HIDDEN_CREDENTIAL_CLIS.includes(kind.agentCli))return true;
+  return false;
+}
+
+// 个人配置里实际展示的凭据项（已剔除本部署不使用的 CLI）。
+// 所有遍历 CREDENTIAL_KINDS 的渲染点都应改用它，否则隐藏不彻底。
+function visibleCredentialKinds(){
+  return CREDENTIAL_KINDS.filter(kind=>!credentialHidden(kind));
+}
+
 const CREDENTIAL_GROUPS=[
   {id:'platform',name:'平台集成',sub:'代码仓库与统一认证',icon:'key'},
   {id:'model',name:'模型与执行',sub:'AI 对话与编码 CLI',icon:'sparkles'},
@@ -492,7 +517,27 @@ const CREDENTIAL_PAT_WARNING='请填写 GitHub <b>个人访问令牌（PAT）</b
 function credentialKind(key){return CREDENTIAL_KINDS.find(kind=>kind.key===key)||null}
 // Kinds with a dialog manage several entries there instead of the inline editor.
 function credentialDialog(key){return credentialKind(key)?.dialog||null}
-function credentialConfigured(kind,user){if(kind.key==='gitToken')return !!user.gitHubCredentialConfigured;return !!credentialValue(user,kind.agentCli?kind.key+'.apiKeyConfigured':kind.key+'Configured')}
+// 平台共享凭据的 provider 集合。由 loadPlatformSharedProviders() 在登录后填充。
+// 个人没配 Key、但平台有共享配置时，个人配置里该 CLI 显示为「已启用」——
+// 团队统一网关部署下这才是真实可用状态，否则界面会误导用户去填 Key。
+function sharedProviderSet(){return state.sharedProviders instanceof Set?state.sharedProviders:(state.sharedProviders=new Set())}
+function credentialSharedByPlatform(kind){
+  const cli=kind.agentCli||(kind.key==='codeBuddyApiKey'?'codebuddy':'');
+  return !!cli&&sharedProviderSet().has(cli);
+}
+async function loadPlatformSharedProviders(){
+  try{
+    const list=await api('/api/platform/providers',{silent:true});
+    const set=new Set((Array.isArray(list)?list:[]).filter(p=>p&&p.configured&&p.enabled).map(p=>p.provider));
+    state.sharedProviders=set;
+    if($('#credentialPanel'))renderCredentialPanel();
+  }catch(e){/* 非管理员读不到这个接口，保持空集合即可 */}
+}
+function credentialConfigured(kind,user){
+  if(kind.key==='gitToken')return !!user.gitHubCredentialConfigured;
+  if(!!credentialValue(user,kind.agentCli?kind.key+'.apiKeyConfigured':kind.key+'Configured'))return true;
+  return credentialSharedByPlatform(kind);
+}
 function credentialUser(){return userById(state.currentUser?.id)||{}}
 function credentialUI(){return state.credentialUI||(state.credentialUI={open:null,filter:'all',closed:{}})}
 function credentialGlyph(name,size=16,cls=''){return `<svg class="agent-icon harness-icon${cls?' '+cls:''}" data-icon="${name}" width="${size}" height="${size}" aria-hidden="true" focusable="false"></svg>`}
@@ -677,8 +722,19 @@ function credentialEditorHTML(kind,user){
     </div>
   </div>`;
 }
+// 模型 CLI 在个人配置里只显示「是否可用」，不提供配置入口。
+//
+// 团队统一网关部署下，Key 与 BaseURL 由平台管理员在「平台管理 → 共享模型凭据」
+// 统一维护，成员不需要也不应该各自填写。个人只需要知道「这个 CLI 现在能不能用」。
+// 需要个人配置的 Git 类凭据不受影响，仍是原来的可展开编辑器。
 function credentialRowMainHTML(kind,user){
   const managed=!!kind.dialog,on=credentialConfigured(kind,user),open=on&&credentialUI().open===kind.key,status=credentialStatus(kind,user);
+  if(kind.group==='model'){
+    const shared=credentialSharedByPlatform(kind);
+    const label=on?(shared?'平台已启用':'已启用'):'平台未配置';
+    const cls=on?'is-on':'is-off';
+    return `<div class="credential-row-main credential-ink">${credentialLogo(kind,on?'':'is-dim')}<div class="credential-row-who"><b>${escapeHTML(kind.name)}<span>${escapeHTML(kind.short)}</span></b><small>${credentialSubline(kind,user)}</small></div><div class="credential-row-end"><span class="credential-cli-state ${cls}">${on?credentialGlyph('check',13):''}${label}</span></div></div>`;
+  }
   const end=on&&!managed
     ?`${credentialBadgeHTML(status)}${kind.key==='gitToken'?`<span class="credential-tip" data-tip="重新校验"><button type="button" class="credential-btn ghost icon credential-ink git-token-verify" data-credential-act="verify" aria-label="重新校验"${status==='busy'?' disabled':''}>${credentialGlyph('refresh',15)}</button></span>`:''}<span class="credential-chevron">${credentialGlyph('chevron-down',16)}</span>`
     :`${credentialBadgeHTML(status)}<button type="button" class="credential-btn secondary credential-ink" data-credential-act="setup"${managed?' aria-haspopup="dialog"':''}>${managed?kind.action:'去配置'}<span class="credential-nudge">${credentialGlyph('chevron-right',13)}</span></button>`;
@@ -687,21 +743,22 @@ function credentialRowMainHTML(kind,user){
 }
 function credentialRowHTML(kind,user){
   const on=credentialConfigured(kind,user),open=on&&credentialUI().open===kind.key;
-  const editor=on&&!kind.dialog?credentialEditorHTML(kind,user):'';
+  // 模型 CLI 不展开编辑器：配置在平台管理里统一做。
+  const editor=on&&!kind.dialog&&kind.group!=='model'?credentialEditorHTML(kind,user):'';
   return `<div class="credential-row${on?' is-configured':''}${open?' is-open':''}" data-credential-row="${kind.key}">${credentialRowMainHTML(kind,user)}<div class="credential-editor"><div><div class="credential-editor-inner">${editor}</div></div></div></div>`;
 }
 function credentialGroupHTML(group,user){
-  const kinds=CREDENTIAL_KINDS.filter(kind=>kind.group===group.id),done=kinds.filter(kind=>credentialConfigured(kind,user)).length,closed=!!credentialUI().closed[group.id];
+  const kinds=visibleCredentialKinds().filter(kind=>kind.group===group.id),done=kinds.filter(kind=>credentialConfigured(kind,user)).length,closed=!!credentialUI().closed[group.id];
   return `<section class="credential-group" data-credential-group="${group.id}"><button type="button" class="credential-group-head credential-ink" aria-expanded="${!closed}">${credentialGlyph(group.icon,16)}<strong>${escapeHTML(group.name)}</strong><span class="credential-group-sub">${escapeHTML(group.sub)}</span><span class="credential-group-meta">${done} / ${kinds.length}</span><span class="credential-group-chevron">${credentialGlyph('chevron-down',15)}</span></button><div class="credential-fold${closed?' is-closed':''}"><div><div class="credential-rows">${kinds.map(kind=>credentialRowHTML(kind,user)).join('')}<p class="credential-empty" hidden></p></div></div></div></section>`;
 }
 function credentialProgressHTML(user){
-  const done=CREDENTIAL_KINDS.filter(kind=>credentialConfigured(kind,user)).length,next=credentialNextKind(user);
-  return `<div class="credential-segs" aria-hidden="true">${CREDENTIAL_KINDS.map((_,index)=>`<i${index<done?' class="is-on"':''}></i>`).join('')}</div><span class="credential-count"><b>${done}</b> / ${CREDENTIAL_KINDS.length} 已配置</span>`
+  const visible=visibleCredentialKinds(),done=visible.filter(kind=>credentialConfigured(kind,user)).length,next=credentialNextKind(user);
+  return `<div class="credential-segs" aria-hidden="true">${visible.map((_,index)=>`<i${index<done?' class="is-on"':''}></i>`).join('')}</div><span class="credential-count"><b>${done}</b> / ${visible.length} 已配置</span>`
     +(next?`<span class="credential-next">下一步<button type="button" class="credential-btn link credential-ink" data-credential-setup="${next.key}">配置 ${escapeHTML(next.short)}<span class="credential-nudge">${credentialGlyph('arrow-right',13)}</span></button></span>`:`<span class="credential-ready">${credentialGlyph('check',15)}推荐凭证已全部就绪</span>`);
 }
 function credentialFilterHTML(user){
-  const done=CREDENTIAL_KINDS.filter(kind=>credentialConfigured(kind,user)).length,filter=credentialUI().filter;
-  return [['all','全部',CREDENTIAL_KINDS.length],['configured','已配置',done],['missing','未配置',CREDENTIAL_KINDS.length-done]].map(([id,label,count])=>`<button type="button" role="tab" data-credential-filter="${id}" class="${filter===id?'active':''}" aria-selected="${filter===id}">${label}<span>${count}</span></button>`).join('');
+  const visible=visibleCredentialKinds(),done=visible.filter(kind=>credentialConfigured(kind,user)).length,filter=credentialUI().filter;
+  return [['all','全部',visible.length],['configured','已配置',done],['missing','未配置',visible.length-done]].map(([id,label,count])=>`<button type="button" role="tab" data-credential-filter="${id}" class="${filter===id?'active':''}" aria-selected="${filter===id}">${label}<span>${count}</span></button>`).join('');
 }
 function credentialPanelHTML(user){
   return `<header class="credential-section-head"><div><h2>个人凭证</h2><p>SOP 使用需求责任人（未指定时为项目 Owner）的个人凭证，保存后对下一次任务生效。</p></div><button type="button" class="credential-btn primary credential-ink" id="credentialAddButton" data-credential-add><span class="credential-turn">${credentialGlyph('plus',15)}</span><span>添加凭证</span></button></header>
@@ -1009,7 +1066,7 @@ function openCredentialWizard(key){
   const dialog=credentialDialog(key);if(dialog)return dialog();
   const preset=key?credentialKind(key):null;
   if(preset&&credentialConfigured(preset,user))return revealCredentialRow(key);
-  const kind=preset||CREDENTIAL_RECOMMENDED.map(credentialKind).find(k=>!credentialConfigured(k,user))||CREDENTIAL_KINDS.find(k=>!credentialConfigured(k,user))||null;
+  const kind=preset||CREDENTIAL_RECOMMENDED.map(credentialKind).find(k=>!credentialConfigured(k,user))||visibleCredentialKinds().find(k=>!credentialConfigured(k,user))||null;
   if(credentialWizard)closeCredentialWizard(true);
   credentialUI().open&&toggleCredentialRow(credentialUI().open,false);
   credentialWizard={step:preset?2:1,kind:kind?.key||null,direct:!!preset,secret:'',extra:credentialWizardDefaults(kind,user),protocol:credentialProtocol(kind||{},user),saving:false,error:'',done:false,guide:{},returnFocus:document.activeElement};
@@ -1059,8 +1116,8 @@ function credentialWizardSecretHint(kind,wizard,validity=credentialWizardValid(w
   return validity.ok?{text:'格式正确',tone:'ok'}:{text:kind.hint||'只在你负责的任务运行时注入，保存后不再明文展示',tone:''};
 }
 function credentialWizardStepOneHTML(user){
-  const wizard=credentialWizard,all=CREDENTIAL_KINDS.every(kind=>credentialConfigured(kind,user));
-  const groups=CREDENTIAL_GROUPS.map(group=>`<p class="credential-opt-label">${escapeHTML(group.name)}</p><div class="credential-opts" role="radiogroup" aria-label="${escapeHTML(group.name)}">${CREDENTIAL_KINDS.filter(kind=>kind.group===group.id).map((kind,index)=>{
+  const wizard=credentialWizard,all=visibleCredentialKinds().every(kind=>credentialConfigured(kind,user));
+  const groups=CREDENTIAL_GROUPS.map(group=>`<p class="credential-opt-label">${escapeHTML(group.name)}</p><div class="credential-opts" role="radiogroup" aria-label="${escapeHTML(group.name)}">${visibleCredentialKinds().filter(kind=>kind.group===group.id).map((kind,index)=>{
     const on=credentialConfigured(kind,user),selected=wizard.kind===kind.key;
     return `<button type="button" class="credential-opt${selected?' is-selected':''}" style="--i:${index}" role="radio" aria-checked="${selected}" data-wizard-kind="${kind.key}"${on&&!kind.dialog?' disabled':''}><span class="credential-radio">${credentialGlyph('check',10)}</span>${credentialLogo(kind)}<span class="credential-opt-text"><b>${escapeHTML(kind.name)}</b><small>${escapeHTML(kind.short)}</small></span>${on?'<span class="credential-pill is-ok">已配置</span>':CREDENTIAL_RECOMMENDED.includes(kind.key)?'<span class="credential-pill">推荐</span>':''}</button>`;
   }).join('')}</div>`).join('');
@@ -1304,6 +1361,8 @@ async function renderPersonalSettings(){
   const panel=host.querySelector('#credentialPanel');
   bindCredentialPanel(panel);
   renderCredentialPanel();
+  // 平台共享凭据决定「哪个 CLI 现在可用」，拉一次即可；管理员之外读不到，静默失败。
+  loadPlatformSharedProviders();
   loadCredentialEffortCatalogs().then(()=>panel.querySelectorAll('[data-credential-catalog]').forEach(refreshCredentialCatalogEfforts));
   hydrateCredentialIcons(host);
   setTimeout(()=>panel.classList.remove('is-entering'),900);

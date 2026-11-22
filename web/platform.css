@@ -2817,3 +2817,9 @@ textarea.pw-input{height:auto;min-height:64px;padding:9px 12px;line-height:1.55;
 .platform-provider-result{margin:0;padding:8px 10px;border-radius:6px;font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
 .platform-provider-result.is-ok{background:color-mix(in srgb,var(--green) 10%,transparent);color:var(--green)}
 .platform-provider-result.is-fail{background:color-mix(in srgb,var(--red) 10%,transparent);color:var(--red)}
+
+/* --- 个人配置 · 模型 CLI 的启用状态 ---
+   团队统一网关部署下，Key 由平台管理员维护，个人只看到「能不能用」。 */
+.credential-cli-state{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.credential-cli-state.is-on{background:color-mix(in srgb,var(--green) 14%,transparent);color:var(--green)}
+.credential-cli-state.is-off{background:var(--subtle);color:var(--muted)}

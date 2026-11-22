@@ -20,20 +20,34 @@ import (
 // 旧的 /api/platform/codebuddy-key 保留可用（内部转发到新表），避免已有前端
 // 与脚本失效。
 
+// hiddenProviderKinds 是本部署不参与统一网关、因此不在平台侧展示的 CLI。
+//
+// 原因：
+//   - codex / claude-code：暂不接入统一网关。它们的协议也没有列进
+//     domain.AgentCLIProtocolOptions，即使放开 BaseURL 与协议也无法配置。
+//     将来要支持时，先把协议补进那张表，再从这里移除。
+//   - cursor：只连官方端点，没有 BaseURL，配置共享凭据没有意义。
+//   - agy（Antigravity）：本部署不使用。
+//
+// 隐藏只发生在展示与写入校验层面：既有数据保留，SharedProviderKey 仍可读，
+// 因此将来放开时不需要数据迁移。
+var hiddenProviderKinds = []string{"codex", "claude-code", "cursor", "agy"}
+
+func providerHidden(kind string) bool {
+	for _, hidden := range hiddenProviderKinds {
+		if hidden == kind {
+			return true
+		}
+	}
+	return false
+}
+
 // platformProviderKinds 返回可配置的 provider 清单，顺序即界面展示顺序。
-//
-// 覆盖范围：CodeBuddy 加 AgentCLIExecutorKinds 里的通用 CLI。
-//
-// 暂不含 Codex / Claude Code：这两者在本部署中不参与统一网关。它们的协议
-// 也没有列进 domain.AgentCLIProtocolOptions，所以即使这里放开，BaseURL 与
-// 协议也无法配置。将来要支持时，把它们的协议补进那张表再在这里加进来。
-//
-// cursor 虽然属于通用 CLI，但它只连官方端点（不在协议表里），配置共享
-// BaseURL 没有意义，因此从清单里剔除。
+// 覆盖 CodeBuddy 加 AgentCLIExecutorKinds 里的通用 CLI，减去 hiddenProviderKinds。
 func platformProviderKinds() []string {
 	out := []string{"codebuddy"}
 	for _, kind := range domain.AgentCLIExecutorKinds {
-		if kind == "cursor" {
+		if providerHidden(kind) {
 			continue
 		}
 		out = append(out, kind)
