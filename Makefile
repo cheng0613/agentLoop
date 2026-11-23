@@ -1,4 +1,4 @@
-.PHONY: run test test-mysql clean-mysql build build-chatbot build-gate-mcp coverage coverage-go coverage-chatbot coverage-web coverage-e2e
+.PHONY: run test test-mysql clean-mysql build build-chatbot build-gate-mcp css-check check coverage coverage-go coverage-chatbot coverage-web coverage-e2e
 
 GOCACHE ?= /tmp/agentflow-gocache
 # Use the local toolchain; go.mod requires go >= 1.26.11.
@@ -8,6 +8,16 @@ run:
 
 test:
 	GOCACHE=$(GOCACHE) go test -p=16 ./... -count=1 -timeout=4m
+
+# css-check guards the design tokens. CSS custom properties fail silently:
+# a self-reference or a cycle makes var(--x) resolve to nothing, and the only
+# symptom is a component losing its color. Three cases are checked -- self
+# reference, cycles, and references with no declaration and no fallback.
+css-check:
+	python3 scripts/check-css-vars.py
+
+# check is the fast, dependency-free gate worth running before every commit.
+check: css-check
 
 # coverage runs the same gates as CI. Needs web/native-chat
 # (make build-chatbot). COVERAGE_P lowers Go package parallelism on small hosts.
