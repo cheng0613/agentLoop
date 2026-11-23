@@ -15,7 +15,7 @@
 :root{
   /* —— 品牌与语义色 —— */
   --blue:#5b8cff; --blue-soft:rgba(91,140,255,.16); --blue-dim:#3b6fd6;
-  --green:#34d399; --amber:#fbbf24; --red:#f87171; --purple:#8b5cf6; --cyan:#22d3ee;
+  --green:#34d399; --amber:#fbbf24; --red:#f87171; --purple:#737373; --cyan:#22d3ee;
   /* —— 暗色基底（默认） —— */
   --bg:#0a0e16; --bg-soft:#0f1521; --panel:#131a29; --panel-2:#19223a; --panel-3:#222d48;
   --line:rgba(148,163,184,.13); --line-strong:rgba(148,163,184,.25);

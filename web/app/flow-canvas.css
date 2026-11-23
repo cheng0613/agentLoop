@@ -313,7 +313,7 @@ html[data-theme="dark"] #flowView{
 #flowView .fd-toast{position:absolute;z-index:50;left:50%;bottom:18px;display:flex;align-items:center;gap:12px;max-width:min(520px,calc(100% - 32px));height:38px;padding:0 6px 0 14px;border-radius:10px;background:#111827;color:#f3f4f6;font-size:13px;box-shadow:var(--fd-shadow-lg);white-space:nowrap;opacity:0;pointer-events:none;transform:translate(-50%,10px);transition:opacity .18s,transform .18s var(--fd-ease)}
 #flowView .fd-toast.on{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
 #flowView .fd-toast #flowToastMsg{overflow:hidden;text-overflow:ellipsis}
-#flowView .fd-toast button{height:28px;padding:0 10px;border:0;border-radius:7px;background:rgba(255,255,255,.1);color:#a5b4fc;font:600 12.5px inherit;cursor:pointer}
+#flowView .fd-toast button{height:28px;padding:0 10px;border:0;border-radius:7px;background:rgba(255,255,255,.1);color:var(--text);font:600 12.5px inherit;cursor:pointer}
 #flowView .fd-toast button:hover{background:rgba(255,255,255,.18)}
 #flowView .fd-toast.noact button{display:none}
 #flowView .fd-toast.noact{padding-right:14px}
