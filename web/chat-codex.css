@@ -279,7 +279,7 @@ body.chat-next-active .chat-next-host{display:flex;flex:1;flex-direction:column;
 #collaborationView .ai-slide table{width:100%;border-collapse:collapse;font-size:14px}
 #collaborationView .ai-slide th,#collaborationView .ai-slide td{padding:7px 8px;border-bottom:1px solid #e5e7eb;text-align:left}
 #collaborationView .ai-slide th{color:#64748b;font-weight:650}
-#collaborationView .ai-slide.cover{justify-content:center;padding:48px 56px 56px;background:linear-gradient(145deg,#0b1220 0%,#1e3a8a 72%);color:#fff}
+#collaborationView .ai-slide.cover{justify-content:center;padding:48px 56px 56px;background:var(--panel);color:var(--text)}
 #collaborationView .ai-slide.cover::before{display:none}
 #collaborationView .ai-slide.cover h3{font-size:36px;color:#fff}
 #collaborationView .ai-slide.cover .ai-slide-sub,#collaborationView .ai-slide.cover .ai-slide-text{color:#dbeafe;font-size:18px}

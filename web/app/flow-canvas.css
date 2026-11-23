@@ -294,8 +294,8 @@ html[data-theme="dark"] #flowView{
 #flowView .fd-seg button.active{background:var(--fd-surface);color:var(--fd-ink);box-shadow:var(--fd-shadow-sm)}
 #flowView .fd-chrome .fd-seg{background:transparent}
 #flowView .fd-chrome .fd-seg button.active{background:var(--fd-soft);box-shadow:none}
-#flowView .fd-ai-btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:7px;background:linear-gradient(135deg,rgb(var(--fd-accent) / .14),rgba(139,92,246,.14));color:rgb(var(--fd-accent));font:600 12.5px/1 inherit;cursor:pointer;white-space:nowrap}
-#flowView .fd-ai-btn:hover{background:linear-gradient(135deg,rgb(var(--fd-accent) / .22),rgba(139,92,246,.22))}
+#flowView .fd-ai-btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:7px;background:rgb(var(--fd-accent) / .12);color:rgb(var(--fd-accent));font:600 12.5px/1 inherit;cursor:pointer;white-space:nowrap}
+#flowView .fd-ai-btn:hover{background:rgb(var(--fd-accent) / .2)}
 #flowView .fd-minimap{position:absolute;z-index:14;right:12px;bottom:12px;width:188px;height:124px;border:1px solid var(--fd-line);border-radius:11px;background:var(--fd-glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:var(--fd-shadow);overflow:hidden;cursor:pointer;transition:right .24s var(--fd-ease),opacity .2s}
 #flowView .fd-minimap svg{display:block;width:100%;height:100%}
 #flowView .fd-mm-view{fill:rgb(var(--fd-accent) / .07);stroke:rgb(var(--fd-accent) / .75);stroke-width:1.2}

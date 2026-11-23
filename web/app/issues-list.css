@@ -291,7 +291,7 @@ html[data-theme="dark"] #issuesView .issue-title-cell .issue-title-tag.tone-dang
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, var(--hui-accent), #8b5cf6);
+  background: var(--hui-accent);
   color: #fff;
   font: 600 10px/1 var(--hui-sans);
 }
