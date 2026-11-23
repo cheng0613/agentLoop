@@ -237,7 +237,10 @@ html[data-theme="dark"] .platform-rail [data-tooltip]::before {
   border-color: transparent rgba(39, 39, 42, 0.96) transparent transparent;
 }
 
-/* 待我确认 badge 徽标 */
+/* 待我确认 badge 徽标
+   描边必须用 rail 的真实背景色（--rail-surface），不能用 --panel：
+   rail 在暗色下是 #0a0a0b，而 --panel 是 #2c2c2a，用后者会在红点外圈
+   描出一圈灰边，把徽标「缩」进去，看着发暗、不醒目。 */
 .platform-rail .nav-badge {
   position: absolute;
   top: 4px;
@@ -245,7 +248,7 @@ html[data-theme="dark"] .platform-rail [data-tooltip]::before {
   min-width: 8px;
   height: 8px;
   background: var(--red);
-  border: 1.5px solid var(--panel);
+  border: 1.5px solid var(--rail-surface);
   border-radius: 99px;
   font-size: 0;
   display: block;
@@ -262,7 +265,7 @@ html[data-theme="dark"] .platform-rail [data-tooltip]::before {
   line-height: 13px;
   text-align: center;
   color: #fff;
-  border: 1px solid var(--panel);
+  border: 1px solid var(--rail-surface);
 }
 
 /* 分割线 */
