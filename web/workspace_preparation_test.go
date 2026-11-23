@@ -39,7 +39,7 @@ eval(source.slice(source.indexOf('  async function refreshEnvironment('),source.
  const previous=painted.length;editing=false;await prepareEnvironment();assert.equal(painted.length,previous,'read-only browsing must not execute preparation');
 })().catch(err=>{console.error(err);process.exitCode=1});
 `
-	if output, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if output, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("workspace preparation UI: %v\n%s", err, output)
 	}
 }
@@ -130,7 +130,7 @@ async function openIDE({ status, readOnly = false, preparation }) {
   assert.equal(viewer.terminal.disabled, true);
 })().catch(error => { console.error(error); process.exitCode = 1; });
 `
-	if output, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if output, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("IDE startup: %v\n%s", err, output)
 	}
 }

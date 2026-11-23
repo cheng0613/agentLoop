@@ -73,53 +73,111 @@
 
   <!-- 全局业务导航：56px 图标栏 -->
   <aside class="platform-rail" id="platformRail" aria-label="全局导航">
-    <nav class="rail-nav">
+    <div class="rail-head">
+      <button type="button" class="rail-icon-btn" id="railCollapseBtn" data-rail-tip="收起导航" aria-label="收起导航" aria-expanded="true" aria-controls="platformRail">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18"/></svg>
+      </button>
+      <button type="button" class="rail-icon-btn" data-rail-menu-toggle data-rail-tip="菜单" aria-label="菜单" aria-haspopup="menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <button type="button" class="rail-icon-btn" id="railBackBtn" data-rail-tip="后退" aria-label="后退">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <button type="button" class="rail-icon-btn" id="railForwardBtn" data-rail-tip="前进" aria-label="前进" disabled>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <nav class="rail-nav" aria-label="主入口">
       <span style="display:none">日常工作</span>
-      <!-- 1. AI 工作台 (Codex 风格 Home 房子图标) -->
-      <button class="rail-btn nav" data-view="collaboration" data-tooltip="AI 工作台" aria-label="AI 工作台">
+      <!-- 1. 新建：回到工作台空会话 -->
+      <button class="rail-btn nav" data-view="collaboration" data-rail-new-chat data-tooltip="新建" aria-label="新建对话">
         <svg class="agent-icon harness-icon" data-icon="home-start" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3.5 10 7.3-6a1.9 1.9 0 0 1 2.4 0l7.3 6"/><path d="M5.5 8.4v10.1A1.5 1.5 0 0 0 7 20h3v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5h3a1.5 1.5 0 0 0 1.5-1.5V8.4"/></svg>
-        <span class="rail-label">AI 工作台</span>
+        <span class="rail-label">新建</span>
       </button>
 
-      <!-- 2. 统计 -->
-      <button class="rail-btn nav" data-view="observability" data-tooltip="统计" aria-label="统计">
-        <svg class="agent-icon harness-icon" data-icon="chart" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 17V9"/><path d="M12 17V7"/><path d="M16 17v-5"/></svg>
-        <span class="rail-label">统计</span>
-      </button>
-
-      <!-- 3. 需求列表 -->
-      <button class="rail-btn nav" data-view="issues" data-tooltip="需求" aria-label="需求">
-        <svg class="agent-icon harness-icon" data-icon="form" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8"/><path class="form-fields" d="M8 12h8M8 16h5"/></svg>
-        <span class="rail-label">需求</span>
-      </button>
-
-      <!-- 4. 待我确认 (带审批徽标) -->
-      <button class="rail-btn nav" data-view="approvals" data-tooltip="待我确认" aria-label="待我确认">
-        <svg class="agent-icon harness-icon" data-icon="gate" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path class="gate-shield" d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path class="gate-check agent-check-draw" pathLength="1" d="m9 12 2 2 4-4"/></svg>
-        <span class="rail-label">待我确认</span>
-        <span id="approvalNavBadge" class="nav-badge" hidden></span>
-      </button>
-
-      <!-- 5. 角色（伙伴，可独立对话） -->
-      <button class="rail-btn nav" data-view="agents" data-tooltip="角色" aria-label="角色">
-        <svg class="agent-icon harness-icon" data-icon="users" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g class="team-front"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1"/></g><g class="team-back"><path d="M16 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 5v1"/></g></svg>
-        <span class="rail-label">角色</span>
-      </button>
-
-      <!-- 6. 流程（SOP 模板 + 定时任务） -->
-      <button class="rail-btn nav" data-view="sops" data-nav-match="flow aiSchedules" data-tooltip="流程" aria-label="流程">
+      <!-- 2. 自动化：SOP + 定时任务 -->
+      <button class="rail-btn nav" data-view="aiSchedules" data-nav-match="sops flow" data-tooltip="自动化" aria-label="自动化">
         <svg class="agent-icon harness-icon" data-icon="workflow" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle class="node-a" cx="6" cy="6" r="2.2" fill="currentColor" fill-opacity="0"/><circle class="node-b" cx="6" cy="18" r="2.2" fill="currentColor" fill-opacity="0"/><circle class="node-c" cx="18" cy="12" r="2.2" fill="currentColor" fill-opacity="0"/><path pathLength="1" d="M8.2 6C12 6 14 8.2 16.45 10.45M8.2 18C12 18 14 15.8 16.45 13.55"/><path class="signal" pathLength="1" d="M8.2 6C12 6 14 8.2 16.45 10.45M8.2 18C12 18 14 15.8 16.45 13.55" opacity="0" stroke-width="2.5"/></svg>
-        <span class="rail-label">流程</span>
+        <span class="rail-label">自动化</span>
       </button>
+
+      <!-- 3. 插件：能力资产（MCP / 规则 / 技能） -->
+      <button class="rail-btn nav" data-view="mcp" data-nav-match="rules skills" data-tooltip="插件" aria-label="插件">
+        <svg class="agent-icon harness-icon" data-icon="skills" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path class="skill-piece" d="M9 4V3a2 2 0 0 1 4 0v1h5a2 2 0 0 1 2 2v4h-1a2 2 0 0 0 0 4h1v4a2 2 0 0 1-2 2h-4v-1a2 2 0 0 0-4 0v1H6a2 2 0 0 1-2-2v-4H3a2 2 0 0 1 0-4h1V6a2 2 0 0 1 2-2h3Z"/></svg>
+        <span class="rail-label">插件</span>
+      </button>
+
+      <!-- 4. 搜索：全局搜索弹层 -->
+      <button class="rail-btn" id="railSearchBtn" data-rail-tip="搜索" aria-label="搜索" aria-haspopup="dialog" aria-expanded="false">
+        <svg class="agent-icon harness-icon" data-icon="search" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span class="rail-label">搜索</span>
+      </button>
+
+      <!-- 5. 更多：其余一级视图收拢 -->
+      <div class="rail-more-wrap">
+        <button class="rail-btn" id="railMoreBtn" data-rail-tip="更多" aria-label="更多" aria-haspopup="menu" aria-expanded="false">
+          <svg class="agent-icon harness-icon" data-icon="more" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></svg>
+          <span class="rail-label">更多</span>
+          <span class="rail-more-dot" id="railMoreDot" hidden aria-hidden="true"></span>
+        </button>
+        <div class="rail-more-menu" id="railMoreMenu" role="menu" aria-label="更多入口" hidden>
+          <button type="button" role="menuitem" data-view="observability"><svg class="agent-icon harness-icon" data-icon="chart" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 17V9"/><path d="M12 17V7"/><path d="M16 17v-5"/></svg><span class="rail-label">统计</span></button>
+          <button type="button" role="menuitem" data-view="issues"><svg class="agent-icon harness-icon" data-icon="form" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8"/><path d="M8 12h8M8 16h5"/></svg><span class="rail-label">需求</span></button>
+          <button type="button" role="menuitem" data-view="approvals"><svg class="agent-icon harness-icon" data-icon="gate" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="m9 12 2 2 4-4"/></svg><span class="rail-label">待我确认</span><span id="approvalNavBadge" class="nav-badge" hidden></span></button>
+          <button type="button" role="menuitem" data-view="agents"><svg class="agent-icon harness-icon" data-icon="users" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g class="team-front"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1"/></g><g class="team-back"><path d="M16 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 5v1"/></g></svg><span class="rail-label">角色</span></button>
+          <button type="button" role="menuitem" data-view="runners"><svg class="agent-icon harness-icon" data-icon="server" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01"/><path d="M7 17.5h.01"/></svg><span class="rail-label">执行机器</span></button>
+          <button type="button" role="menuitem" data-view="guide"><svg class="agent-icon harness-icon" data-icon="key" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3"/><path d="M16 7l3 3"/><path d="M18 5l2 2"/></svg><span class="rail-label">访问密钥</span></button>
+          <button type="button" role="menuitem" data-view="dockerfiles" data-nav-match="environments sandboxes"><svg class="agent-icon harness-icon" data-icon="layers" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg><span class="rail-label">环境资产</span></button>
+          <button type="button" role="menuitem" data-view="bots"><svg class="agent-icon harness-icon" data-icon="robot" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="8" width="16" height="11" rx="2"/><path d="M12 3v5"/><path d="M8 13h.01M16 13h.01"/><path d="M9 17h6"/></svg><span class="rail-label">通道管理</span></button>
+          <button type="button" role="menuitem" data-view="settings"><svg class="agent-icon harness-icon" data-icon="settings" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="rail-label">设置</span></button>
+          <div id="platformNavGroup" hidden><button type="button" role="menuitem" data-view="platform"><svg class="agent-icon harness-icon" data-icon="gate" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path class="gate-shield" d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path class="gate-check agent-check-draw" pathLength="1" d="m9 12 2 2 4-4"/></svg><span class="rail-label">平台管理</span></button></div>
+        </div>
+      </div>
     </nav>
+
+    <!-- 伙伴：项目/共享角色，点开进角色页 -->
+    <section class="rail-section" id="railPartnersSection" aria-labelledby="railPartnersTitle">
+      <h3 class="rail-section-title" id="railPartnersTitle">伙伴</h3>
+      <div class="rail-partners" id="railPartners"></div>
+    </section>
+
+    <!-- 置顶：置顶的会话，绿色圆点表示正在回复 -->
+    <section class="rail-section" id="railPinnedSection" aria-labelledby="railPinnedTitle" hidden>
+      <h3 class="rail-section-title" id="railPinnedTitle">置顶</h3>
+      <div class="rail-list" id="railPinned"></div>
+    </section>
+
+    <!-- 全部任务：项目清单，点开切到该项目的工作台 -->
+    <section class="rail-section rail-section-grow" id="railProjectsSection" aria-labelledby="railProjectsTitle">
+      <button type="button" class="rail-section-toggle" id="railProjectsToggle" aria-expanded="true" aria-controls="railProjects">
+        <svg class="rail-chev" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+        <span class="rail-label" id="railProjectsTitle">全部任务</span>
+      </button>
+      <div class="rail-list" id="railProjects"></div>
+      <div class="rail-session-menu" id="railSessionMenu" role="menu" aria-label="会话操作" hidden>
+        <button type="button" role="menuitem" data-rail-session-act="rename">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+          <span class="rail-label">重命名</span>
+        </button>
+        <button type="button" role="menuitem" data-rail-session-act="pin">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 17v5"/><path d="M9 3h6l-1 6 4 3v2H6v-2l4-3z"/></svg>
+          <span class="rail-label">置顶</span>
+        </button>
+        <button type="button" role="menuitem" data-rail-session-act="archive">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+          <span class="rail-label">归档</span>
+        </button>
+        <div class="rail-session-menu-sep" role="separator"></div>
+        <button type="button" role="menuitem" class="is-danger" data-rail-session-act="delete">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>
+          <span class="rail-label">删除</span>
+        </button>
+      </div>
+    </section>
 
     <div class="rail-bottom">
       <div class="rail-divider" role="separator"></div>
-
-      <button type="button" class="rail-btn" id="railSidebarToggle" data-tooltip="展开导航" aria-label="展开导航" aria-expanded="false" aria-controls="platformRail">
-        <svg class="agent-icon harness-icon" data-icon="panel-left" data-icon-motion="idle" width="18" height="18" aria-hidden="true" focusable="false"></svg>
-        <span class="rail-label">展开导航</span>
-      </button>
 
       <!-- 设置 -->
       <button class="rail-btn nav" id="railSettingsEntry" data-view="settings" data-tooltip="设置" aria-label="设置" aria-controls="settingsSidebar" aria-expanded="false">
@@ -127,11 +185,24 @@
         <span class="rail-label">设置</span>
       </button>
 
-      <!-- 底部用户头像（承接原本右上角的全部功能） -->
+      <!-- 底部用户卡：头像 + 名字/部门，右侧主题切换与设置 -->
       <div class="user-profile-wrap rail-profile-wrap" id="userProfileWrap">
-        <div id="userBadge" class="user-badge rail-user" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false" data-tooltip="个人信息与操作" aria-label="个人信息与操作">
-          <span class="user-avatar-circle rail-user-avatar" id="userAvatarText">访</span>
-          <b id="userName" class="rail-label">访客</b>
+        <div class="rail-user-card">
+          <div id="userBadge" class="user-badge rail-user" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false" data-tooltip="个人信息与操作" aria-label="个人信息与操作">
+            <span class="user-avatar-circle rail-user-avatar" id="userAvatarText">访</span>
+            <span class="rail-user-meta">
+              <b id="userName" class="rail-label">访客</b>
+              <small id="userSubline" class="rail-user-sub"></small>
+            </span>
+          </div>
+          <div class="rail-user-actions">
+            <button type="button" class="rail-user-act" id="railThemeBtn" data-tooltip="切换主题" aria-label="切换主题">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/></svg>
+            </button>
+            <button type="button" class="rail-user-act" id="railUserSettingsBtn" data-view="settings" data-tooltip="设置" aria-label="设置">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+          </div>
         </div>
         <div id="userProfilePopover" class="user-profile-popover rail-profile-popover" role="dialog" aria-label="个人信息"></div>
       </div>
@@ -154,6 +225,7 @@
       <button class="nav management-back" data-jump="collaboration"><span class="nav-icon"><svg class="agent-icon harness-icon" data-icon="chevron-left" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg></span><span class="nav-label">返回工作台</span></button>
       <p>个人</p>
       <button class="nav" data-view="settings"><span class="nav-icon"><svg class="agent-icon harness-icon" data-icon="user" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle class="head" cx="12" cy="8" r="4"/><path class="body" d="M4 21a8 8 0 0 1 16 0"/></svg></span><span class="nav-label">个人配置</span></button>
+      <button class="nav" data-view="assistant" aria-label="AI 助手" title="AI 助手"><span class="nav-icon"><svg class="agent-icon harness-icon" data-icon="sparkle" data-icon-motion="idle" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.5 13.9 9l5.6 1.9-5.6 1.9L12 18.4l-1.9-5.6L4.5 10.9 10.1 9z"/><path d="M18.5 4v3M17 5.5h3"/></svg></span><span class="nav-label">AI 助手</span></button>
       <p>项目</p>
       <button class="nav" data-view="projects"><span class="nav-icon"><svg class="agent-icon harness-icon" data-icon="users" data-icon-motion="idle" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g class="team-front"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1"/></g><g class="team-back"><path d="M16 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 5v1"/></g></svg></span><span class="nav-label">项目配置</span></button>
       <button class="nav" data-view="bots" aria-label="通道管理" title="通道管理"><span class="nav-icon"><svg class="agent-icon harness-icon" data-icon="robot" data-icon-motion="idle" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="8" width="16" height="11" rx="2"/><path class="antenna" d="M12 3v5"/><path class="eyes" d="M8 13h.01M16 13h.01"/><path class="mouth" d="M9 17h6"/></svg></span><span class="nav-label">通道管理</span></button>
@@ -1330,6 +1402,7 @@
   <script src="/app/flow-palette.js?v=20261030fd2"></script>
   <script src="/app/flows.js?v=20261030theme1"></script>
   <script src="/app/agents.js"></script>
+  <script src="/app/rail-nav.js"></script>
   <script src="/app/platform-providers.js"></script>
   <script src="/app/mcp.js"></script>
   <script src="/app/assets.js"></script>

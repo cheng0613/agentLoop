@@ -63,7 +63,7 @@ const panel={set innerHTML(v){panelRenders++},querySelector(s){return {'[data-cr
 const $=s=>({'#credentialPanel':panel,'[data-credential-row="gitToken"]':row,'#credentialPanel [data-credential-row="gitToken"]':row}[s]??null);
 const document={createElement(){const holder={set innerHTML(v){holder.firstElementChild={html:v}}};return holder},querySelectorAll:()=>[]};
 const window={};
-eval(code.slice(code.indexOf('const CREDENTIAL_GROUPS='),code.indexOf('// 谁能改通用模板')));
+eval(code.slice(code.indexOf('const HIDDEN_CREDENTIAL_CLIS='),code.indexOf('// 谁能改通用模板')));
 (async()=>{
  const channel=listenForGongfengOAuth();
  assert.equal(channels.length,1);assert.equal(channel.name,'agentflow-gongfeng-oauth');
@@ -91,7 +91,7 @@ eval(code.slice(code.indexOf('const CREDENTIAL_GROUPS='),code.indexOf('// 谁能
  assert.deepEqual(calls,[]);
 })().catch(error=>{console.error(error);process.exit(1)});
 `
-	if out, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if out, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("gongfeng OAuth settings refresh failed: %v\n%s", err, out)
 	}
 }

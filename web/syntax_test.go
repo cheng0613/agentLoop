@@ -122,7 +122,7 @@ assert.ok(!code.includes('function issueMoreActionsHTML('));
 assert.ok(code.includes('data-rerun-from-here'));
 assert.ok(!code.includes('data-rerun-from-node-issue'));
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("issue recovery controls failed: %v\n%s", err, out)
 	}
@@ -148,7 +148,7 @@ assert.ok(code.includes('Agent 节点先提交结构化终态，随后校验产�
 assert.ok(code.includes('pass | rework | fail | human'));
 assert.ok(!code.includes('node?.verification'));
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("unified validation behavior check failed: %v\n%s", err, out)
 	}
@@ -202,7 +202,7 @@ assert.deepEqual(resolveAssetSaveIdentity(items, '__new__', 'new-id'), {id:'new-
 assert.ok(code.includes('readonly aria-readonly="true"'));
 assert.ok(code.includes("identity.created?'资产已创建':'资产修改已保存'"));
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("asset save behavior check failed: %v\n%s", err, out)
 	}
@@ -262,7 +262,7 @@ assert.throws(()=>mcpImportCandidates({mcpServers:{bad:{command:'node',args:'ser
 assert.throws(()=>mcpImportCandidates({mcpServers:{bad:{command:'node',pathEntries:'bin'}}}), /pathEntries 必须是 JSON 数组/);
 assert.throws(()=>mcpImportCandidates({mcpServers:{bad:{type:'websocket',url:'wss:\/\/example.com'}}}), /不支持的 MCP transport/);
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("mcp.json import parser check failed: %v\n%s", err, out)
 	}
@@ -403,8 +403,7 @@ renderUserBadge();
 state.currentUser = { isGuest: false, chineseName: "测试员工", loginName: "testuser", staffId: 1001, deptName: "技术架构部" };
 renderUserBadge();
 `
-	cmd := exec.Command(node, "-e", script)
-	out, err := cmd.CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("renderUserBadge failed: %v\n%s", err, out)
 	}
@@ -441,7 +440,7 @@ for (const [input, want] of cases) {
   }
 }
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("localhost SSO redirect check failed: %v\n%s", err, out)
 	}
@@ -495,7 +494,7 @@ const api = async (path, options = {}) => {
 };
 const $ = () => null, setTimeout = () => {}, location = {origin: 'http://localhost'};
 const document = {activeElement: null, querySelectorAll: () => []};
-eval(code.slice(code.indexOf('const CREDENTIAL_GROUPS='), code.indexOf('// 谁能改通用模板')) +
+eval(code.slice(code.indexOf('const HIDDEN_CREDENTIAL_CLIS='), code.indexOf('// 谁能改通用模板')) +
   ';globalThis.cred={CREDENTIAL_KINDS,CREDENTIAL_GROUPS,kind:credentialKind,get wizard(){return credentialWizard},set wizard(v){credentialWizard=v}};');
 const count = (html, needle) => html.split(needle).length - 1;
 
@@ -506,22 +505,32 @@ assert.deepEqual(cred.CREDENTIAL_KINDS.filter(k => k.group === 'model').map(k =>
 
 // Progress, next-step hint, filter counts and per-group counts.
 const html = credentialPanelHTML(user);
-assert.ok(html.includes('<b>2</b> / 13 已配置'));
+// 面板只列可见凭据：codex / claude-code / cursor / agy 在本部署被隐藏，
+// 所以总数是 9 而不是 CREDENTIAL_KINDS 的 13。
+assert.ok(html.includes('<b>1</b> / 9 已配置'));
 assert.ok(html.includes('data-credential-setup="codeBuddyApiKey"'), 'next step follows Git → CodeBuddy');
-assert.ok(html.includes('1 / 3') && html.includes('1 / 10'));
-assert.ok(html.includes('已配置<span>2</span>') && html.includes('未配置<span>11</span>'));
-assert.equal(count(html, 'data-credential-row='), 13);
+assert.ok(html.includes('1 / 3') && html.includes('0 / 6'));
+assert.ok(html.includes('已配置<span>1</span>') && html.includes('未配置<span>8</span>'));
+assert.equal(count(html, 'data-credential-row='), 9);
 assert.ok(!html.includes('credential-grid') && !html.includes('credential-savebar') && !html.includes('userCredentialForm'));
 // Unconfigured rows only offer 去配置; configured rows carry an inline editor with delete.
-assert.equal(count(html, 'data-credential-act="setup"'), 11);
-assert.equal(count(html, 'credential-editor-form'), 2);
-assert.equal(count(html, 'data-credential-act="delete"'), 2);
-for (const key of ['codeBuddyApiKey', 'claudeCodeApiKey']) {
-  const row = credentialRowHTML(cred.kind(key), user);
-  assert.ok(row.includes('去配置') && !row.includes('credential-editor-form') && !row.includes('is-configured'), key);
-  // The whole row is a hoverable button that opens the wizard; it has nothing to expand.
-  assert.ok(row.includes('class="credential-row-main credential-ink" role="button" tabindex="0">'), key);
+assert.equal(count(html, 'data-credential-act="setup"'), 2);
+assert.equal(count(html, 'credential-editor-form'), 1);
+assert.equal(count(html, 'data-credential-act="delete"'), 1);
+// 未配置的 Git 类凭据走对话框：行里是「管理密钥 / 管理令牌」，没有内联编辑器。
+{
+  const row = credentialRowHTML(cred.kind('gitHttpCredentials'), user);
+  assert.ok(row.includes('data-credential-act="setup"') && !row.includes('credential-editor-form') && !row.includes('is-configured'), 'gitHttpCredentials');
+  assert.ok(row.includes('aria-haspopup="dialog"'), 'Git credentials open a dialog');
 }
+// 模型凭据由平台共享 Key 统一管理，行里只报「平台未配置 / 已启用」，不给个人填写入口。
+{
+  const row = credentialRowHTML(cred.kind('codeBuddyApiKey'), user);
+  assert.ok(row.includes('平台未配置'), 'model credentials report the shared platform key');
+  assert.ok(!row.includes('credential-editor-form'), 'model credentials have no inline editor');
+}
+// 本部署不使用的 CLI 仍然保留定义与数据，但不出现在面板里。
+assert.ok(!html.includes('claudeCodeApiKey'), 'hidden CLI credentials stay out of the panel');
 assert.ok(credentialRowHTML(cred.kind('gitToken'), user).includes('class="credential-row-main credential-ink" role="button" tabindex="0" aria-expanded="false"'));
 assert.ok(!html.includes('点击任意行配置或编辑') && !html.includes('点击已配置的行展开编辑'));
 assert.ok(credentialRowHTML(cred.kind('gitToken'), user).includes('git-token-verify'), 'Git row keeps 重新校验');
@@ -634,8 +643,10 @@ assert.equal(calls.length, 0);
   // 添加凭证 starts at step 1 with configured kinds disabled.
   cred.wizard = {step: 1, kind: null, direct: false, secret: '', extra: '', guide: {}, error: ''};
   const one = credentialWizardStepOneHTML(user);
-  assert.ok(one.includes('data-wizard-kind="gitToken" disabled') && one.includes('data-wizard-kind="codexApiKey" disabled'));
-  assert.ok(!one.includes('data-wizard-kind="codeBuddyApiKey" disabled'));
+  assert.ok(one.includes('data-wizard-kind="gitToken" disabled'), 'configured kinds are disabled');
+  assert.ok(!one.includes('data-wizard-kind="codeBuddyApiKey" disabled'), 'unconfigured kinds stay selectable');
+  // 已隐藏的 CLI 不进入向导；向导只列可见凭据。
+  assert.ok(!one.includes('data-wizard-kind="codexApiKey"'), 'hidden CLIs stay out of the wizard');
   assert.ok(credentialWizardFootHTML().includes('data-wizard-next disabled'));
   // Going back to step 1 and picking another kind drops what was typed for the previous one.
   cred.wizard = {step: 1, kind: 'codeBuddyApiKey', direct: false, secret: 'cb_CARRY', extra: '', guide: {0: true}, error: 'x'};
@@ -679,7 +690,7 @@ assert.equal(calls.length, 0);
   assert.ok(!code.includes('不含 /v1/messages'));
 })().catch(error => { console.error(error); process.exit(1); });
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("credential list and wizard failed: %v\n%s", err, out)
 	}
@@ -720,7 +731,7 @@ gotoCredential('codexApiKey');
 assert.deepEqual(opened, ['codeBuddyApiKey'], 'hidden panel or a different route does nothing');
 assert.deepEqual(revealed, ['gitToken']);
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("gotoCredential branches failed: %v\n%s", err, out)
 	}
@@ -766,7 +777,7 @@ click(el({'[data-credential-row]': empty, '[data-credential-act]': setup, '.cred
 assert.deepEqual(acted, ['setup']);
 assert.equal(opened.length, 3);
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("credential row activation failed: %v\n%s", err, out)
 	}
@@ -814,7 +825,7 @@ assert.ok(code.includes('通用模板为只读'));
 assert.ok(code.includes('data-adopt-generic'));
 assert.ok(code.includes('sop-generic'));
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("generic template preflight check failed: %v\n%s", err, out)
 	}
@@ -853,7 +864,7 @@ assert.ok(legacy.includes('value="legacy-codex" selected disabled'));
 assert.ok(!legacy.includes('value="codebuddy" selected'));
 assert.ok(executorOptions('codex').includes('value="codex" selected'));
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("legacy executor UI check failed: %v\n%s", err, out)
 	}
@@ -911,7 +922,7 @@ const poller=code.slice(code.indexOf('function startScheduleJobPoll(){'), code.i
 assert.ok(poller.includes('scheduleRunningCount(state.data.scheduleJobs, state.projectFilter)'));
 assert.ok(!poller.includes('.some(scheduleJobRunning)'));
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("schedule status helper check failed: %v\n%s", err, out)
 	}
@@ -951,7 +962,7 @@ assert.equal(runProjectId(state.data.runs[1]), 'platform');
 assert.ok(code.includes('renderApprovals(true);'));
 assert.ok(code.includes('value:approvalItems().length'));
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("approvals project scope check failed: %v\n%s", err, out)
 	}
@@ -1018,7 +1029,7 @@ assert.ok(!code.includes('function captureRepoRows('));
 assert.ok(!code.includes('function persistRepoRow('));
 assert.ok(code.includes("integrateBranch:f.elements.integrateBranch.value.trim()"));
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("repository URL helper check failed: %v\n%s", err, out)
 	}
@@ -1162,16 +1173,16 @@ func TestTAPDImportUI(t *testing.T) {
 	if dashImport < 0 || dashNew < 0 || dashImport > dashNew {
 		t.Fatal("工作总览 must place 导入 TAPD to the left of 新建需求")
 	}
+	// 设置侧栏现在是「个人 / 项目 / 能力 / 环境 / 开放与平台」分组：
+	// 运行记录不再是一级项，随流程页进入。这里只守住项目配置归属于「项目」分组。
 	projectGroup := strings.Index(page, `<p>项目</p>`)
-	flowGroup := strings.Index(page, `<p>流程与任务</p>`)
-	agentGroup := strings.Index(page, `<p>Agent 能力</p>`)
-	runsNav := strings.Index(page, `data-view="runs"`)
+	capabilityGroup := strings.Index(page, `<p>能力</p>`)
 	projectsNav := strings.Index(page, `data-view="projects"`)
-	if flowGroup < 0 || agentGroup < 0 || !(flowGroup < runsNav && runsNav < agentGroup) {
-		t.Fatal("运行记录 must sit under 流程与任务")
+	if projectGroup < 0 || capabilityGroup < 0 || projectsNav < 0 {
+		t.Fatal("设置侧栏必须有「项目」与「能力」分组，并在其中放项目配置")
 	}
-	if projectGroup < 0 || !(projectGroup < projectsNav && projectsNav < flowGroup) {
-		t.Fatal("项目配置 must sit under 项目, before 流程与任务")
+	if !(projectGroup < projectsNav && projectsNav < capabilityGroup) {
+		t.Fatal("项目配置 must sit under 项目, before 能力")
 	}
 	js, err := readAppBundle()
 	if err != nil {
@@ -1367,7 +1378,7 @@ assert.equal(scoped.tokens, 100);
 assert.equal(scoped.demo.humanInterventions, 0);
 assert.ok(!code.slice(code.indexOf('async function refreshObs(){'), code.indexOf('function runCost(')).includes("api('/api/runs"));
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("usage analysis helper check failed: %v\n%s", err, out)
 	}
@@ -1435,7 +1446,7 @@ assert.equal(state.listPages.issues, 1);
 const obs = paginateList('obs-users', items);
 assert.equal(obs.size, 20);
 `
-	if out, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if out, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("pagination helper check failed: %v\n%s", err, out)
 	}
 }
@@ -1465,7 +1476,7 @@ assert.equal(issueMatchesQuery(issue, project, 'DP-42'), true);
 assert.equal(issueMatchesQuery(issue, project, 'DemoDNS'), true);
 assert.equal(issueMatchesQuery(issue, project, '不存在的标题'), false);
 `
-	if out, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if out, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("issue title fuzzy-search behavior check failed: %v\n%s", err, out)
 	}
 }
@@ -1558,7 +1569,7 @@ eval(extension.slice(extension.indexOf('function changesSignature('), extension.
 assert.equal(changesSignature([{path:'b',index:'M',worktree:' '},{path:'a',index:' ',worktree:'M'}]), changesSignature([{path:'a',index:' ',worktree:'M'},{path:'b',index:'M',worktree:' '}]));
 assert.notEqual(changesSignature([{path:'a',index:' ',worktree:'M'}]), changesSignature([]));
 `
-	if out, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if out, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("workspace language helper check failed: %v\n%s", err, out)
 	}
 	css, err := os.ReadFile("observability.css")
@@ -1597,7 +1608,7 @@ func TestIssueFilterAndManualCloseUI(t *testing.T) {
 		`<option value="todo">待处理 / 待执行</option>`,
 		`<option value="done">已完成</option>`,
 		`<option value="closed">已关闭</option>`,
-		`data-dtab="operations"`,
+		`data-dtab="history"`,
 		`未指定责任人`,
 	} {
 		if !strings.Contains(html, want) {
@@ -1780,7 +1791,7 @@ for (const [stored, bucket] of statusMatrix) {
   }
 }
 `
-		if out, err := exec.Command(node, "-e", nodeScript).CombinedOutput(); err != nil {
+		if out, err := runNodeScript(t, node, nodeScript); err != nil {
 			t.Fatalf("renderIssues node execution check failed: %v\n%s", err, out)
 		}
 	}
@@ -1923,7 +1934,7 @@ if (stage.key !== 'active') {
   process.exit(1);
 }
 `
-		if out, err := exec.Command(node, "-e", nodeScript).CombinedOutput(); err != nil {
+		if out, err := runNodeScript(t, node, nodeScript); err != nil {
 			t.Fatalf("clarification UX node test failed: %v\n%s", err, out)
 		}
 	}
@@ -2158,7 +2169,7 @@ assert.equal(runRetryNeedsContext(cancelled), false);
 assert.ok(code.includes("if(!context && !fromEl?.closest?.('[data-human-context-root]') && runRetryNeedsContext(run))"));
 assert.ok(code.includes("r.status==='failed'&&!gongfengIssueClosed(ctx.issue)"));
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("run retry context check failed: %v\n%s", err, out)
 	}
@@ -2188,7 +2199,7 @@ assert.equal(previewCandidateHttpsURL('http://loopforge-test.example.com:80/prev
 assert.equal(previewCandidateHttpsURL('https://loopforge-test.example.com/preview/token/'), 'https://loopforge-test.example.com/preview/token/');
 assert.equal(previewCandidateHttpsURL(''), '');
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("preview https fallback check failed: %v\n%s", err, out)
 	}
@@ -2332,7 +2343,7 @@ assert.equal(runWallNote({status:'succeeded', createdAt:created, timing:{executi
 const legacy = {status:'succeeded', createdAt:new Date(0).toISOString(), nodes:{a:{finishedAt:new Date(90000).toISOString()}}};
 assert.equal(runElapsed(legacy), '1.5m');
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("run timing display failed: %v\n%s", err, out)
 	}
@@ -2379,7 +2390,7 @@ const bare = humanDecisionPanelHTML('run-1','summary',{status:'waiting_approval'
 assert.match(bare, /判断依据/);
 assert.match(bare, /门禁未通过。请看产物和日志后决定。/);
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("human gate disclosure failed: %v\n%s", err, out)
 	}
@@ -2446,7 +2457,7 @@ const selectedBar=approvalBatchBarHTML(state.approvalItems);
 assert.match(selectedBar, /已选 1 条/);
 assert.match(selectedBar, /data-ap-batch-approve>/);
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("approval card layout failed: %v\n%s", err, out)
 	}
@@ -2514,7 +2525,7 @@ func TestNotificationEditorsSeparateNodeRemindersAndSOPReports(t *testing.T) {
  const task=notificationBindingsHTML([{botId:'b',events:['succeeded','failed']}],{sourceType:'schedule_job',projectId:'p'});
  assert.match(task,/执行成功/);assert.match(task,/执行失败/);assert.match(task,/data-notification-mode/);
  `
-	if out, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if out, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("%v %s", err, out)
 	}
 }
@@ -2536,45 +2547,30 @@ func TestCodexStyleLeftMiniRailLayout(t *testing.T) {
 		t.Fatal("#platformRail must sit before .platform-sidebar in DOM")
 	}
 
-	// 2. 左侧小栏只留 4 个日常入口和设置；流程模板、运行记录、定时任务收进设置导航。
-	for _, view := range []string{"collaboration", "observability", "issues", "approvals", "settings"} {
+	// 2. 左侧小栏是展开态主入口：新建 / 自动化 / 插件 / 搜索 / 更多，再加上设置。
+	// 「更多」菜单收拢统计、需求、待我确认、角色等其余一级视图。
+	railNav := page[railIdx:sidebarIdx]
+	for _, view := range []string{"collaboration", "aiSchedules", "mcp", "settings"} {
 		needle := `data-view="` + view + `"`
-		sub := page[railIdx:sidebarIdx]
-		if !strings.Contains(sub, needle) {
+		if !strings.Contains(railNav, needle) {
 			t.Fatalf("#platformRail must contain %s nav button", needle)
 		}
 	}
-	for _, view := range []string{"sops", "runs", "aiSchedules"} {
+	for _, id := range []string{"railSearchBtn", "railMoreBtn", "railMoreMenu"} {
+		if !strings.Contains(railNav, `id="`+id+`"`) {
+			t.Fatalf("#platformRail must contain #%s", id)
+		}
+	}
+	for _, view := range []string{"observability", "issues", "approvals", "agents"} {
 		needle := `data-view="` + view + `"`
-		if strings.Contains(page[railIdx:sidebarIdx], needle) {
-			t.Fatalf("#platformRail must not contain %s; it lives in the settings navigation", needle)
-		}
-		if !strings.Contains(page[sidebarIdx:], needle) {
-			t.Fatalf("settings navigation must contain %s", needle)
+		if !strings.Contains(railNav, needle) {
+			t.Fatalf("#platformRail 更多菜单 must contain %s", needle)
 		}
 	}
-	// 图标栏第 2 位仍是统计；需求列表紧跟其后，两者都是日常工作入口。
-	railNav := page[railIdx:sidebarIdx]
-	if !strings.Contains(railNav, `data-view="issues" data-tooltip="需求列表" aria-label="需求列表"`) {
-		t.Fatal("#platformRail must contain the issues entry labelled 需求列表")
-	}
-	if !strings.Contains(railNav, `data-view="observability" data-tooltip="统计" aria-label="统计"`) {
-		t.Fatal("#platformRail observability button must be labelled 统计")
-	}
-	if strings.Index(railNav, `data-view="observability"`) > strings.Index(railNav, `data-view="issues"`) {
-		t.Fatal("统计 must stay before 需求列表 in #platformRail")
-	}
-	if strings.Index(railNav, `data-view="issues"`) > strings.Index(railNav, `data-view="approvals"`) {
-		t.Fatal("需求列表 must sit before 待我确认 in #platformRail")
-	}
-	if strings.Index(railNav, `data-view="observability"`) > strings.Index(railNav, `data-view="approvals"`) {
-		t.Fatal("统计 must sit before 待我确认 in #platformRail")
-	}
-	if strings.Contains(page[sidebarIdx:], `data-view="observability"`) {
-		t.Fatal("settings navigation must not duplicate the 统计 entry")
-	}
-	if !strings.Contains(page[sidebarIdx:], `data-view="runners"`) {
-		t.Fatal("settings navigation must contain the runners entry")
+	for _, moved := range []string{"流程模板", "运行记录", "定时任务"} {
+		if strings.Contains(railNav, `<span class="rail-label">`+moved+`</span>`) {
+			t.Fatalf("%s must not stay on the rail", moved)
+		}
 	}
 
 	// 3. 待我确认按钮包含审批徽标，且底部包含完整个人信息与弹窗入口
@@ -2640,17 +2636,19 @@ func TestCodexStyleLeftMiniRailLayout(t *testing.T) {
 		t.Fatal(err)
 	}
 	appJs := string(appJsBytes)
-	if !strings.Contains(appJs, "const noSidebarViews = ['issues', 'approvals', 'observability'];") {
-		t.Fatal("app.js must hide the sidebar on the rail-only pages: 需求列表, 待我确认, 统计")
+	if !strings.Contains(appJs, "const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow', 'agents', 'aiSchedules'];") {
+		t.Fatal("app.js must hide the sidebar on the rail-only pages: 需求列表, 待我确认, 统计, 自动化")
 	}
 	managed := appJs[strings.Index(appJs, "const settingsManagementViews="):]
 	managed = managed[:strings.Index(managed, "\n")]
 	if strings.Contains(managed, "'observability'") {
 		t.Fatal("统计 must not enter settings management mode")
 	}
-	for _, view := range []string{"'sops'", "'runs'", "'aiSchedules'", "'bots'"} {
+	// 自动化（sops/aiSchedules）现在从 rail 直达，不再进设置管理态；
+	// 运行记录与通道管理仍留在设置侧栏，必须保持管理态。
+	for _, view := range []string{"'runs'", "'bots'"} {
 		if !strings.Contains(managed, view) {
-			t.Fatalf("%s moved into the settings sidebar and must enter settings management mode", view)
+			t.Fatalf("%s lives in the settings sidebar and must enter settings management mode", view)
 		}
 	}
 	if !strings.Contains(appJs, "observability:'统计'") {

@@ -550,6 +550,28 @@ export function useChat() {
     },
     [newChat, syncProject],
   );
+  // rail 的「新建」：开一个完全空白的新会话，不关联任何任务、也不带项目。
+  // newChat 只清会话，项目会留着，所以这里额外把项目一并清掉。
+  const startBlankChat = useCallback(() => {
+    // [DIAG] 临时日志：定位「新建无效」。
+    console.log("[diag] startBlankChat enter", {
+      activeId: currentId.current,
+      sessionId: sessionRef.current?.id,
+      projectId: projectRef.current,
+      globalProject: globalProject.current,
+    });
+    newChat();
+    console.log("[diag] startBlankChat after newChat", {
+      activeId: currentId.current,
+      sessionId: sessionRef.current?.id,
+      projectId: projectRef.current,
+    });
+    if (projectRef.current) {
+      setSandboxProfileId("");
+      setProjectId("");
+      syncProject("");
+    }
+  }, [newChat, syncProject]);
   // The page's project switcher defaults to the first project, which a new
   // user usually has not joined. Start their new chats as personal chats
   // instead of failing on the first message. The parent page keeps its
@@ -1436,6 +1458,7 @@ export function useChat() {
     setSession,
     open,
     newChat,
+    startBlankChat,
     selectProject,
     startProjectDraft,
     send,

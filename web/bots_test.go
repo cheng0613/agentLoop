@@ -12,7 +12,7 @@ func TestBotSessionSearchAndTypes(t *testing.T) {
 		t.Skip("node not installed")
 	}
 	script := `const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');const ctx={};vm.createContext(ctx);vm.runInContext(fs.readFileSync('app/bots.js','utf8'),ctx);const sessions=[{name:'研发群',type:'group'},{name:'Alice',type:'single'}];assert.equal(ctx.filteredBotSessions(sessions,'研发')[0].type,'group');assert.equal(ctx.filteredBotSessions(sessions,'ALICE')[0].type,'single');assert.equal(ctx.filteredBotSessions(sessions,'不存在').length,0);assert.equal(ctx.botTypeLabel('group'),'群聊');assert.equal(ctx.botTypeLabel('single'),'单聊');assert.equal(ctx.filteredBotSessions(sessions,'').length,2);ctx.escapeHTML=x=>String(x);assert.match(ctx.botModelPickerHTML({model:'gpt-6.1-sol'}),/name="model" value="gpt-6.1-sol"/);assert.match(fs.readFileSync('app/bots.js','utf8'),/name="model"/);`
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("search: %v %s", err, out)
 	}
@@ -154,8 +154,9 @@ assert.doesNotMatch(css,/\.page-header|\.bot-edit-head/,'Bot page uses the share
 assert.doesNotMatch(css,/--hui-[a-z-]+:/,'Bot page reads the shared tokens instead of declaring them');
 const sharedCSS=fs.readFileSync('app/harness-ui.css','utf8');
 assert.match(sharedCSS,/\.hui-lamp::after \{[^}]*animation: huiBreath /,'live badges breathe through the shared lamp');
-for(const token of ['--hui-accent: #7b61ff','--hui-text: #252529','--hui-border: #eae9ee','--hui-success: #338768','--hui-error: #c15161'])assert.ok(sharedCSS.includes(token),token);
-assert.match(sharedCSS,/html\[data-theme="dark"\] \{[^}]*--hui-accent: #a08aff[^}]*--hui-surface: #141417/,'dark tokens');
+// 共享令牌现在指向 tokens.css 里的主题变量，不再写死色值；写死的色值不跟主题切换。
+for(const token of ['--hui-accent: var(--blue)','--hui-text: var(--text)','--hui-border: var(--line)','--hui-success: var(--green)','--hui-error: var(--red)'])assert.ok(sharedCSS.includes(token),token);
+assert.match(sharedCSS,/html\[data-theme="dark"\] \{[^}]*--hui-accent: var\(--blue\)[^}]*--hui-surface: var\(--panel\)/,'dark tokens');
 assert.match(css,/#botsContent \.bot-record-tabs\.sliding-tabs\[data-sliding-tabs\]>\[data-sliding-indicator\]\{[^}]*height:2px!important[^}]*background:var\(--hui-accent\)/,'records use an underline');
 assert.match(css,/\.bot-list-table tbody tr:hover \.bot-row-actions,\.bot-list-table tbody tr:focus-within \.bot-row-actions\{opacity:1\}/);
 assert.doesNotMatch(css,/\.bot-check input\[type="checkbox"\]\{appearance:none/,'bot switches use the global Harness switch');
@@ -177,8 +178,7 @@ assert.match(tabs,/role="tab" aria-selected="true" class="active" data-bot-tab="
 assert.match(tabs,/role="tab" aria-selected="false" class="" data-bot-tab="list"/);
 assert.match(records,/role="tab" aria-selected="true" class="active" data-bot-records="interactions"/);
 `
-	cmd := exec.Command(node, "-e", script)
-	out, err := cmd.CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil {
 		t.Fatalf("bot tabs: %v %s", err, out)
 	}
@@ -210,7 +210,7 @@ paint();assert.equal(add.disabled,true,'viewer cannot add');
 ctx.state={authRequired:false,projectFilter:''};paint();assert.equal(add.hidden,true,'no project, no add');
 console.log('BOT_HEADING_OK');
 `
-	out, err := exec.Command(node, "-e", script).CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil || !strings.Contains(string(out), "BOT_HEADING_OK") {
 		t.Fatalf("bot heading: %v %s", err, out)
 	}
@@ -244,8 +244,7 @@ vm.runInContext('loadBots=()=>{};botUI.projectId="p1";botUI.items=[{id:"b2",name
  console.log('BOT_DELETE_OK');
 })().catch(e=>{console.error(e);process.exit(1)});
 `
-	cmd := exec.Command(node, "-e", script)
-	out, err := cmd.CombinedOutput()
+	out, err := runNodeScript(t, node, script)
 	if err != nil || !strings.Contains(string(out), "BOT_DELETE_OK") {
 		t.Fatalf("bot delete: %v %s", err, out)
 	}

@@ -1,4 +1,4 @@
-.PHONY: run test test-mysql clean-mysql build build-chatbot build-gate-mcp css-check check coverage coverage-go coverage-chatbot coverage-web coverage-e2e
+.PHONY: run test test-web test-mysql clean-mysql build build-chatbot build-gate-mcp css-check check coverage coverage-go coverage-chatbot coverage-web coverage-e2e
 
 GOCACHE ?= /tmp/agentflow-gocache
 # Use the local toolchain; go.mod requires go >= 1.26.11.
@@ -9,15 +9,35 @@ run:
 test:
 	GOCACHE=$(GOCACHE) go test -p=16 ./... -count=1 -timeout=4m
 
+# test-web runs only the web package: the front-end gates a UI change can
+# actually break (layout, rail, tokens consumed by components). Faster than the
+# whole repository, which also builds platform packages a style edit never
+# touches.
+#
+#   make test-web                    every front-end test
+#   make test-web RUN=TestRail       only tests whose name matches (Go regexp)
+#
+# RUN is handed to `go test -run` verbatim; quote it if it contains spaces.
+RUN ?=
+test-web:
+	GOCACHE=$(GOCACHE) go test ./web/ -count=1 -timeout=4m \
+		$(if $(strip $(RUN)),-run '$(RUN)')
+
 # css-check guards the design tokens. CSS custom properties fail silently:
 # a self-reference or a cycle makes var(--x) resolve to nothing, and the only
 # symptom is a component losing its color. Three cases are checked -- self
 # reference, cycles, and references with no declaration and no fallback.
+#
+# This is a repository-wide gate, not a per-change one: it walks every sheet
+# under web/ and web/app/. Run it when the token graph changes (declaring or
+# referencing a custom property) or before committing, not on every style edit.
+# CI runs it as its own step.
 css-check:
 	python3 scripts/check-css-vars.py
 
-# check is the fast, dependency-free gate worth running before every commit.
-check: css-check
+# check is the fast, dependency-free gate worth running before every commit:
+# the token graph plus the front-end tests.
+check: css-check test-web
 
 # coverage runs the same gates as CI. Needs web/native-chat
 # (make build-chatbot). COVERAGE_P lowers Go package parallelism on small hosts.

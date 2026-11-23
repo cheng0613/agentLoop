@@ -64,7 +64,10 @@ func appBundlePath(t testing.TB) string {
 	if err := os.WriteFile(path, data, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	return path
+	// 这个路径会被拼进 Node 脚本里的字符串字面量。Windows 的反斜杠会被 JS
+	// 当成转义序列（\U、\A … 直接是语法错误），正斜杠在 Windows 和 POSIX 上
+	// Node 都认，所以统一换成 /。
+	return filepath.ToSlash(path)
 }
 
 func TestAppBundleFilesAreEmbeddedAndListed(t *testing.T) {

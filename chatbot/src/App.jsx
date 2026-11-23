@@ -63,12 +63,6 @@ import HarnessIcon from "./HarnessIcon";
 import QueuedMessages from "./QueuedMessages";
 import "./message-queue.css";
 import ConversationStatusIcon from "./ConversationStatusIcon";
-import { SidebarSection } from "./SidebarPreview";
-import {
-  splitSidebarSections,
-  PROJECT_PREVIEW_LIMIT,
-  previewSessions,
-} from "./session-sections.js";
 import { useLocalConversations } from "./useLocalConversations.js";
 import SessionContextMenu from "./SessionContextMenu";
 import { usePanelPresence } from "./usePanelPresence";
@@ -97,29 +91,6 @@ const THEME_OPTIONS = [
   { value: "system", label: "跟随系统" },
 ];
 const environmentVisibilityKey = "agentflow.native-chat.environmentVisibility.v1";
-const sidebarWidthKey = "agentflow.sidebarWidth";
-const sidebarLayoutKey = "agentflow.sidebarLayoutVersion";
-const sidebarLayoutVersion = "grasp-reference-v3";
-function sidebarViewport() {
-  try {
-    // The workbench and settings share the host's desktop breakpoint.
-    window.parent.matchMedia("(min-width:1001px)");
-    return window.parent;
-  } catch {
-    return window;
-  }
-}
-function readSidebarWidth() {
-  // Also migrate standalone workbench loads, before the first React render.
-  if (localStorage.getItem(sidebarLayoutKey) !== sidebarLayoutVersion) {
-    localStorage.removeItem(sidebarWidthKey);
-    localStorage.setItem(sidebarLayoutKey, sidebarLayoutVersion);
-  }
-  const saved = Number(localStorage.getItem(sidebarWidthKey));
-  return sidebarViewport().matchMedia("(min-width:1001px)").matches && saved
-    ? Math.round(Math.min(420, Math.max(220, saved)))
-    : 304;
-}
 function useTitleReveal(sessionId, title, revealId) {
   const lastRevealedId = useRef(null);
   const [reveal, setReveal] = useState(null);
@@ -321,13 +292,9 @@ export default function App() {
     sessionTitle,
     chat.revealId,
   );
-  const [sidebar, setSidebar] = useState(
-      () => sidebarViewport().matchMedia("(min-width:1001px)").matches,
-    );
   const [panel, setPanel] = useState(false),
     [panelView, setPanelView] = useState("artifacts"),
     [artifactUnread, setArtifactUnread] = useState(0),
-    [sidebarWidth, setSidebarWidth] = useState(readSidebarWidth),
     [selectedArtifact, setSelectedArtifact] = useState(null),
     [menu, setMenu] = useState(null),
     [sessionContext, setSessionContext] = useState(null),
@@ -336,9 +303,6 @@ export default function App() {
     [query, setQuery] = useState(""),
     [archived, setArchived] = useState(false),
     [mineOnly, setMineOnly] = useState(false),
-    [collapsedProjects, setCollapsedProjects] = useState({}),
-    [expandedProjects, setExpandedProjects] = useState({}),
-    [pinnedOpen, setPinnedOpen] = useState(true),
     [pins, setPins] = useState({}),
     [text, setText] = useState(""),
     [attachments, setAttachments] = useState([]),
@@ -532,24 +496,6 @@ export default function App() {
     if (starter.prompt) useStarter(starter.prompt);
   }
   useEffect(() => {
-    const wide = sidebarViewport().matchMedia("(min-width:1001px)");
-    const apply = () => setSidebarWidth(readSidebarWidth());
-    const onStorage = (event) => {
-      if (
-        !event.key ||
-        event.key === sidebarWidthKey ||
-        event.key === sidebarLayoutKey
-      ) apply();
-    };
-    apply();
-    wide.addEventListener("change", apply);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      wide.removeEventListener("change", apply);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
-  useEffect(() => {
     const media = matchMedia("(prefers-color-scheme: dark)");
     const apply = () => {
       document.documentElement.dataset.theme = resolveTheme(
@@ -610,6 +556,87 @@ export default function App() {
     window.addEventListener("message", listener);
     return () => window.removeEventListener("message", listener);
   }, [chat.startProjectDraft]);
+  // 宿主 rail 的搜索按钮：打开会话搜索弹窗（和 ⌘K 同一个）。
+  useEffect(() => {
+    const listener = (event) => {
+      if (
+        event.source !== window.parent ||
+        event.origin !== location.origin ||
+        event.data?.type !== "agentflow-chat-search"
+      ) return;
+      setDialog({ type: "search" });
+      setQuery("");
+    };
+    window.addEventListener("message", listener);
+    return () => window.removeEventListener("message", listener);
+  }, []);
+  // 宿主 rail 点击会话：在本页内部切换，不重建 iframe。
+  const openSessionRef = useRef(null);
+  openSessionRef.current = chat.open;
+  useEffect(() => {
+    const listener = (event) => {
+      if (
+        event.source !== window.parent ||
+        event.origin !== location.origin ||
+        event.data?.type !== "agentflow-chat-open-session"
+      ) return;
+      const sessionId = String(event.data.sessionId || "");
+      if (!sessionId) return;
+      openSessionRef.current?.(sessionId);
+    };
+    window.addEventListener("message", listener);
+    return () => window.removeEventListener("message", listener);
+  }, []);
+  // 宿主 rail 的「新建」：开一个完全空白的新会话（不关联任务、不带项目）。
+  const blankChatRef = useRef(null);
+  blankChatRef.current = () => {
+    setIssueDraft(null);
+    setIssueMention(null);
+    chat.startBlankChat();
+  };
+  useEffect(() => {
+    const listener = (event) => {
+      if (
+        event.source !== window.parent ||
+        event.origin !== location.origin ||
+        event.data?.type !== "agentflow-chat-new"
+      ) return;
+      blankChatRef.current?.();
+    };
+    window.addEventListener("message", listener);
+    return () => window.removeEventListener("message", listener);
+  }, []);
+  // 宿主 rail 的会话右键菜单：重命名 / 归档 / 删除 / 置顶。
+  // 改名与删除都走本页已有的确认对话框，不在这里直接调接口。
+  // 回调存进 ref，监听只绑定一次——否则每次会话列表变化都会重绑。
+  const sessionActionRef = useRef(null);
+  sessionActionRef.current = (action, sessionId) => {
+    const target = (chat.sessions || []).find((s) => s.id === sessionId);
+    if (!target) return;
+    if (action === "rename") {
+      setDialog({ type: "rename", session: target, value: target.title || "" });
+    } else if (action === "delete") {
+      setDialog({ type: "delete", session: target });
+    } else if (action === "archive" || action === "restore") {
+      void chat.archive(sessionId, action === "archive");
+    } else if (action === "pin" || action === "unpin") {
+      togglePin(sessionId);
+    }
+  };
+  useEffect(() => {
+    const listener = (event) => {
+      if (
+        event.source !== window.parent ||
+        event.origin !== location.origin ||
+        event.data?.type !== "agentflow-chat-session-action"
+      ) return;
+      const sessionId = String(event.data.sessionId || "");
+      if (!sessionId) return;
+      sessionActionRef.current?.(String(event.data.action || ""), sessionId);
+    };
+    window.addEventListener("message", listener);
+    return () => window.removeEventListener("message", listener);
+  }, []);
   useEffect(() => {
     if (
       !issueMention ||
@@ -728,12 +755,11 @@ export default function App() {
     // not have to notice the badge. Restored artifacts (the first snapshot of
     // an existing conversation), conversations without artifacts and layouts
     // where the drawer would cover the answer keep the drawer as it was.
+    // 会话侧栏已移到宿主 rail，内容区不再被它挤占。
     const revealArtifacts = shouldRevealArtifactPanel({
       addedArtifacts,
       panelOpen: panel,
       viewportWidth: window.innerWidth || document.documentElement.clientWidth,
-      sidebarOpen: sidebar,
-      sidebarWidth,
     });
     if (revealArtifacts) {
       setArtifactUnread(0);
@@ -746,8 +772,6 @@ export default function App() {
     artifactList,
     conversationRuns,
     panel,
-    sidebar,
-    sidebarWidth,
   ]);
   useEffect(() => {
     if (follow.current && scroll.current)
@@ -773,10 +797,6 @@ export default function App() {
       ) {
         e.preventDefault();
         startNewChat();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "b") {
-        e.preventDefault();
-        setSidebar((v) => !v);
       }
       if ((e.ctrlKey || e.metaKey) && e.key === ",") {
         e.preventDefault();
@@ -1002,27 +1022,20 @@ export default function App() {
       input.current?.setSelectionRange(value.caret, value.caret);
     });
   }
-  const sidebarSections = splitSidebarSections(chat.sessions, chat.projects, {
-    archived,
-    mineOnly,
-    currentUserId: chat.user?.id,
-    query,
-    pinned,
-    activeId: chat.activeId,
-    hideIdleRuns: true,
-  });
   const searchGroups = groupSessionHistory(chat.sessions, chat.projects, {
     query,
     pinned,
   });
-  useEffect(() => {
-    // A search result or project switch should reveal the selected conversation.
-    setCollapsedProjects((previous) => ({
-      ...previous,
-      [chat.projectId]: false,
-    }));
-  }, [chat.activeId, chat.projectId]);
   const messages = chat.session?.messages || [];
+  // 消息列表的稳定 key 前缀。
+  //
+  // 原实现用 key={index}，切会话时 messages 整体替换但 index 不变，
+  // React 会复用上一段对话的 DOM 节点再逐个覆盖内容：长会话下比重新
+  // 挂载还慢，还会丢掉输入框焦点与滚动位置。
+  //
+  // 把会话 id 拼进 key：切会话 ⇒ 前缀变 ⇒ 全部重建，React 不会跨会话
+  // 复用节点。同一会话内 index 稳定，不需要内容哈希。
+  const messageKeyPrefix = chat.session?.id || chat.activeId || "draft";
   const conversationStarted = Boolean(
     chat.activeId && chat.session?.id === chat.activeId &&
     (messages.length || chat.busy || sidebarArtifacts.length || conversationRuns.length),
@@ -1032,19 +1045,7 @@ export default function App() {
     if (conversationStarted)
       setMenu((current) => (current?.type === "host" || current?.type === "project" ? null : current));
   }, [conversationStarted]);
-  const sidebarPresence = usePanelPresence(sidebar);
   const artifactPresence = usePanelPresence(artifactPanelVisible);
-  const previousSidebar = useRef(sidebar);
-  useEffect(() => {
-    if (previousSidebar.current && !sidebar) {
-      const navigation = document.getElementById("conversation-navigation");
-      if (navigation?.contains(document.activeElement) || document.activeElement === document.body)
-        document.querySelector(".sidebar-toggle")?.focus({ preventScroll: true });
-      setMenu(null);
-      setSessionContext(null);
-    }
-    previousSidebar.current = sidebar;
-  }, [sidebar]);
   function cancelSessionPress() {
     if (sessionPress.current) window.clearTimeout(sessionPress.current.timer);
     sessionPress.current = null;
@@ -1129,7 +1130,6 @@ export default function App() {
           setSessionContext(null);
           chat.open(s.id);
           setQuery("");
-          if (innerWidth < 850) setSidebar(false);
         }}
       >
         <span>{s.displayTitle || s.title || "新对话"}</span>
@@ -1225,41 +1225,24 @@ export default function App() {
       className={[
         "chat-shell",
         !chat.activeId && "home-shell",
-        !sidebar && "sidebar-hidden",
-        sidebarPresence.mounted && "sidebar-mounted",
-        sidebarPresence.animating && "sidebar-transitioning",
-        sidebarPresence.phase === "entering" && "sidebar-entering",
-        sidebarPresence.phase === "closing" && "sidebar-closing",
         artifactPresence.mounted && "with-panel",
         artifactPresence.animating && "artifact-transitioning",
         artifactPresence.phase === "entering" && "artifact-entering",
         artifactPresence.phase === "closing" && "artifact-closing",
       ].filter(Boolean).join(" ")}
-      style={{ "--sidebar-width": `${sidebarWidth}px` }}
     >
       <header className="brand">
+        {/* 会话导航已移到宿主的左侧 rail；这里只保留品牌入口。 */}
         <button
           className="brand-home"
           onClick={startNewChat}
           aria-label="AgentLoop 首页"
-          inert={!sidebar}
-          aria-hidden={!sidebar || undefined}
         >
           <span className="brand-icon">
             <HarnessIcon name="workflow" size={20} />
           </span>
           <strong>AgentLoop</strong>
         </button>
-        <IconButton
-          className="sidebar-toggle"
-          data-hover-ink-control=""
-          label={sidebar ? "隐藏会话侧边栏" : "显示会话侧边栏"}
-          aria-expanded={sidebar}
-          aria-controls="conversation-navigation"
-          onClick={() => setSidebar(!sidebar)}
-        >
-          <HarnessIcon name="panel-left" size={16} />
-        </IconButton>
       </header>
       <header className="conversation-header">
         <div className="conversation-title">
@@ -1442,185 +1425,6 @@ export default function App() {
           </button> : null}
         </div>
       </header>
-      {sidebarPresence.mounted ? (
-        <aside
-          id="conversation-navigation"
-          className="conversation-sidebar"
-          aria-label="会话导航"
-          inert={!sidebar}
-          aria-hidden={!sidebar || undefined}
-        >
-          <div className="sidebar-create-row">
-            <button className="new-chat-button" onClick={startNewChat} title="新对话 · Ctrl/⌘ ⇧ O">
-              <HarnessIcon name="edit" size={17} />
-              <span>新对话</span>
-            </button>
-            <IconButton
-              label="搜索会话"
-              onClick={() => {
-                setDialog({ type: "search" });
-                setQuery("");
-              }}
-            >
-              <HarnessIcon name="search" size={16} />
-            </IconButton>
-            <div className="menu-anchor">
-              <IconButton
-                label="筛选会话"
-                aria-haspopup="menu"
-                aria-expanded={menu?.type === "filter"}
-                onClick={() =>
-                  setMenu(menu?.type === "filter" ? null : { type: "filter" })
-                }
-              >
-                <HarnessIcon name="filter" size={14} />
-              </IconButton>
-              {menu?.type === "filter" ? (
-                <Menu label="筛选会话" className="sidebar-filter-menu" onClose={closeMenu}>
-                  <button
-                    role="menuitemradio"
-                    aria-checked={!archived && !mineOnly}
-                    onClick={() => {
-                      setArchived(false);
-                      setMineOnly(false);
-                      closeMenu();
-                    }}
-                  >
-                    最近的会话
-                    {!archived && !mineOnly ? <HarnessIcon name="check" size={14} /> : null}
-                  </button>
-                  <button
-                    role="menuitemradio"
-                    aria-checked={archived}
-                    onClick={() => {
-                      setArchived(true);
-                      setMineOnly(false);
-                      closeMenu();
-                    }}
-                  >
-                    已归档
-                    {archived ? <HarnessIcon name="check" size={14} /> : null}
-                  </button>
-                  <button
-                    role="menuitemradio"
-                    aria-checked={mineOnly}
-                    onClick={() => {
-                      setArchived(false);
-                      setMineOnly(true);
-                      closeMenu();
-                    }}
-                  >
-                    仅我参与的对话
-                    {mineOnly ? <HarnessIcon name="check" size={14} /> : null}
-                  </button>
-                </Menu>
-              ) : null}
-            </div>
-          </div>
-          <div className="session-list">
-            {archived ? <div className="section-label">已归档</div> : null}
-            {!archived && sidebarSections.pinnedSessions.length ? (
-              <SidebarSection
-                className="sidebar-pinned"
-                title="置顶"
-                icon="pin"
-                count={sidebarSections.pinnedSessions.length}
-                expanded={!!query || pinnedOpen}
-                onToggle={() => setPinnedOpen((open) => !open)}
-              >
-                {sidebarSections.pinnedSessions.map((session) =>
-                  renderSession(session, {
-                    projectName: sessionProjectName(
-                      session.projectId,
-                      chat.projects,
-                    ),
-                  }),
-                )}
-              </SidebarSection>
-            ) : null}
-            {sidebarSections.groups.length ? (
-              <>
-                {sidebarSections.groups.map((group) => {
-                  const stored = collapsedProjects[group.projectId];
-                  const expanded =
-                    !!query ||
-                    (stored === undefined
-                      ? group.projectId === chat.projectId || !group.projectId
-                      : !stored);
-                  const showAll = !!query || !!expandedProjects[group.projectId];
-                  const sessions = showAll
-                    ? group.sessions
-                    : previewSessions(
-                        group.sessions,
-                        PROJECT_PREVIEW_LIMIT,
-                        chat.activeId,
-                      );
-                  const hidden = group.sessions.length - sessions.length;
-                  return (
-                    <SidebarSection
-                      key={group.projectId}
-                      title={group.name}
-                      icon={group.projectId ? "folder" : "user"}
-                      count={group.sessions.length}
-                      expanded={expanded}
-                      onToggle={() =>
-                        setCollapsedProjects((previous) => ({
-                          ...previous,
-                          [group.projectId]: expanded,
-                        }))
-                      }
-                    >
-                      {sessions.map((session) => renderSession(session))}
-                      {hidden > 0 ? (
-                        <button
-                          type="button"
-                          className="sidebar-more"
-                          onClick={() =>
-                            setExpandedProjects((previous) => ({
-                              ...previous,
-                              [group.projectId]: true,
-                            }))
-                          }
-                        >
-                          展开其余 {hidden} 条
-                        </button>
-                      ) : null}
-                      {showAll && group.sessions.length > PROJECT_PREVIEW_LIMIT ? (
-                        <button
-                          type="button"
-                          className="sidebar-more"
-                          onClick={() =>
-                            setExpandedProjects((previous) => ({
-                              ...previous,
-                              [group.projectId]: false,
-                            }))
-                          }
-                        >
-                          收起
-                        </button>
-                      ) : null}
-                    </SidebarSection>
-                  );
-                })}
-              </>
-            ) : null}
-            {!sidebarSections.pinnedSessions.length &&
-            !sidebarSections.groups.length ? (
-              <div className="empty-session-list">
-                <p className="end-label">
-                  {chat.ready
-                    ? archived
-                      ? "还没有归档会话"
-                      : mineOnly
-                        ? "还没有你参与的会话"
-                        : "还没有会话"
-                    : "正在连接…"}
-                </p>
-              </div>
-            ) : null}
-          </div>
-        </aside>
-      ) : null}
       <main
         className={`conversation-main ${!chat.activeId ? "empty-conversation" : ""}`}
       >
@@ -1641,7 +1445,7 @@ export default function App() {
               {messages.map((message, index) =>
                 isProposalTimeout(message, messages[index - 1]) ? null : confirmationCaption(message, messages[index - 1]) ? (
                   <div
-                    key={index}
+                    key={`${messageKeyPrefix}:${index}`}
                     className="confirmation-note"
                     data-message-index={index}
                   >
@@ -1650,7 +1454,7 @@ export default function App() {
                   </div>
                 ) : (
                   <article
-                    key={index}
+                    key={`${messageKeyPrefix}:${index}`}
                     className={`message ${message.role}`}
                     data-message-index={index}
                   >

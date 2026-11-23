@@ -24,7 +24,7 @@ assert.equal(defaultProjectId([{id:'welcome'},{id:'team',ownerId:7}],8),'welcome
 assert.equal(defaultProjectId([]),'');
 assert.equal(defaultProjectId(undefined),'');
 `
-	if out, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if out, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("default project check failed: %v\n%s", err, out)
 	}
 }

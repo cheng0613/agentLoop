@@ -55,7 +55,7 @@ async function submit(value) {
   assert.ok(!Object.hasOwn(await submit('3'),'maxDispatch'), 'AI jobs must not include the dispatch limit');
 })().catch(error=>{console.error(error);process.exit(1)});
 `
-	if out, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if out, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("dispatch limit form: %v\n%s", err, out)
 	}
 }

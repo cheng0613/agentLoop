@@ -2,7 +2,7 @@
 .chat-shell {
   --sidebar-width: 304px;
   --navigation-header-height: 78px;
-  --navigation-rail: #fff;
+  --navigation-rail: #f0f0ee;
   --navigation-border: #e5e5e899;
   --navigation-secondary: #52525b;
   --surface: #fff;

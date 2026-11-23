@@ -74,7 +74,7 @@ const busy=()=>({ok:false,status:409,json:async()=>({code:'workspace_busy',error
  assert.deepEqual(late.calls.map(x=>x.operation),['open','close']);
 })().catch(err=>{console.error(err);process.exitCode=1});
 `
-	if output, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if output, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("terminal adapter: %v\n%s", err, output)
 	}
 }

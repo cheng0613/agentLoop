@@ -61,7 +61,7 @@ const settle=async()=>{for(let i=0;i<8;i++)await Promise.resolve()};
  assert.deepEqual(await activate('run','resume',{}),{ok:true},'failure must release the UI operation for explicit retry');
 })().catch(err=>{console.error(err);process.exitCode=1});
 `
-	if output, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if output, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("run activation UI: %v\n%s", err, output)
 	}
 }
@@ -213,7 +213,7 @@ eval(fs.readFileSync('app/run-activation.js','utf8')+'\n'+fs.readFileSync('app/r
  assert.ok(calls.every(([,method])=>method==='GET'),'reopening must follow the existing restore without posting again');
 })().catch(err=>{console.error(err);process.exitCode=1});
 `
-	if output, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if output, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("run workspace restore UI: %v\n%s", err, output)
 	}
 }

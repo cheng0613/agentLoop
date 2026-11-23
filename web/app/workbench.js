@@ -21,9 +21,10 @@ function openRunFromId(id,opts={}){
 function updateApprovalBadge(){
   const n=approvalItems().length;
   const badge=$('#approvalNavBadge');
-  if(!badge)return;
-  badge.hidden=!n;
-  badge.textContent=n||'';
+  if(badge){badge.hidden=!n;badge.textContent=n||''}
+  // 「更多」菜单里才看得到具体数字，收起态靠按钮上的小点提待办。
+  const dot=$('#railMoreDot');
+  if(dot)dot.hidden=!n;
 }
 
 // ================= 个人凭证 =================
@@ -2167,13 +2168,21 @@ function userAvatarHTML(userOrId, spec=100, extraClass=''){
 
 function renderUserBadge(){
   window.AgentFlowPageFeedback?.sync();
-  const badge=$('#userBadge'), nameEl=$('#userName'), avatarEl=$('#userAvatarText');
+  const badge=$('#userBadge'), nameEl=$('#userName'), avatarEl=$('#userAvatarText'), subEl=$('#userSubline');
   if(!badge) return;
   const user=state.currentUser;
   const isGuest = !user || user.isGuest;
   const displayName=user?.chineseName||user?.loginName||'访客';
   if(nameEl) nameEl.textContent=displayName;
   if(avatarEl) avatarEl.innerHTML=userAvatarHTML(user, 100);
+  // 副标题：登录名 · 部门（没有部门时退到角色/团队），访客只写身份。
+  if(subEl){
+    const stored=(state.data?.users||[]).find(u=>Number(u.id)===Number(user?.id))||{};
+    const secondary=stored.deptName||user?.deptName||stored.dept||stored.roleName||'';
+    const primary=isGuest?'未登录':(user?.loginName||stored.loginName||'');
+    subEl.textContent=[primary,secondary].filter(Boolean).join(' · ');
+    subEl.hidden=!subEl.textContent;
+  }
   let authErr = null;
   try { authErr = sessionStorage.getItem('agentflow_auth_err'); } catch (_) {}
   if(isGuest){

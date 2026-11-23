@@ -44,7 +44,7 @@ const login=fs.readFileSync('login.js','utf8'),bootJS=fs.readFileSync('boot.js',
 check('login writes the shared key',login.includes("localStorage.setItem('agentflow.theme.v3', next)"));
 check('boot.js leaves the theme to boot-theme.js',!bootJS.includes('dataset.theme'));
 `
-	if out, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if out, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("%v\n%s", err, out)
 	}
 }

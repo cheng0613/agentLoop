@@ -82,6 +82,10 @@ Preserve the platform architecture; keep deployment-specific adapters isolated. 
 3. 图标、动效与组件设计语言参考 Harness UI（MIT，许可见 `web/app/harness-ui-LICENSE.txt`）。
 4. 引入上游素材或代码时保留 MIT 许可与来源说明，许可文件位置见
    `design.md`「设计参考」。
+5. 前端改动的验证入口是 `make test-web`（只跑 `web` 包），有明确目标时用
+   `make test-web RUN=TestRail` 缩到具体用例。`make css-check` 是**全仓**
+   范围的令牌体检，只在改动了 CSS 自定义属性的声明/引用关系、或提交前跑，
+   不要把它当成每个前端改动的前置条件——它不检查布局与交互。
 
 ## 历史整改记录
 

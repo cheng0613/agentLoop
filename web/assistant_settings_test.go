@@ -21,7 +21,14 @@ func TestAssistantSettingsPageIsWired(t *testing.T) {
 			t.Fatalf("index.html is missing %q", want)
 		}
 	}
-	if strings.Index(index, `data-view="assistant"`) > strings.Index(index, `data-view="bots"`) || strings.Index(index, `data-view="assistant"`) < strings.Index(index, `data-view="settings"`) {
+	// 设置侧栏里 AI 助手跟在个人配置之后、项目分组之前。
+	// rail 的「更多」菜单也带 settings/bots 入口，所以只在设置侧栏范围内比顺序。
+	sidebar := index[strings.Index(index, `id="settingsSidebar"`):]
+	sidebarSettings := strings.Index(sidebar, `data-view="settings"`)
+	sidebarAssistant := strings.Index(sidebar, `data-view="assistant"`)
+	sidebarBots := strings.Index(sidebar, `data-view="bots"`)
+	if sidebarSettings < 0 || sidebarAssistant < 0 || sidebarBots < 0 ||
+		sidebarAssistant < sidebarSettings || sidebarAssistant > sidebarBots {
 		t.Fatal("AI 助手 belongs with personal settings, ahead of the project section")
 	}
 	for _, want := range []string{"'settings','assistant'", "assistant:'AI 助手'", "if(name==='assistant')loadAssistantSettings();"} {

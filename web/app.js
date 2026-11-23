@@ -946,7 +946,24 @@ async function boot(){
     if(name==='projects')applyProjectAdminRoute();
     if(name==='collaboration'){
       const id=routePart(1);
-      if(id){const url=new URL(location.href);url.searchParams.set('chatSession',id);history.replaceState({},'',url);const frame=$('#chatNextFrame');if(frame){frame.dataset.src='';mountNativeChat()}}
+      if(id){
+        const url=new URL(location.href);
+        url.searchParams.set('chatSession',id);
+        history.replaceState({},'',url);
+        // 深链 /#/collaboration/<id> 要切到指定会话。
+        // 不能重载 iframe：切会话时清空 dataset.src 会让 mountNativeChat
+        // 重设 frame.src，整块 Chatbot 重新加载（下载 bundle、重挂 React、
+        // 重拉会话列表），在 rail 里连续点会话会明显卡顿。
+        // 改为让 Chatbot 自己调 open()，只换会话不动文档。
+        const frame=$('#chatNextFrame');
+        if(frame&&frame.dataset.src==='native'&&nativeChatReady){
+          frame.contentWindow?.postMessage({type:'agentflow-chat-open-session',sessionId:id},location.origin);
+        }else if(frame){
+          // iframe 尚未就绪（首次进入、或刚被销毁）：此时必须靠地址参数带会话。
+          frame.dataset.src='';
+          mountNativeChat();
+        }
+      }
     }
   });
   if(view==='projects')syncProjectAdminRouteState();
@@ -1000,9 +1017,11 @@ function bind(){
     }else switchView(btn.dataset.view);
   });
   $('#settingsSidebarToggle')?.addEventListener('click',()=>{cancelSettingsRouteTransition();setSettingsSidebarExpanded(!settingsSidebarExpanded())});
-  $('#railSidebarToggle')?.addEventListener('click',()=>{
-    setPlatformRailExpanded(!platformRailExpanded());
-  });
+  // rail 默认展开；用户收起过一次就记住，下次打开保持收起。
+  setPlatformRailExpanded(readPlatformRailExpanded());
+  if(typeof bindRailNav==='function')bindRailNav();
+  // app.js 先于 app/*.js 加载，bind() 跑时 rail-nav.js 可能还没就绪。
+  else window.addEventListener('DOMContentLoaded',()=>{if(typeof bindRailNav==='function')bindRailNav()},{once:true});
   document.addEventListener('click',event=>{
     if(document.body.classList.contains('management-mode')&&event.target instanceof Element&&event.target.closest('.collab-rail-toggle')){
       event.preventDefault();event.stopImmediatePropagation();
@@ -1043,6 +1062,8 @@ function bind(){
   const refreshRunnersBtn=$('#refreshRunners');if(refreshRunnersBtn)refreshRunnersBtn.onclick=()=>refreshRunners();
   $('#langToggle').onclick=()=>window.lfSetLang(window.lfLang()==='en'?'zh':'en');
   $('#themeToggle').onclick=toggleTheme;renderThemeToggle();
+  // 底部用户卡右侧的主题按钮：和顶部 themeToggle 共用同一套切换。
+  $('#railThemeBtn')?.addEventListener('click',event=>{event.stopPropagation();toggleTheme();renderThemeToggle()});
   const profileWrap = $('#userProfileWrap');
   const userBadge = $('#userBadge');
   const credentialsButton = $('#userCredentialsButton');
@@ -1516,6 +1537,7 @@ function mountNativeChat(){
       if(message.type==='agentflow-chat-ready'){
         nativeChatReady=true;
         postPendingChatIssueMention(frame);
+        if(typeof postPendingRailSearch==='function')postPendingRailSearch();
         postNativeChatProject(frame);
         finishBootLoader();
       }
@@ -1525,7 +1547,10 @@ function mountNativeChat(){
         const url=new URL(location.href);
         if(id)url.searchParams.set('chatSession',id);else url.searchParams.delete('chatSession');
         url.searchParams.delete('chatIssue');
-        if(activeViewName()==='collaboration')url.hash=id?'#/collaboration/'+encodeURIComponent(id):'#/collaboration';
+        // 会话 id 只放 query，不要把 hash 也改成 #/collaboration/<id>：
+        // hash 一变，applyRoute 会重置并重挂 iframe，切会话就闪一下。
+        // 深链 #/collaboration/<id> 仍由 applyRoute 支持，只是这里不再写。
+        if(activeViewName()==='collaboration')url.hash='#/collaboration';
         history.replaceState({},'',url);
       }
       if(message.type==='agentflow-chat-project'){
@@ -1767,22 +1792,33 @@ function setSettingsSidebarExpanded(expanded){
   }
 }
 function platformRailExpanded(){return document.body.classList.contains('platform-rail-expanded')}
+
+// 导航栏的展开状态跟着用户走：没存过就是展开（默认），存过就按存的来。
+const PLATFORM_RAIL_STORAGE_KEY='agentflow.platformRailExpanded';
+function readPlatformRailExpanded(){
+  try{
+    const saved=localStorage.getItem(PLATFORM_RAIL_STORAGE_KEY);
+    if(saved==='false')return false;
+    if(saved==='true')return true;
+  }catch{}
+  return true;
+}
+function rememberPlatformRailExpanded(expanded){
+  try{localStorage.setItem(PLATFORM_RAIL_STORAGE_KEY,String(!!expanded))}catch{}
+}
+
 function setPlatformRailExpanded(expanded){
   expanded=!!expanded;
   document.body.classList.toggle('platform-rail-expanded',expanded);
-  const button=$('#railSidebarToggle');
-  if(!button)return;
-  const label=expanded?'只显示图标':'展开导航';
-  button.disabled=false;
-  button.removeAttribute('aria-disabled');
-  button.removeAttribute('title');
-  button.setAttribute('aria-controls','platformRail');
-  button.setAttribute('aria-expanded',String(expanded));
-  button.setAttribute('aria-label',label);
-  if(expanded)button.removeAttribute('data-tooltip');
-  else button.dataset.tooltip=label;
-  const text=button.querySelector('.rail-label');
-  if(text)text.textContent=label;
+  rememberPlatformRailExpanded(expanded);
+  // 收起/展开由顶栏的折叠按钮驱动（syncRailCollapseButton 负责它的文案）。
+  // 展开态才出现伙伴/置顶/全部任务，展开时重新渲染一次，避免显示旧数据。
+  if(expanded){
+    if(typeof renderRailNav==='function')renderRailNav();
+    if(typeof syncRailBackButtons==='function')syncRailBackButtons();
+  }
+  // 折叠按钮的文案/图标两种状态下都要跟着变，收起时也要同步。
+  if(typeof syncRailCollapseButton==='function')syncRailCollapseButton();
 }
 function viewTitles(){return {management:'设置',collaboration:'工作台',issues:'需求',aiSchedules:'定时任务',bots:'通道管理',assistant:'AI 助手',runs:'运行记录',approvals:'待我确认',sops:'流程',flow:'流程设计',agents:'角色',mcp:'能力资产',rules:'能力资产',skills:'能力资产',dockerfiles:'环境资产',environments:'环境资产',sandboxes:'环境资产',observability:'统计',projects:'项目配置',platform:'平台管理',runners:'执行机器',settings:'个人配置',access:'访问密钥',guide:'访问密钥'}}
 // 设置侧栏只列一级入口；被合并进同一页的子视图（能力资产、环境资产的类型 Tab，
@@ -1918,8 +1954,14 @@ function persistView(name,push=false){
   if(location.hash===next)return;
   // push=true 时压入新历史记录，让浏览器「后退」能在平台页面间回退；
   // 否则原地替换，避免 boot 时把首个视图压栈。
-  if(push)history.pushState(null,'',next);
-  else history.replaceState(null,'',next);
+  // rail 的前进/后退按钮靠序号判断是否可用：每次 pushState 递增并存进 state，
+  // popstate 时读回来与当前序号比较。
+  if(push){
+    const seq=typeof railNextSeq==='function'?railNextSeq():1;
+    history.pushState({railSeq:seq},'',next);
+    if(typeof railPushDepth==='function')railPushDepth();
+  }
+  else history.replaceState({...(history.state||{}),railSeq:(history.state&&history.state.railSeq)||0},'',next);
 }
 function switchView(name){
   $$('details.collab-settings').forEach(menu=>menu.open=false);
@@ -2026,4 +2068,4 @@ function switchView(name){
   if(name==='guide')renderGuide();
   if(name==='flow'){if(!state.workflow?.nodes?.some(n=>n.id===state.selectedNode))state.selectedNode=null;renderWorkflowMeta();renderCanvas();renderProperties();setFlowView('canvas');refreshGenericWorkflowRoles()}
 }
-function renderAll(){renderUserBadge();renderPlatformNav();renderObsTabs();renderProjectSwitcher();renderIssues();renderSOPCatalog();renderWorkflowMeta();renderCanvas();renderProperties();renderAgents();renderAssets();renderMCPManagement();renderRuns();renderSync();renderProjectAdmin();renderDashboard();renderGuide();updateApprovalBadge();showDirectRunButton($('#flowView').classList.contains('active'))}
+function renderAll(){renderUserBadge();renderPlatformNav();renderRailNav();renderObsTabs();renderProjectSwitcher();renderIssues();renderSOPCatalog();renderWorkflowMeta();renderCanvas();renderProperties();renderAgents();renderAssets();renderMCPManagement();renderRuns();renderSync();renderProjectAdmin();renderDashboard();renderGuide();updateApprovalBadge();showDirectRunButton($('#flowView').classList.contains('active'))}

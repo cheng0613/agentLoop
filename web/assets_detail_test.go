@@ -62,10 +62,15 @@ func TestAssetsStylesheetFollowsHarnessTokens(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{":root {\n", `html[data-theme="dark"] {`, "--hui-stage: #f4f3f8;", "--hui-stage: #18181c;"} {
+	// 令牌块要把舞台底色指向主题变量，而不是写死色值——写死的色值不会跟着
+	// 亮/暗主题切换，也绕过了 tokens.css 这一唯一来源。
+	for _, want := range []string{":root {\n", `html[data-theme="dark"] {`, "--hui-stage: var(--panel-2);"} {
 		if !strings.Contains(string(tokenCSS), want) {
 			t.Fatalf("harness-ui.css token block is missing %q", want)
 		}
+	}
+	if n := strings.Count(string(tokenCSS), "--hui-stage: var(--panel-2);"); n != 2 {
+		t.Fatalf("harness-ui.css must map --hui-stage to var(--panel-2) in both light and dark blocks, got %d", n)
 	}
 	css, err := os.ReadFile("app/assets-harness.css")
 	if err != nil {

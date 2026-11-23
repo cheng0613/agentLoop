@@ -70,6 +70,45 @@ vi.mock("mermaid", () => ({
 import App from "../src/App.jsx";
 
 describe("App", () => {
+  // 会话导航在宿主 rail 上；它的搜索按钮通过 postMessage 让这里打开搜索弹窗。
+  // 宿主 rail 的「新建」：开空白会话，不关联任务，也不带项目。
+  test("the host rail can start a blank conversation", async () => {
+    const previous = { ...chat };
+    const startBlankChat = vi.fn();
+    Object.assign(chat, { startBlankChat, projectId: "p1" });
+    const view = render(<App />);
+    try {
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          data: { type: "agentflow-chat-new" },
+          origin: location.origin,
+          source: window.parent,
+        })
+      );
+      expect(startBlankChat).toHaveBeenCalled();
+    } finally {
+      view.unmount();
+      Object.assign(chat, previous);
+    }
+  });
+
+  test("the host rail can open the conversation search dialog", async () => {
+    const view = render(<App />);
+    try {
+      expect(screen.queryByLabelText("搜索会话名称")).not.toBeInTheDocument();
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          data: { type: "agentflow-chat-search" },
+          origin: location.origin,
+          source: window.parent,
+        })
+      );
+      expect(await screen.findByLabelText("搜索会话名称")).toBeInTheDocument();
+    } finally {
+      view.unmount();
+    }
+  });
+
   test("pauses without showing an intermediate stopping state", () => {
     const previous = { ...chat };
     Object.assign(chat, { activeId: "stopping-chat", busy: true, stopping: true,
@@ -431,7 +470,6 @@ describe("App", () => {
       projectId: "p1",
     });
     const view = render(<App />);
-    expect(screen.getAllByText("已有会话").length).toBeGreaterThan(0);
     const textbox = screen.getByRole("textbox");
     await user.type(textbox, "继续");
     const send = screen.queryByLabelText(/发送/);
@@ -453,28 +491,6 @@ describe("App", () => {
     chat.rename.mockResolvedValueOnce(true);
     await user.click(screen.getByText("保存"));
 
-    const showSidebar = screen.queryByLabelText("显示会话侧边栏");
-    if (showSidebar) await user.click(showSidebar);
-    // Pinning moves the row to another section; query the live row each time.
-    const openSessionMenu = async () => {
-      const sessionLink = document.querySelector(".session-link");
-      expect(sessionLink).toBeInTheDocument();
-      fireEvent.contextMenu(sessionLink, { clientX: 20, clientY: 20 });
-      return screen.findByRole("menu", { name: "会话操作" });
-    };
-    await user.click(within(await openSessionMenu()).getByRole("menuitem", { name: "置顶" }));
-    await user.click(within(await openSessionMenu()).getByRole("menuitem", { name: "归档" }));
-    expect(chat.archive).toHaveBeenCalled();
-    await waitFor(() => expect(screen.queryByRole("menu", { name: "会话操作" })).not.toBeInTheDocument());
-    await user.click(within(await openSessionMenu()).getByRole("menuitem", { name: "删除" }));
-    const deleteDialog = await screen.findByRole("dialog", { name: "删除会话" });
-    await user.click(within(deleteDialog).getByRole("button", { name: "删除" }));
-    expect(chat.remove).toHaveBeenCalled();
-    await user.click(await screen.findByLabelText("筛选会话"));
-    await user.click(screen.getByText("已归档"));
-    await user.click(screen.getByLabelText("搜索会话"));
-    await user.type(screen.getByLabelText("搜索会话名称"), "已有");
-    fireEvent.keyDown(document, { key: "Escape" });
     fireEvent.keyDown(document, { key: ",", ctrlKey: true });
     expect(screen.getByText("个人配置与模型凭据")).toBeInTheDocument();
     view.unmount();
@@ -854,114 +870,3 @@ describe("App", () => {
   });
 });
 
-describe("sidebar conversation filter", () => {
-  test("only lists conversations the reader took part in", async () => {
-    const user = userEvent.setup();
-    const previous = { ...chat };
-    const now = new Date().toISOString();
-    Object.assign(chat, {
-      activeId: null,
-      session: null,
-      projectId: "p1",
-      sessions: [
-        {
-          id: "mine",
-          title: "我参与的项目会话",
-          projectId: "p1",
-          shared: true,
-          participants: [
-            { id: "u1", name: "tester" },
-            { id: "u2", name: "同事" },
-          ],
-          updatedAt: now,
-          messages: [],
-        },
-        {
-          id: "theirs",
-          title: "同事独自发起的会话",
-          projectId: "p1",
-          shared: true,
-          participants: [{ id: "u2", name: "同事" }],
-          updatedAt: now,
-          messages: [],
-        },
-      ],
-    });
-    const view = render(<App />);
-    try {
-      const showSidebar = screen.queryByLabelText("显示会话侧边栏");
-      if (showSidebar) await user.click(showSidebar);
-      expect(screen.getAllByText("同事独自发起的会话").length).toBeGreaterThan(0);
-
-      await user.click(screen.getByLabelText("筛选会话"));
-      await user.click(screen.getByText("仅我参与的对话"));
-
-      expect(screen.queryByText("同事独自发起的会话")).not.toBeInTheDocument();
-      expect(screen.getAllByText("我参与的项目会话").length).toBeGreaterThan(0);
-
-      await user.click(screen.getByLabelText("筛选会话"));
-      expect(
-        screen.getByText("仅我参与的对话").closest("[role=menuitemradio]"),
-      ).toHaveAttribute("aria-checked", "true");
-      await user.click(screen.getByText("最近的会话"));
-      expect(screen.getAllByText("同事独自发起的会话").length).toBeGreaterThan(0);
-    } finally {
-      view.unmount();
-      Object.assign(chat, previous);
-    }
-  });
-});
-
-describe("sidebar reply status", () => {
-  test("an unread completed reply shows a blue dot, a running one spins, a failed one warns", async () => {
-    const user = userEvent.setup();
-    const previous = { ...chat };
-    const originalFetch = globalThis.fetch;
-    globalThis.fetch = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ ok: true, recorded: true }) }));
-    const now = new Date().toISOString();
-    const row = (id, title, generationStatus, generationId, unread = false) => ({
-      id, title, projectId: "p1", userId: "u1", generationStatus, generationId, unread, updatedAt: now, messages: [],
-    });
-    Object.assign(chat, {
-      activeId: null,
-      session: null,
-      projectId: "p1",
-      sessions: [
-        row("unread", "完成未读", "completed", "g2", true),
-        row("read", "完成已读", "completed", "g3"),
-        row("busy", "正在生成", "running", "g4"),
-        row("broken", "生成出错", "failed", "g5"),
-      ],
-    });
-    const view = render(<App />);
-    try {
-      const showSidebar = screen.queryByLabelText("显示会话侧边栏");
-      if (showSidebar) await user.click(showSidebar);
-      const status = (title) =>
-        screen.getAllByText(title)[0].closest(".session-link").querySelector(".session-status");
-      await waitFor(() => expect(status("完成未读")).toHaveAttribute("data-session-status", "unread"));
-      expect(status("完成未读")).toHaveAccessibleName("有新回复未读");
-      expect(status("完成未读").querySelector(".session-unread-dot")).not.toBeNull();
-      expect(status("完成已读")).toBeNull();
-      expect(status("正在生成").querySelector('[data-icon="arc-spinner"]')).not.toBeNull();
-      expect(status("生成出错").querySelector('[data-icon="alert"]')).not.toBeNull();
-
-      // Opening the conversation reports the reply read and clears its dot.
-      Object.assign(chat, { activeId: "unread" });
-      view.rerender(<App />);
-      await waitFor(() =>
-        expect(globalThis.fetch).toHaveBeenCalledWith(
-          "/api/assistant/sessions/unread/read",
-          expect.objectContaining({ method: "POST", body: JSON.stringify({ generationId: "g2" }) }),
-        ),
-      );
-      Object.assign(chat, { activeId: null });
-      view.rerender(<App />);
-      await waitFor(() => expect(status("完成未读")).toBeNull());
-    } finally {
-      view.unmount();
-      globalThis.fetch = originalFetch;
-      Object.assign(chat, previous);
-    }
-  });
-});

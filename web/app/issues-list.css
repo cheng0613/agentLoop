@@ -292,11 +292,11 @@ html[data-theme="dark"] #issuesView .issue-title-cell .issue-title-tag.tone-dang
   display: grid;
   place-items: center;
   background: var(--hui-accent);
-  color: #fff;
+  color: var(--hui-on-accent);
   font: 600 10px/1 var(--hui-sans);
 }
 #issuesView .issue-assignee-avatar .user-avatar-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-#issuesView .issue-assignee-avatar .user-avatar-text { font-size: 10px; font-weight: 600; color: #fff; text-transform: uppercase; }
+#issuesView .issue-assignee-avatar .user-avatar-text { font-size: 10px; font-weight: 600; color: var(--hui-on-accent); text-transform: uppercase; }
 #issuesView :is(.issue-repository-cell, .issue-workflow-cell) { color: var(--hui-secondary); font-size: 13px; }
 
 #issuesView .issue-priority {

@@ -13,11 +13,13 @@ html[data-theme="dark"]{--v4-canvas:var(--bg);--v4-navy:var(--panel);--v4-shadow
   --sidebar-w: 304px;
   --shell-canvas: #fff;
   --shell-inset-x: 14px;
-  --rail-surface: #fff;
-  --rail-hover: #ededed;
-  --rail-active: #eaeaea;
+  /* rail 用浅灰底，与白色内容区分开，让边界一眼可辨。 */
+  --rail-surface: var(--bg-soft);
+  --rail-hover: #e6e6e3;
+  --rail-active: #dcdcd8;
   --rail-ink: #18181b;
   --rail-muted: #66666f;
+  --rail-line: var(--line);
 }
 html[data-theme="dark"] {
   --shell-canvas: #141417;
@@ -26,6 +28,7 @@ html[data-theme="dark"] {
   --rail-active: #26262c;
   --rail-ink: #ededf0;
   --rail-muted: #a1a1aa;
+  --rail-line: var(--line);
 }
 .app-shell {
   display: grid !important;
@@ -92,6 +95,17 @@ body.no-sidebar .platform-sidebar {
   user-select: none;
   flex-shrink: 0;
   overflow: visible !important;
+}
+/* rail 与内容区之间的分隔：贯穿全高，不受 rail 上下外边距影响。 */
+.platform-rail::after {
+  content: "";
+  position: absolute;
+  top: -14px;
+  bottom: -14px;
+  right: -1px;
+  width: 1px;
+  background: var(--rail-line);
+  pointer-events: none;
 }
 .platform-rail nav,
 .platform-rail .rail-nav,
@@ -369,6 +383,432 @@ body.platform-rail-expanded .platform-rail #userName {
   font-size: 14px;
   font-weight: 500;
 }
+/* --- 展开态：顶栏 / 入口 / 伙伴 / 置顶 / 全部任务 --- */
+
+/* 收起态（56px 图标列）只留图标栏本体：分段容器隐藏，「更多」贴着栏右侧
+   弹出菜单，顶栏只保留折叠按钮 —— 它是收起之后唯一能把导航展开回来的入口。
+   这些规则必须限定在未展开时，否则展开态的菜单/后退/前进会被它一起藏掉。 */
+body:not(.platform-rail-expanded) .rail-section {
+  display: none;
+}
+body:not(.platform-rail-expanded) .rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  padding: 0 0 6px;
+}
+body:not(.platform-rail-expanded) .rail-head .rail-icon-btn:not(#railCollapseBtn) {
+  display: none;
+}
+/* 收起态折叠按钮居中；展开后它回到顶栏最左侧，和其余图标并排。 */
+body:not(.platform-rail-expanded) .rail-head #railCollapseBtn {
+  display: grid;
+}
+
+/* 图标按钮的基础样式：收起态和展开态共用，展开态的规则只在此基础上调整排布。 */
+.rail-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--rail-ink);
+  cursor: pointer;
+}
+.rail-icon-btn:hover:not(:disabled) {
+  background: var(--rail-hover);
+}
+.rail-icon-btn:disabled {
+  opacity: .35;
+  cursor: default;
+}
+.rail-icon-btn:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: -2px;
+}
+
+body.platform-rail-expanded {
+  --rail-w: 304px;
+}
+body.platform-rail-expanded .platform-rail {
+  padding: 8px 10px 10px !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 0;
+  overflow: hidden !important;
+}
+
+/* 顶栏 */
+body.platform-rail-expanded .rail-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  padding: 0 0 6px;
+}
+body.platform-rail-expanded .rail-head .spacer {
+  flex: 1;
+}
+body.platform-rail-expanded .rail-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--rail-ink);
+  cursor: pointer;
+}
+body.platform-rail-expanded .rail-icon-btn:hover:not(:disabled) {
+  background: var(--rail-hover);
+}
+body.platform-rail-expanded .rail-icon-btn:disabled {
+  opacity: .35;
+  cursor: default;
+}
+body.platform-rail-expanded .rail-icon-btn:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: -2px;
+}
+body.platform-rail-expanded .rail-head .spacer + .rail-icon-btn {
+  margin-left: auto;
+}
+
+/* 入口列表 */
+body.platform-rail-expanded .rail-nav {
+  flex: none;
+  gap: 1px;
+  padding-bottom: 6px;
+}
+body.platform-rail-expanded .platform-rail .rail-btn {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 8px !important;
+  border-radius: 8px !important;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--rail-ink);
+}
+body.platform-rail-expanded .platform-rail .rail-btn svg {
+  flex: none;
+  color: var(--rail-muted);
+}
+body.platform-rail-expanded .platform-rail .rail-btn.active svg {
+  color: var(--v3-accent);
+}
+body.platform-rail-expanded .rail-sep {
+  height: 1px;
+  flex: none;
+  margin: 6px 8px;
+  background: var(--rail-hover);
+}
+
+/* 分段：伙伴 / 置顶 / 全部任务 */
+body.platform-rail-expanded .rail-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: none;
+  padding: 0;
+}
+body.platform-rail-expanded .rail-section-grow {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+body.platform-rail-expanded .rail-section-title {
+  margin: 0;
+  padding: 10px 8px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: .2px;
+  color: var(--rail-muted);
+}
+body.platform-rail-expanded .rail-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 32px;
+  flex: none;
+  margin-top: 6px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--rail-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  cursor: pointer;
+  text-align: left;
+}
+body.platform-rail-expanded .rail-section-toggle:hover {
+  background: var(--rail-hover);
+}
+body.platform-rail-expanded .rail-section-toggle .rail-label {
+  color: inherit !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+body.platform-rail-expanded .rail-chev {
+  flex: none;
+  transition: transform var(--rail-expand-duration, 240ms) cubic-bezier(.16,1,.3,1);
+}
+body.platform-rail-expanded .rail-section-toggle[aria-expanded="false"] .rail-chev {
+  transform: rotate(-90deg);
+}
+
+/* 列表滚动区：收起时整体隐藏 */
+body.platform-rail-expanded .rail-list,
+body.platform-rail-expanded .rail-partners {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rail-hover) transparent;
+}
+body.platform-rail-expanded .rail-projects {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rail-hover) transparent;
+}
+/* 伙伴是一排头像，不换行：放不下的由渲染层折成「+N」。 */
+body.platform-rail-expanded .rail-partners {
+  flex: none;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  overflow: visible;
+  padding: 2px 8px 4px;
+}
+/* 全部任务那一段吃掉剩余高度，列表自己滚动，伙伴与置顶保持自然高度。 */
+body.platform-rail-expanded .rail-section-grow > .rail-list {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+body.platform-rail-expanded .rail-list[hidden],
+body.platform-rail-expanded .rail-projects[hidden] {
+  display: none !important;
+}
+body.platform-rail-expanded .rail-list::-webkit-scrollbar,
+body.platform-rail-expanded .rail-projects::-webkit-scrollbar {
+  width: 8px;
+}
+body.platform-rail-expanded .rail-list::-webkit-scrollbar-thumb,
+body.platform-rail-expanded .rail-projects::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background-clip: padding-box;
+  background-color: var(--rail-hover);
+}
+
+/* 行：伙伴 / 置顶 / 项目共用 */
+body.platform-rail-expanded .rail-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 34px;
+  flex: none;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--rail-ink);
+  font-family: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+body.platform-rail-expanded .rail-row:hover {
+  background: var(--rail-hover);
+}
+body.platform-rail-expanded .rail-row:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: -2px;
+}
+body.platform-rail-expanded .rail-row[aria-current="true"] {
+  background: var(--rail-active);
+}
+body.platform-rail-expanded .rail-row .rail-row-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.platform-rail-expanded .rail-row .rail-row-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--rail-muted);
+}
+body.platform-rail-expanded .rail-row .rail-row-time {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--rail-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 伙伴：单个头像按钮，以及末尾的「+N」。 */
+body.platform-rail-expanded .rail-partner {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+body.platform-rail-expanded .rail-partner:hover {
+  background: var(--rail-hover);
+}
+body.platform-rail-expanded .rail-partner:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 1px;
+}
+body.platform-rail-expanded .rail-partner-more {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--rail-muted);
+  background: var(--rail-hover);
+  font-variant-numeric: tabular-nums;
+}
+body.platform-rail-expanded .rail-partner-more:hover {
+  color: var(--rail-ink);
+  background: var(--rail-active);
+}
+body.platform-rail-expanded .rail-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: .2px;
+  user-select: none;
+}
+body.platform-rail-expanded .rail-row-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+body.platform-rail-expanded .rail-row-col .rail-row-name {
+  font-size: 14px;
+  line-height: 1.3;
+}
+body.platform-rail-expanded .rail-row-sub {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--rail-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 运行中绿点 */
+body.platform-rail-expanded .rail-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34,197,94,.15);
+}
+
+/* 「更多」弹出菜单 */
+body.platform-rail-expanded .rail-more-wrap {
+  display: block;
+  position: relative;
+}
+.rail-more-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.rail-more-menu {
+  position: absolute;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 176px;
+  padding: 6px;
+  border: 1px solid var(--rail-hover);
+  border-radius: 12px;
+  background: var(--rail-surface);
+  box-shadow: 0 8px 28px rgba(0,0,0,.14);
+}
+.rail-more-menu[hidden] {
+  display: none;
+}
+.rail-more-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--rail-ink);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.rail-more-menu button:hover {
+  background: var(--rail-hover);
+}
+.rail-more-menu button svg {
+  flex: none;
+  color: var(--rail-muted);
+}
+.rail-more-menu .nav-badge {
+  margin-left: auto;
+}
+body.platform-rail-expanded .rail-more-menu .rail-label,
+.rail-more-menu .rail-label {
+  display: block !important;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* 收起态：这些新元素不该占位 */
+body:not(.platform-rail-expanded) .rail-more-menu {
+  display: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .app-shell,
   .platform-rail {
@@ -3689,3 +4129,255 @@ html[data-theme="dark"] #runnersView .runner-runtime-icon:is(.codex,.claude-code
 @media(max-width:1100px){#projectsView .project-admin-layout>aside>:is(.project-admin-caption,.project-admin-list){position:static}}
 /* The profile card owns the theme switcher on desktop; the node stays because assistant.js inserts its button before it. */
 @media(min-width:1001px){.topbar #themeToggle{display:none!important}}
+
+/* 分段为空时的提示行 */
+.rail-empty {
+  margin: 0;
+  padding: 4px 8px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--rail-muted);
+}
+
+/* 「更多」上的待办小点：收起态看不到菜单里的数字，靠它提醒。 */
+.platform-rail .rail-btn .rail-more-dot {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber, #f59e0b);
+}
+body.platform-rail-expanded .platform-rail .rail-btn .rail-more-dot {
+  position: static;
+  margin-left: auto;
+  flex: none;
+}
+
+
+/* --- 底部用户卡：胶囊外形（头像 + 名字/部门 + 主题与设置） --- */
+body.platform-rail-expanded .platform-rail .rail-profile-wrap {
+  display: block !important;
+  margin-top: 6px;
+  padding: 0;
+}
+body.platform-rail-expanded .rail-user-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 8px 6px 6px;
+  border: 1px solid var(--rail-hover);
+  border-radius: 999px;
+  background: var(--rail-surface);
+  box-sizing: border-box;
+}
+body.platform-rail-expanded .rail-user-card:hover {
+  border-color: var(--line-strong, var(--line));
+}
+/* 姓名区是卡片主体：点它打开个人信息弹窗。 */
+body.platform-rail-expanded .platform-rail .user-badge.rail-user {
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  gap: 9px;
+  justify-content: flex-start !important;
+}
+body.platform-rail-expanded .platform-rail .user-badge.rail-user:hover,
+body.platform-rail-expanded .platform-rail .rail-profile-wrap.is-open .user-badge.rail-user {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+body.platform-rail-expanded .rail-user-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  flex: none;
+}
+body.platform-rail-expanded .rail-user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+body.platform-rail-expanded .platform-rail #userName {
+  max-width: 100%;
+  flex: none;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.platform-rail-expanded .rail-user-sub {
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--rail-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.platform-rail-expanded .rail-user-sub[hidden] {
+  display: none;
+}
+/* 右侧两个圆形按钮。 */
+body.platform-rail-expanded .rail-user-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+body.platform-rail-expanded .rail-user-act {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: 1px solid var(--rail-hover);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--rail-muted);
+  cursor: pointer;
+  transition: background-color .16s ease, color .16s ease, border-color .16s ease;
+}
+body.platform-rail-expanded .rail-user-act:hover {
+  background: var(--rail-hover);
+  border-color: var(--line-strong, var(--line));
+  color: var(--rail-ink);
+}
+body.platform-rail-expanded .rail-user-act:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 1px;
+}
+
+/* 收起态没有卡片：头像退回圆形按钮，名称与动作按钮隐藏。
+   卡片本身退化成透明容器，好让原有的圆形头像样式继续生效。 */
+body:not(.platform-rail-expanded) .rail-user-card {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+body:not(.platform-rail-expanded) .rail-user-meta,
+body:not(.platform-rail-expanded) .rail-user-actions {
+  display: none;
+}
+
+
+/* --- 全部任务：项目可展开到会话 --- */
+body.platform-rail-expanded .rail-project {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+body.platform-rail-expanded .rail-project-row .rail-chev {
+  flex: none;
+  margin-left: auto;
+  color: var(--rail-muted);
+  transition: transform var(--rail-expand-duration, 240ms) cubic-bezier(.16,1,.3,1);
+}
+body.platform-rail-expanded .rail-project-row[aria-expanded="false"] .rail-chev {
+  transform: rotate(-90deg);
+}
+/* 会话行左缩进，和对齐项目文件夹图标的宽度一致。 */
+body.platform-rail-expanded .rail-project-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 26px;
+}
+body.platform-rail-expanded .rail-row-session {
+  min-height: 30px;
+  font-size: 13.5px;
+  color: var(--rail-muted);
+}
+body.platform-rail-expanded .rail-row-session:hover {
+  color: var(--rail-ink);
+}
+body.platform-rail-expanded .rail-row-session[aria-current="true"] {
+  color: var(--rail-ink);
+  font-weight: 500;
+}
+body.platform-rail-expanded .rail-project-sessions .rail-empty {
+  padding: 2px 8px 6px;
+  font-size: 12px;
+}
+
+
+/* 会话右键菜单：定位相对 rail，坐标在 openRailSessionMenu 里算。 */
+.rail-session-menu {
+  position: absolute;
+  z-index: 130;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 168px;
+  padding: 6px;
+  border: 1px solid var(--rail-line);
+  border-radius: 12px;
+  background: var(--rail-surface);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .14);
+}
+.rail-session-menu[hidden] {
+  display: none;
+}
+.rail-session-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--rail-ink);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.rail-session-menu button:hover {
+  background: var(--rail-hover);
+}
+.rail-session-menu button:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: -2px;
+}
+.rail-session-menu button svg {
+  flex: none;
+  color: var(--rail-muted);
+}
+.rail-session-menu button.is-danger {
+  color: var(--red);
+}
+.rail-session-menu button.is-danger svg {
+  color: var(--red);
+}
+.rail-session-menu button.is-danger:hover {
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+}
+.rail-session-menu .rail-label {
+  display: block !important;
+  font-size: 13px;
+  font-weight: 400;
+}
+.rail-session-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--rail-hover);
+}

@@ -62,7 +62,7 @@ const document={querySelectorAll:()=>[],activeElement:null};
 const window={};
 const location={search:'',pathname:'/',hash:'',origin:'http://localhost'};
 let replaced=0;const history={replaceState(){replaced++}};
-eval(code.slice(code.indexOf('const CREDENTIAL_GROUPS='),code.indexOf('// 谁能改通用模板'))+';globalThis.cred={kind:credentialKind};');
+eval(code.slice(code.indexOf('const HIDDEN_CREDENTIAL_CLIS='),code.indexOf('// 谁能改通用模板'))+';globalThis.cred={kind:credentialKind};');
 const gitToken=cred.kind('gitToken');
 (async()=>{
  // Entering the page verifies a configured token once and caches the answer.
@@ -143,7 +143,7 @@ const gitToken=cred.kind('gitToken');
  assert.ok(toasts.slice(announced).some(t=>t.message.includes('工蜂授权已保存')));
 })().catch(error=>{console.error(error);process.exit(1)});
 `
-	if out, err := exec.Command(node, "-e", script).CombinedOutput(); err != nil {
+	if out, err := runNodeScript(t, node, script); err != nil {
 		t.Fatalf("git token UI check failed: %v\n%s", err, out)
 	}
 }
