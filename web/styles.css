@@ -15,7 +15,7 @@
 :root{
   /* —— 品牌与语义色 —— */
   --blue:#5b8cff; --blue-soft:rgba(91,140,255,.16); --blue-dim:#3b6fd6;
-  --green:#34d399; --amber:#fbbf24; --red:#f87171; --purple:#737373; --cyan:#22d3ee;
+  --green:#3ddc97; --amber:#f3a115; --red:#ef4444; --purple:#737373; --cyan:#22d3ee;
   /* 文字色变体，与 tokens.css 保持一致 */
   --green-fg:#3ddc97; --amber-fg:#f3a115; --red-fg:#f87171; --cyan-fg:#60a5fa;
   /* —— 暗色基底（默认） —— */
