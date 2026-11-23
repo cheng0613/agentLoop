@@ -122,7 +122,7 @@
 .node-output.empty b{font-size:10px}
 .node-output.empty p{margin:4px 0 0;color:var(--muted-2);font-size:9px}
 .node-error{border-color:rgba(248,113,113,.35)}
-.node-error>b{display:block;padding:8px 10px;background:rgba(248,113,113,.1);color:var(--red);font-size:10px}
+.node-error>b{display:block;padding:8px 10px;background:rgba(248,113,113,.1);color:var(--red-fg);font-size:10px}
 .node-error pre{background:#2a1419;color:#ffd9dc}
 .node-error-detail{padding:10px;background:rgba(248,113,113,.045)}
 .node-error .credential-action{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:9px 10px;background:rgba(248,113,113,.045)}
@@ -135,7 +135,7 @@
 .node-error-detail ul,.node-decision ul{margin:7px 0 0;padding-left:18px;color:var(--text);font-size:10px}
 .node-error-detail li p,.node-decision li p{margin:2px 0 7px;color:var(--muted)}
 .node-decision{margin-top:10px;border:1px solid rgba(251,191,36,.42);border-radius:9px;overflow:hidden;background:rgba(251,191,36,.065)}
-.node-decision>b{display:block;padding:8px 10px;background:rgba(251,191,36,.12);color:var(--amber);font-size:10px}
+.node-decision>b{display:block;padding:8px 10px;background:rgba(251,191,36,.12);color:var(--amber-fg);font-size:10px}
 .node-decision>div,.node-decision>ul{margin:0;padding:9px 10px 0}
 .node-decision>div:last-child,.node-decision>ul:last-child{padding-bottom:9px}
 .runtime-details{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line);color:var(--muted-2);font-size:9.5px}
@@ -161,10 +161,10 @@
 .approval-callout .callout-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .approval-callout .callout-title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .approval-callout .callout-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:700;line-height:1.2}
-.approval-callout .callout-badge.human{background:rgba(245,158,11,.18);color:var(--amber);border:1px solid rgba(245,158,11,.35)}
-.approval-callout .callout-badge.failed{background:rgba(239,68,68,.18);color:var(--red);border:1px solid rgba(239,68,68,.35)}
+.approval-callout .callout-badge.human{background:rgba(245,158,11,.18);color:var(--amber-fg);border:1px solid rgba(245,158,11,.35)}
+.approval-callout .callout-badge.failed{background:rgba(239,68,68,.18);color:var(--red-fg);border:1px solid rgba(239,68,68,.35)}
 .approval-callout b.callout-title,.approval-callout>div>b{font-size:15px;font-weight:700;color:var(--text)}
-.approval-callout.failed b.callout-title{color:var(--red)}
+.approval-callout.failed b.callout-title{color:var(--red-fg)}
 .approval-callout .callout-node-name{font-size:13px;color:var(--muted-2)}
 .approval-callout .callout-node-name b{font-size:13px;color:var(--text);font-weight:600}
 .approval-callout .callout-content{display:flex;flex-direction:column;gap:10px}
@@ -184,14 +184,14 @@
 .approval-callout .ap-buttons .button{min-height:34px;padding:0 16px;border-radius:8px;font-size:13px;font-weight:600}
 .child-sop-callout{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 0;padding:11px 13px;border:1px solid rgba(251,191,36,.45);border-radius:9px;background:rgba(251,191,36,.08)}
 .child-sop-callout.failed{border-color:rgba(248,113,113,.5);background:rgba(248,113,113,.07)}
-.child-sop-callout b{font-size:12px;color:var(--amber)}
-.child-sop-callout.failed b{color:var(--red)}
+.child-sop-callout b{font-size:12px;color:var(--amber-fg)}
+.child-sop-callout.failed b{color:var(--red-fg)}
 .child-sop-callout p{margin:3px 0 0;font-size:11px;color:var(--muted)}
 .child-sop-panel{margin-top:11px;padding:10px 12px;border:1px solid var(--line);border-radius:9px}
 .child-sop-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .child-sop-head b{flex:1;font-size:12px}
 .child-sop-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px;padding:5px 0;border-top:1px dashed var(--line);font-size:11.5px}
-.child-sop-row small{flex-basis:100%;color:var(--red)}
+.child-sop-row small{flex-basis:100%;color:var(--red-fg)}
 .child-sop-trace-note{margin:0 0 8px;font-size:11px;color:var(--muted)}
 .run-detail-header+.paused-run-callout{margin:0 18px 16px}
 .paused-run-callout{border-color:rgba(91,140,255,.38);background:rgba(91,140,255,.07)}
@@ -210,9 +210,9 @@
 .telemetry-category{font-weight:750}
 .telemetry-category.lifecycle{color:var(--blue)}
 .telemetry-category.model{color:var(--purple)}
-.telemetry-category.tool{color:var(--amber)}
-.telemetry-category.verification{color:var(--green)}
-.telemetry-category.error{color:var(--red)}
+.telemetry-category.tool{color:var(--amber-fg)}
+.telemetry-category.verification{color:var(--green-fg)}
+.telemetry-category.error{color:var(--red-fg)}
 .telemetry-event .msg{color:var(--muted);word-break:break-word}
 .hook-trace-facts{display:flex;flex-wrap:wrap;gap:5px 12px;margin:7px 0}
 .hook-trace-facts div{display:flex;align-items:center;gap:4px}
@@ -221,7 +221,7 @@
 .hook-trace-output{margin-top:6px;border:1px solid var(--line);border-radius:7px;background:var(--panel-2)}
 .hook-trace-output summary{padding:5px 8px;color:var(--muted);font:9.5px var(--mono);cursor:pointer}
 .hook-trace-output pre{max-height:180px;margin:0;padding:7px 8px;overflow:auto;border-top:1px solid var(--line);white-space:pre-wrap;word-break:break-word;font:9.5px/1.5 var(--mono)}
-.hook-trace-output.error summary{color:var(--red)}
+.hook-trace-output.error summary{color:var(--red-fg)}
 .control-feed .row-item{font-size:11.5px}
 
 /* Worker 日志 */
@@ -367,8 +367,8 @@ html[data-theme="light"] .worker-log-line pre,html[data-theme="dark"] .worker-lo
 :is(#observabilityView,#metricsView) .obs-kpi-value .num{color:var(--text);font-size:24px;font-weight:650;line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 :is(#observabilityView,#metricsView) .obs-kpi-value u{color:var(--muted);font-size:13px;text-decoration:none}
 :is(#observabilityView,#metricsView) .obs-dl{font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
-:is(#observabilityView,#metricsView) .obs-dl.good{color:var(--green)}
-:is(#observabilityView,#metricsView) .obs-dl.bad{color:var(--red)}
+:is(#observabilityView,#metricsView) .obs-dl.good{color:var(--green-fg)}
+:is(#observabilityView,#metricsView) .obs-dl.bad{color:var(--red-fg)}
 :is(#observabilityView,#metricsView) .obs-dl.flat{color:var(--muted-2)}
 :is(#observabilityView,#metricsView) .obs-spark{display:block;width:100%;height:22px;color:var(--c1)}
 :is(#observabilityView,#metricsView) .obs-spark.is-empty{height:22px}
@@ -412,8 +412,8 @@ html[data-theme="light"] .worker-log-line pre,html[data-theme="dark"] .worker-lo
 #observabilityView .obs-trend-card,#observabilityView .obs-chips,#observabilityView .obs-trend-compare{margin:0}
 :is(#observabilityView,#metricsView) .obs-chip{border:0;font-size:11.5px}
 :is(#observabilityView,#metricsView) .obs-legend i{margin-right:0}
-#observabilityView .obs-delta.good{color:var(--green)}
-#observabilityView .obs-delta.bad{color:var(--red)}
+#observabilityView .obs-delta.good{color:var(--green-fg)}
+#observabilityView .obs-delta.bad{color:var(--red-fg)}
 
 /* Token 去向 */
 #observabilityView .obs-bd-dims{margin-top:-2px}
@@ -442,7 +442,7 @@ html[data-theme="light"] .worker-log-line pre,html[data-theme="dark"] .worker-lo
 #observabilityView .obs-fail-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:8px;border:0;border-radius:8px;background:transparent;color:var(--text);font-size:12px;text-align:left;cursor:pointer}
 #observabilityView .obs-fail-row:hover{background:var(--hover)}
 #observabilityView .obs-fail-row>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#observabilityView .obs-fail-row>b{color:var(--red);font-variant-numeric:tabular-nums}
+#observabilityView .obs-fail-row>b{color:var(--red-fg);font-variant-numeric:tabular-nums}
 #observabilityView .obs-fail-meta{grid-column:1/-1;display:grid;grid-template-columns:minmax(60px,1fr) auto;align-items:center;gap:10px}
 #observabilityView .obs-fail-meta .obs-meter{margin:0}
 #observabilityView .obs-fail-meta .obs-meter i{background:var(--red);opacity:.7}
@@ -459,14 +459,14 @@ html[data-theme="light"] .worker-log-line pre,html[data-theme="dark"] .worker-lo
 .obs-funnel-fallback button{display:grid;grid-template-columns:90px 1fr 40px 44px;align-items:center;gap:8px;border:0;background:transparent;color:var(--text);font-size:12px;text-align:left;cursor:pointer}
 .obs-funnel-fallback .obs-meter{margin:0;height:14px;border-radius:4px}
 .obs-funnel-fallback em{color:var(--muted-2);font-style:normal}
-.obs-funnel-fallback em.bad{color:var(--red)}
+.obs-funnel-fallback em.bad{color:var(--red-fg)}
 #observabilityView .obs-chips{display:flex;flex-wrap:wrap;gap:4px}
 #observabilityView .obs-chips button{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;border:1px solid var(--line);border-radius:99px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer}
 #observabilityView .obs-chips button:hover{color:var(--text)}
 #observabilityView .obs-chips button.active{border-color:color-mix(in srgb,var(--c1) 60%,var(--line));color:var(--text);background:color-mix(in srgb,var(--c1) 10%,transparent)}
 #observabilityView .obs-chips i{color:var(--muted-2);font-style:normal;font-size:11px;font-variant-numeric:tabular-nums}
-.obs-mr.merged{color:var(--green);font-weight:600}
-.obs-mr.integrated{color:var(--amber);font-weight:600}
+.obs-mr.merged{color:var(--green-fg);font-weight:600}
+.obs-mr.integrated{color:var(--amber-fg);font-weight:600}
 
 /* 明细面板 */
 #observabilityView .obs-dx{display:grid;grid-template-columns:184px minmax(0,1fr);min-height:360px;border:1px solid var(--line);border-radius:var(--obs-r);background:var(--panel);overflow:hidden}

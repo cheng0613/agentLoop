@@ -41,8 +41,8 @@
 .sop-card-foot{border-top:1px solid var(--line);margin-top:16px;padding-top:14px;color:var(--muted-2);flex-wrap:wrap}
 .sop-card-foot time{color:var(--muted-2)}
 .sop-status{border-radius:10px;padding:3px 7px;font-weight:700;font-size:9px}
-.sop-status.published{color:var(--green);background:rgba(52,211,153,.15)}
-.sop-status.draft{color:var(--amber);background:rgba(251,191,36,.16)}
+.sop-status.published{color:var(--green-fg);background:rgba(52,211,153,.15)}
+.sop-status.draft{color:var(--amber-fg);background:rgba(251,191,36,.16)}
 .sop-status.archived{color:var(--muted-2);background:var(--panel-2)}
 
 /* SOP 创建向导起点选择 */
@@ -93,13 +93,13 @@
 .req-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--bg-soft)}
 .req-row.missing{border-color:color-mix(in srgb,var(--amber) 34%,var(--line))}
 .req-row .req-mark{width:22px;height:22px;flex:0 0 22px;display:grid;place-items:center;border-radius:50%;font-size:11px;font-weight:800;background:var(--panel-2);color:var(--muted)}
-.req-row.ok .req-mark{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+.req-row.ok .req-mark{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green-fg)}
 .req-row.missing .req-mark{background:color-mix(in srgb,var(--amber) 18%,transparent);color:color-mix(in srgb,var(--amber) 80%,var(--text))}
 .req-row>div{flex:1;min-width:0}
 .req-row b{display:block;font-size:12px;color:var(--text)}
 .req-row p{margin:2px 0 0;font-size:10.5px;color:var(--muted-2);line-height:1.5}
 .req-row .req-state{font-size:10px;font-weight:750;color:var(--muted-2);white-space:nowrap}
-.req-row.ok .req-state{color:var(--green)}
+.req-row.ok .req-state{color:var(--green-fg)}
 .req-row.missing .req-state{color:color-mix(in srgb,var(--amber) 78%,var(--text))}
 
 .sop-playbooks{width:100%;max-width:840px;display:flex;flex-direction:column;gap:12px;padding:0 0 24px}

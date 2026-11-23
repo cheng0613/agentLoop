@@ -775,8 +775,8 @@ body.view-has-heading .topbar .command-trigger{margin-left:0 !important}
 .sync-panel-head{min-height:64px}.sync-panel-title>b{font-size:14px}.sync-panel-summary{padding-block:13px}
 .sync-error-detail{max-width:min(620px,60vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .issue-toolbar{padding:9px 10px;border-radius:14px;width:100%}
-.status.paused{background:color-mix(in srgb,var(--amber) 16%,transparent);color:var(--amber)}
-html[data-theme="dark"] .status.paused{color:var(--amber)}
+.status.paused{background:color-mix(in srgb,var(--amber) 16%,transparent);color:var(--amber-fg)}
+html[data-theme="dark"] .status.paused{color:var(--amber-fg)}
 
 #agentsView .page-heading,
 #agentsView .catalog-toolbar,
@@ -874,13 +874,13 @@ html[data-theme="dark"] .status.paused{color:var(--amber)}
 .issue-table-body>.issue-table-row.needs-attention:hover .issue-title-cell>b{color:var(--blue)!important}
 .issue-table-body>.issue-table-row.needs-confirm .issue-title-cell>b{color:var(--text)!important}
 .issue-table-body>.issue-table-row.needs-confirm:hover .issue-title-cell>b{color:var(--blue)!important}
-.issue-title-cell .issue-title-tag.tone-danger{color:var(--red)}
-.issue-title-cell .issue-title-tag.tone-warn{color:var(--amber)}
+.issue-title-cell .issue-title-tag.tone-danger{color:var(--red-fg)}
+.issue-title-cell .issue-title-tag.tone-warn{color:var(--amber-fg)}
 .issue-title-cell .issue-title-tag.tone-accent{color:#6d28d9}
 .issue-title-cell .issue-title-tag.tone-cyan{color:#0e7490}
 .issue-title-cell .issue-title-tag.tone-neutral{color:var(--muted)}
-html[data-theme="dark"] .issue-title-cell .issue-title-tag.tone-danger{color:var(--red)}
-html[data-theme="dark"] .issue-title-cell .issue-title-tag.tone-warn{color:var(--amber)}
+html[data-theme="dark"] .issue-title-cell .issue-title-tag.tone-danger{color:var(--red-fg)}
+html[data-theme="dark"] .issue-title-cell .issue-title-tag.tone-warn{color:var(--amber-fg)}
 html[data-theme="dark"] .issue-title-cell .issue-title-tag.tone-accent{color:#c4b5fd}
 html[data-theme="dark"] .issue-title-cell .issue-title-tag.tone-cyan{color:#67e8f9}
 .kanban-card h4{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px;-webkit-line-clamp:unset;line-clamp:unset}
@@ -1203,7 +1203,7 @@ html[data-theme="dark"] .agent-studio-v2{box-shadow:0 18px 56px rgba(0,0,0,.42),
   background:var(--panel-2);color:var(--muted-2);font-size:11px;font-weight:800;font-style:normal;
 }
 .as-steps button.active .as-step-num{background:var(--blue);color:#fff;box-shadow:none}
-.as-steps button.done .as-step-num{background:color-mix(in srgb,var(--green) 18%,var(--panel-2));color:var(--green)}
+.as-steps button.done .as-step-num{background:color-mix(in srgb,var(--green) 18%,var(--panel-2));color:var(--green-fg)}
 .as-step-text{display:flex;flex-direction:column;gap:2px;min-width:0}
 .as-step-text b{font-size:12px;font-weight:700}
 .as-step-text small{font-size:10px;color:var(--muted-2);font-weight:500}
@@ -1306,7 +1306,7 @@ html[data-theme="dark"] .agent-studio-v2{box-shadow:0 18px 56px rgba(0,0,0,.42),
   height:28px;margin-top:6px;border:0;background:transparent;color:var(--muted-2);
   cursor:pointer;font-size:18px;border-radius:8px;
 }
-.as-list-row button:hover{color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent)}
+.as-list-row button:hover{color:var(--red-fg);background:color-mix(in srgb,var(--red) 10%,transparent)}
 .as-add{
   margin-top:8px;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;
   border:1px dashed var(--line-strong);border-radius:10px;background:transparent;
@@ -1340,7 +1340,7 @@ html[data-theme="dark"] .agent-studio-v2{box-shadow:0 18px 56px rgba(0,0,0,.42),
 .as-artifact-head button,.as-gate-head button,.as-hook-head button{
   width:34px;height:34px;border:0;border-radius:10px;background:transparent;color:var(--muted-2);cursor:pointer;font-size:18px;
 }
-.as-artifact-head button:hover,.as-gate-head button:hover,.as-hook-head button:hover{color:var(--red);background:color-mix(in srgb,var(--red) 8%,transparent)}
+.as-artifact-head button:hover,.as-gate-head button:hover,.as-hook-head button:hover{color:var(--red-fg);background:color-mix(in srgb,var(--red) 8%,transparent)}
 .as-artifact label,.as-gate label{display:block;margin:0 0 6px;font-size:11px;font-weight:700;color:var(--muted)}
 .as-artifact input[type=text],.as-gate textarea{
   width:100%;border:1px solid var(--line-strong);border-radius:10px;padding:8px 10px;
@@ -2678,13 +2678,13 @@ html[data-theme="dark"] .agent-studio-v2{box-shadow:0 18px 56px rgba(0,0,0,.42),
 .clarify-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.clarify-error{margin-top:10px;padding:10px 12px;border-radius:9px;background:color-mix(in srgb,var(--red) 11%,transparent);color:#dc5151;font-size:12px}
 .clarify-next-step-callout{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:8px 0 12px;padding:9px 12px;border-radius:9px;background:color-mix(in srgb,var(--amber,var(--amber)) 10%,var(--panel,#fff));border:1px solid color-mix(in srgb,var(--amber,var(--amber)) 28%,var(--line,rgba(51,65,85,.12)));font-size:12px}
 .clarify-next-step-callout .clarify-step-badge{display:inline-flex;align-items:center;gap:6px;font-weight:650;color:var(--text)}
-.clarify-next-step-callout .clarify-step-badge.active{color:var(--amber)}
+.clarify-next-step-callout .clarify-step-badge.active{color:var(--amber-fg)}
 html[data-theme="dark"] .clarify-next-step-callout .clarify-step-badge.active{color:var(--amber,var(--amber))}
 .clarify-next-step-callout .step-num{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;background:var(--amber);color:#fff;font-size:10px;font-weight:750}
 html[data-theme="dark"] .clarify-next-step-callout .step-num{background:var(--amber,var(--amber));color:#1e293b}
 .clarify-next-step-callout .clarify-step-arrow{color:var(--muted-2);font-size:11px}
 .clarify-action-hint{width:100%;margin-top:6px;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:5px}
-.clarify-action-hint.ok{color:var(--green)}
+.clarify-action-hint.ok{color:var(--green-fg)}
 
 /* Runner onboarding and machine inventory. */
 #runnersView{
@@ -2722,15 +2722,15 @@ html[data-theme="dark"] #runnersView{--rv-term:#0a0a0b;--rv-codex:#3f3f46}
 #runnersView #bindToken{color:var(--rv-accent)}
 #runnersView .runner-command-box .button{flex:none;justify-content:center;min-width:84px;height:28px;padding:0 10px;border:1px solid #fff;border-radius:7px;background:#fff;color:#252529;font-size:12px;font-weight:500;box-shadow:none;transition:background-color .16s,border-color .16s,color .16s}
 #runnersView .runner-command-box .button:hover{background:#e4e4e7;border-color:#e4e4e7}
-#runnersView .runner-command-box .button.copied{background:#dcfce7;border-color:#dcfce7;color:var(--green)}
+#runnersView .runner-command-box .button.copied{background:#dcfce7;border-color:#dcfce7;color:var(--green-fg)}
 #runnersView .runner-command-box .button.dark{border-color:#fff;background:#fff;color:#252529}
 #runnersView .runner-command-box .button.dark:hover:not(:disabled){border-color:#e4e4e7;background:#e4e4e7;color:#252529}
-#runnersView .runner-command-box .button.dark.copied,#runnersView .runner-command-box .button.dark.copied:hover:not(:disabled){border-color:#dcfce7;background:#dcfce7;color:var(--green)}
+#runnersView .runner-command-box .button.dark.copied,#runnersView .runner-command-box .button.dark.copied:hover:not(:disabled){border-color:#dcfce7;background:#dcfce7;color:var(--green-fg)}
 #runnersView .runner-command-box.compact{margin-top:8px}
 #runnersView .runner-command-box.compact pre{color:#a1a1aa;font-size:12px}
 #runnersView .runner-command-box.compact .button{min-width:64px;border-color:#3f3f46;background:transparent;color:#e4e4e7}
 #runnersView .runner-command-box.compact .button:hover{background:#27272a}
-#runnersView .runner-command-box.compact .button.copied{border-color:var(--green);background:transparent;color:#86efac}
+#runnersView .runner-command-box.compact .button.copied{border-color:var(--green-fg);background:transparent;color:#86efac}
 #runnersView .runner-command-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin-top:10px}
 #runnersView .runner-command-note{display:flex;align-items:center;gap:4px;margin:0;color:var(--rv-muted);font-size:12px}
 #runnersView .runner-command-note span{color:var(--rv-ok);font-weight:700}

@@ -37,10 +37,18 @@
   --blue-soft: rgba(38, 38, 38, .08);
   --blue-dim: #404040;
   --purple: #737373;
+  /* 强调用途：边框、背景、图标（保持饱和，深色主题下仍可辨） */
   --green: #2aae5b;
   --amber: #ea6b17;
   --red: #f87171;
   --cyan: #60a5fa;
+  /* 文字用途：深色底上需要更亮才可读。对标 Cindy 的 warning-fg，
+     它与 warning-accent 并存且恒定更亮。凡是 color: 用到状态色的地方
+     应改用 *-fg。 */
+  --green-fg: #3ddc97;
+  --amber-fg: #f3a115;
+  --red-fg: #f87171;
+  --cyan-fg: #60a5fa;
 
   /* 焦点环：键盘导航可见性依赖它，是唯一建议永久保留蓝色的地方。 */
   --focus-ring: rgba(65, 124, 221, .65);
@@ -129,6 +137,11 @@
      亮色下蓝色对比度需要更高，软色与红色单独调深。 */
   --blue-soft: rgba(38, 38, 38, .07);
   --red: #dc2626;
+  /* 亮色底上文字色需要更深 */
+  --green-fg: #15803d;
+  --amber-fg: #b45309;
+  --red-fg: #dc2626;
+  --cyan-fg: #1d4ed8;
   /* info：亮色下用 Cindy 的深蓝，保证白底可读 */
   --cyan: #1d4ed8;
   --focus-ring: rgba(65, 124, 221, .55);

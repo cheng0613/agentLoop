@@ -62,11 +62,11 @@
 /* GitHub 风格 Alert / Callout 块 */
 .md-alert{margin:0 0 16px;padding:12px 16px;border-left:4px solid;border-radius:0 8px 8px 0;font-size:12.5px;background:var(--bg-soft)}
 .md-alert-title{display:flex;align-items:center;gap:6px;font-weight:700;margin-bottom:6px;text-transform:uppercase;font-size:11px;letter-spacing:.04em}
-.md-alert-note{border-color:var(--cyan);background:color-mix(in srgb,var(--cyan) 8%,transparent)}.md-alert-note .md-alert-title{color:var(--cyan)}
-.md-alert-tip{border-color:var(--green);background:color-mix(in srgb,var(--green) 8%,transparent)}.md-alert-tip .md-alert-title{color:var(--green)}
+.md-alert-note{border-color:var(--cyan-fg);background:color-mix(in srgb,var(--cyan) 8%,transparent)}.md-alert-note .md-alert-title{color:var(--cyan-fg)}
+.md-alert-tip{border-color:var(--green-fg);background:color-mix(in srgb,var(--green) 8%,transparent)}.md-alert-tip .md-alert-title{color:var(--green-fg)}
 .md-alert-important{border-color:var(--purple);background:color-mix(in srgb,var(--purple) 8%,transparent)}.md-alert-important .md-alert-title{color:var(--purple)}
-.md-alert-warning{border-color:var(--amber);background:color-mix(in srgb,var(--amber) 8%,transparent)}.md-alert-warning .md-alert-title{color:var(--amber)}
-.md-alert-caution{border-color:var(--red);background:color-mix(in srgb,var(--red) 8%,transparent)}.md-alert-caution .md-alert-title{color:var(--red)}
+.md-alert-warning{border-color:var(--amber-fg);background:color-mix(in srgb,var(--amber) 8%,transparent)}.md-alert-warning .md-alert-title{color:var(--amber-fg)}
+.md-alert-caution{border-color:var(--red-fg);background:color-mix(in srgb,var(--red) 8%,transparent)}.md-alert-caution .md-alert-title{color:var(--red-fg)}
 
 /* 表格样式 */
 .markdown-body table{width:100%;border-collapse:collapse;margin:16px 0;font-size:12px;display:table;overflow-x:auto}

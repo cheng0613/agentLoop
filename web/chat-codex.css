@@ -112,7 +112,7 @@
 .collab-overview-pill{padding:2px 8px;border-radius:999px;background:var(--cc-soft-2,var(--hover));color:var(--muted);font-size:11px;white-space:nowrap}
 .collab-overview-pill.status-in_progress,.collab-overview-pill.status-in_review{background:var(--blue-soft);color:var(--blue)}
 .collab-overview-pill.status-done{background:color-mix(in srgb,var(--green) 14%,transparent);color:#0f9b6c}
-.collab-overview-pill.status-blocked{background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--red)}
+.collab-overview-pill.status-blocked{background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--red-fg)}
 .collab-overview-pill[hidden]{display:none}
 .collab-sop{margin:0 4px 2px}
 .collab-sop-head{display:grid;grid-template-columns:14px minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;padding:8px 8px;border:0;border-radius:10px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
