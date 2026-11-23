@@ -1962,9 +1962,11 @@ function switchView(name){
   setSettingsSidebarExpanded(!narrowSettings?isPureManagement:staying?settingsSidebarExpanded():!!prevView&&!isSettingsManagementView(previous));
   $('#managementEntry')?.classList.toggle('active', isPureManagement);
   $('#railSettingsEntry')?.classList.toggle('active', isPureManagement);
-  // 这些视图占满整宽、不渲染侧栏。sops 与 flow 都是 rail 一级入口，
-  // 页面自己管理内部布局（流程设计有自己的角色面板）。
-  const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow'];
+  // 这些视图占满整宽、不渲染侧栏。凡是 rail 一级入口都应当在这里，
+  // 页面自己管理内部布局（流程设计有自己的角色面板，角色页是单行列表）。
+  // 移出设置区时两处都要改：settingsManagementViews 与 noSidebarViews，
+  // 只改前者会留下一个空的侧栏容器。
+  const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow', 'agents', 'aiSchedules'];
   document.body.classList.toggle('no-sidebar', noSidebarViews.includes(name));
   document.body.classList.toggle('chat-next-active', name==='collaboration');
   if(name==='collaboration'||isPureManagement)mountNativeChat();

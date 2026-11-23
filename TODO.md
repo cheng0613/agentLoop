@@ -98,3 +98,30 @@
 风险提示：社区包靠复用本机登录的 Trae 凭证工作，团队内部使用可能违反
 Trae 服务条款，落地前建议先确认合规。
 
+## 导航视图的两个必改项（踩过的坑）
+
+把一个视图从「设置」提升为 rail 一级入口时，**必须同时改两处**，只改一处会留下视觉问题：
+
+```js
+// web/app.js
+const settingsManagementViews = [...];  // 决定是否按「设置视图」渲染
+const noSidebarViews        = [...];    // 决定是否隐藏侧栏容器
+```
+
+| 只改前者 | 后果 |
+| --- | --- |
+| 不在 settingsManagementViews，也不在 noSidebarViews | 侧栏容器照常渲染但配置导航不显示 → **左侧一块空白** |
+| 仍在 settingsManagementViews | 完整设置菜单出现，把页面挤到右侧 |
+
+已处理（2026-11-23）：
+- `sops` 流程列表：补进 noSidebarViews（原左侧空白的直接原因）
+- `flow` 流程设计：移出 settingsManagementViews，并补进 noSidebarViews
+- `agents` 角色：补进 noSidebarViews
+- `aiSchedules` 定时任务：补进 noSidebarViews
+
+新增导航时的检查清单：
+1. 从 settingsManagementViews 移除
+2. 加入 noSidebarViews
+3. 确认视图容器在 index.html 里是 `<section class="view ...">` 而非嵌套在设置布局内
+4. 验证：点进去左侧不空、不出现设置菜单、内容占满整宽
+
