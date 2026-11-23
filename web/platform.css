@@ -61,7 +61,7 @@
 .platform-sidebar .nav .nav-label{flex:1;min-width:0;width:auto;letter-spacing:0;white-space:nowrap}
 .platform-sidebar .nav:hover{background:var(--hover);color:var(--text)}
 .platform-sidebar .nav:hover .nav-icon{color:var(--blue)}
-.platform-sidebar .nav.active{background:rgba(91;color:#fff;font-weight:650}
+.platform-sidebar .nav.active{background:linear-gradient(90deg,rgba(91,140,255,.2),rgba(139,92,246,.12));color:#fff;font-weight:650}
 .platform-sidebar .nav.active::before{content:"";position:absolute;left:-10px;top:7px;bottom:7px;width:3px;border-radius:0 3px 3px 0;background:var(--accent-gradient)}
 .platform-sidebar .nav.active .nav-icon{background:rgba(91,140,255,.22);color:var(--blue)}
 .platform-sidebar .nav-group-toggle{margin-top:1px}
@@ -214,7 +214,7 @@ html.theme-fading body,html.theme-fading body *:not([data-sliding-indicator]){tr
 
 /* ================= 需求与 Issue ================= */
 .issue-heading,.project-context-bar,.sync-panel,.issue-toolbar,.issue-board{max-width:1560px}
-.project-context-bar{min-height:64px;display:flex;align-items:center;gap:20px;padding:12px 16px;margin:0 auto 10px;border:1px solid var(--line);border-radius:13px;background:var(--panel) 0%;box-shadow:var(--shadow-sm)}
+.project-context-bar{min-height:64px;display:flex;align-items:center;gap:20px;padding:12px 16px;margin:0 auto 10px;border:1px solid var(--line);border-radius:13px;background:linear-gradient(135deg,var(--panel) 0%,var(--bg-soft) 100%);box-shadow:var(--shadow-sm)}
 .project-context-main{display:flex;align-items:center;gap:11px;min-width:0}
 .project-context-mark{flex:0 0 auto;width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:var(--accent-gradient);color:#fff;font-size:11px;font-weight:850;letter-spacing:.04em}
 .project-context-main small,.project-context-main b,.project-context-main p{display:block}
@@ -514,7 +514,7 @@ html[data-theme="dark"] .issue-title-tag.tone-cyan{color:#67e8f9}
   animation:drawerIn .22s ease;pointer-events:auto;
 }
 @keyframes drawerIn{from{transform:translateX(30px);opacity:.5}to{transform:translateX(0);opacity:1}}
-.drawer-head{padding:16px 22px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+.drawer-head{padding:16px 22px 12px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel),var(--bg-soft))}
 .drawer-head h2{margin:2px 0 4px;font-size:17px;line-height:1.35}
 .drawer-head .muted{font-size:11.5px;margin:0}
 .drawer-head .modal-close{position:absolute;right:18px;top:16px}
@@ -594,7 +594,7 @@ a.conv-branch::after{content:" ↗";opacity:.7}
 .approval-list{display:flex;flex-direction:column;gap:14px;margin:0}
 .approval-empty{width:100%;padding:56px 24px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
 .approval-empty .empty-box{padding:0}
-.ap-card{display:flex;gap:18px;padding:15px 17px;border:1px solid var(--line);border-radius:12px;background:var(--panel) 0%;box-shadow:var(--shadow-sm)}
+.ap-card{display:flex;gap:18px;padding:15px 17px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel) 0%,var(--bg-soft) 100%);box-shadow:var(--shadow-sm)}
 .ap-card.done{opacity:.72}
 .ap-card.attention{border-color:rgba(251,191,36,.4)}
 .ap-main{flex:1;min-width:0}
@@ -1624,7 +1624,7 @@ textarea.pa-input{height:auto;min-height:76px;padding:9px 11px;resize:vertical;l
 .mcp-market-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-bottom:28px}
 .mcp-market-card{display:flex;flex-direction:column;min-height:238px;padding:20px;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px rgba(15,23,42,.04);transition:.18s ease}
 .mcp-market-card:hover{transform:translateY(-2px);border-color:#b7c8ff;box-shadow:0 12px 30px rgba(69,95,180,.10)}
-.mcp-market-card.is-installed{border-color:#cad8ff;background:rgba(83}
+.mcp-market-card.is-installed{border-color:#cad8ff;background:linear-gradient(180deg,rgba(83,109,254,.035),var(--panel) 45%)}
 .mcp-card-head{display:flex;align-items:center;gap:12px}
 .mcp-card-head>div{min-width:0}.mcp-card-head h3{margin:0 0 3px;font-size:17px}.mcp-card-head small{color:var(--muted)}
 .mcp-card-logo{display:grid;place-items:center;flex:0 0 46px;width:46px;height:46px;border-radius:12px;background:#f1f5ff;color:var(--blue);font-weight:850;overflow:hidden}
@@ -1762,7 +1762,7 @@ textarea.pa-input{height:auto;min-height:76px;padding:9px 11px;resize:vertical;l
 
 /* ================= Agent / SOP 向导 ================= */
 .definition-wizard-card{width:min(900px,94vw);max-height:90vh;overflow:auto;padding:0;border-radius:17px}
-.wizard-head{min-height:96px;padding:20px 26px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:var(--panel)}
+.wizard-head{min-height:96px;padding:20px 26px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:linear-gradient(135deg,var(--panel),var(--panel-2))}
 .wizard-head h2{margin:3px 0 4px;font-size:20px}
 .wizard-head p{margin:0;color:var(--muted-2);font-size:9.5px}
 .wizard-steps{height:62px;padding:0 26px;display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line);background:var(--panel)}
@@ -1842,7 +1842,7 @@ textarea.pa-input{height:auto;min-height:76px;padding:9px 11px;resize:vertical;l
 .catalog-search span{color:var(--muted-2);line-height:1}
 .catalog-search input{min-width:0;flex:1;height:100%;border:0!important;outline:0;background:transparent!important;color:var(--text);font-size:12px;box-shadow:none!important;padding:0!important;border-radius:0!important}
 .definition-card-grid{max-width:none;width:100%;margin:0;display:grid;grid-template-columns:repeat(3,minmax(250px,1fr));gap:14px}
-.definition-card{min-height:224px;display:flex;flex-direction:column;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel) 0%;box-shadow:var(--shadow-sm);cursor:pointer;transition:all .16s ease;color:var(--text)}
+.definition-card{min-height:224px;display:flex;flex-direction:column;padding:16px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,var(--panel) 0%,var(--bg-soft) 100%);box-shadow:var(--shadow-sm);cursor:pointer;transition:all .16s ease;color:var(--text)}
 .definition-card:hover{transform:translateY(-2px);border-color:rgba(91,140,255,.45);box-shadow:var(--shadow)}
 .definition-card header{display:flex;align-items:center;gap:11px}
 .definition-avatar{width:42px;height:42px;display:grid;place-items:center;border-radius:11px;font-size:11px;font-weight:850}
