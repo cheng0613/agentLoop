@@ -1591,7 +1591,10 @@ function settingsSidebarExpanded(){
 }
 let settingsSidebarEntryFrame=0;
 let settingsSidebarWasManaged=false;
-const settingsManagementViews=['settings','assistant','projects','bots','flow','runs','mcp','rules','skills','runners','dockerfiles','environments','sandboxes','guide','platform'];
+// 「流程」与「流程设计」已提升为一级导航（rail），不再属于设置区。
+// 留在列表里会让这两页渲染设置侧栏：流程页出现一个空侧栏，流程设计页
+// 出现完整设置菜单，且正文被侧栏挤到右侧。
+const settingsManagementViews=['settings','assistant','projects','bots','runs','mcp','rules','skills','runners','dockerfiles','environments','sandboxes','guide','platform'];
 const settingsRouteMotion=matchMedia('(prefers-reduced-motion: reduce)');
 let settingsRouteTransition=null;
 let settingsRouteApplying=false;
@@ -1959,7 +1962,9 @@ function switchView(name){
   setSettingsSidebarExpanded(!narrowSettings?isPureManagement:staying?settingsSidebarExpanded():!!prevView&&!isSettingsManagementView(previous));
   $('#managementEntry')?.classList.toggle('active', isPureManagement);
   $('#railSettingsEntry')?.classList.toggle('active', isPureManagement);
-  const noSidebarViews = ['issues', 'approvals', 'observability'];
+  // 这些视图占满整宽、不渲染侧栏。sops 与 flow 都是 rail 一级入口，
+  // 页面自己管理内部布局（流程设计有自己的角色面板）。
+  const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow'];
   document.body.classList.toggle('no-sidebar', noSidebarViews.includes(name));
   document.body.classList.toggle('chat-next-active', name==='collaboration');
   if(name==='collaboration'||isPureManagement)mountNativeChat();
