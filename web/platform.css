@@ -2108,7 +2108,12 @@ html[data-theme="dark"] .edge-delete-btn:hover path{stroke:#ffffff !important}
 @media(max-width:1280px){.flow-workbench{grid-template-columns:220px minmax(360px,1fr) 420px}.flow-command-actions .button:nth-child(2){display:none}}
 
 /* ================= 亮色主题 ================= */
-html[data-theme="light"]{--bg:#f5f7fb;--bg-soft:#eef1f7;--panel:#fff;--panel-2:#f3f5fa;--line:rgba(51,65,85,.12);--line-strong:rgba(51,65,85,.22);--text:#0f172a;--muted:#475569;--muted-2:#64748b;--blue-soft:rgba(63,109,246,.11);--green:#159f75;--amber:var(--amber);--red:var(--red);--shadow:0 12px 32px rgba(30,41,59,.12);--shadow-sm:0 3px 12px rgba(30,41,59,.08);--hover:rgba(63,109,246,.07)}
+/* 原先这里有一条 html[data-theme="light"]{...} 规则，用旧的冷灰配色
+   重新定义了 --bg/--panel/--text/--green 等一整套变量。它比 tokens.css 的
+   [data-theme="light"] 优先级高（0,1,1 vs 0,1,0），所以亮色主题下所有颜色
+   实际走的是这组旧值，tokens.css 的改动不生效。其中 --amber:var(--amber) 与
+   --red:var(--red) 还是自引用，解析为空，导致依赖它们的元素（如待我确认角标）
+   失去颜色。令牌已统一到 tokens.css，此处删除。 */
 html[data-theme="light"] body{color-scheme:light}html[data-theme="light"] .platform-sidebar{background:var(--panel)}html[data-theme="light"] .brand-text b,html[data-theme="light"] .workspace-switch b{color:var(--text)}html[data-theme="light"] .workspace-switch{border-color:var(--line);background:var(--bg-soft)}html[data-theme="light"] .platform-sidebar .nav.active{color:var(--text);background:color-mix(in srgb,var(--text) 8%,transparent)}html[data-theme="light"] .topbar{background:rgba(255,255,255,.86)}html[data-theme="light"] .requirement-modal-head,html[data-theme="light"] .prop-header.sticky{background:rgba(255,255,255,.96)}html[data-theme="light"] .button.dark{background:#24324a}html[data-theme="light"] .node-output pre,html[data-theme="light"] .node-error pre{background:var(--panel);color:var(--text)}html[data-theme="light"] .drawer-backdrop{background:rgba(31,41,55,.28)}
 
 /* ================= 创建向导 2.0 ================= */
