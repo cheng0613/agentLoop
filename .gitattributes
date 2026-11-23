@@ -17,3 +17,23 @@ Dockerfile text eol=lf
 *.html text eol=lf
 *.py text eol=lf
 *.sql text eol=lf
+
+# 其余文本格式同样固定 LF。漏掉的扩展名会跟着 core.autocrlf 走，
+# 在 Windows 上检出成 CRLF，随后被编辑器写回索引，引发两类难查的失败：
+#   - web/syntax_test.go 这类精确字符串断言用 "\n" 匹配源码，命中 CRLF 即失败；
+#   - Makefile 与 shell 脚本在 Linux/CI 上报 "invalid option name"。
+# scripts/check-line-endings.py 与 pre-commit 钩子负责守住这条规则。
+*.ts text eol=lf
+*.tsx text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.toml text eol=lf
+*.txt text eol=lf
+*.env text eol=lf
+*.example text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.dockerignore text eol=lf
+.gitleaks.toml text eol=lf
+Makefile text eol=lf
+LICENSE text eol=lf
