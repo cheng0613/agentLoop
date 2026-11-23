@@ -66,22 +66,13 @@ test('token management renders client specs, revealed prompts, and credential hi
   `);
   await settle(4);
   const panel = app.document.querySelector('#credentialPanel');
-  panel.querySelector('[data-credential-row="codeBuddyApiKey"] .credential-row-main').click();
-  const secret = panel.querySelector('[data-credential-row="codeBuddyApiKey"] input[name="secret"]');
-  secret.value = 'ck_replacement';
-  secret.dispatchEvent(new app.window.Event('input', { bubbles: true }));
-  panel.querySelector('[data-credential-row="codeBuddyApiKey"] [data-credential-eye]').click();
-  assert.equal(secret.type, 'text');
-  const save = panel.querySelector('[data-credential-row="codeBuddyApiKey"] [data-credential-act="save"]');
-  assert.equal(save.disabled, false);
-  save.click();
-  await settle(6);
-  assert.equal(app.router.calls.find(c => c.path === '/api/users/1/credentials').body.codeBuddyApiKey, 'ck_replacement');
-  const configuredRow = app.document.querySelector('[data-credential-row="codeBuddyApiKey"]');
+  // 模型 CLI 行（35646ba）不再内联编辑：已配置的 CodeBuddy 显示「已启用」，
+  // Key 与网络环境改由平台管理员在「平台管理 → 共享模型凭据」维护。
+  const configuredRow = panel.querySelector('[data-credential-row="codeBuddyApiKey"]');
   configuredRow.querySelector('.credential-row-main').click();
-  configuredRow.querySelector('[data-credential-act="delete"]').click();
-  assert.equal(configuredRow.querySelector('[data-credential-pane="confirm"]').classList.contains('is-off'), false);
-  configuredRow.querySelector('[data-credential-act="undelete"]').click();
+  await settle(2);
+  assert.match(configuredRow.textContent, /已启用/);
+  assert.equal(configuredRow.querySelector('input[name="secret"]'), null, 'model CLI rows render no inline editor');
   const gitRow = app.document.querySelector('[data-credential-row="gitToken"]');
   gitRow.querySelector('.credential-row-main').click();
   const gitSecret = gitRow.querySelector('input[name="secret"]');

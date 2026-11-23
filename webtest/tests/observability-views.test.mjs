@@ -14,7 +14,7 @@ test('observability tabs only expose usage and delivery views', async (t) => {
   assert.equal(app.evaluate(`state.obsTab`), 'overview');
   assert.equal(app.evaluate(`obsNormalizeTab('delivery')`), 'delivery');
   assert.equal(app.evaluate(`obsNormalizeTab('anything-else')`), 'overview');
-  assert.deepEqual([...app.document.querySelectorAll('[data-obs-tab]')].map(b => b.dataset.obsTab), ['overview', 'delivery']);
+  assert.deepEqual([...app.document.querySelectorAll('[data-obs-tab]')].map(b => b.dataset.obsTab), ['overview', 'delivery', 'runs']);
   assert.equal(app.evaluate(`obsDetailScope()`), 'overview');
   assert.equal(app.evaluate(`typeof refreshSkillhubEfficiency`), 'undefined');
 });
