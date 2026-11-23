@@ -22,6 +22,8 @@ jobs:
       - run: python3 scripts/test-install.py -v
       - name: Check design tokens for self-references and cycles
         run: make css-check
+      - name: Check text files use LF line endings
+        run: make line-endings
       - name: Build and test the chatbot frontend embedded by the platform binary
         run: bash scripts/build-chatbot.sh
       - name: Let Chromium use its sandbox as an unprivileged user

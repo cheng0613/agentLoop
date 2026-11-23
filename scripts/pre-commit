@@ -1,0 +1,76 @@
+#!/bin/sh
+# pre-commit：在提交前挡住三类「不报错但会坏事」的改动。
+#
+# 为什么需要
+# ----------------------------------------------------------------
+# 这几类问题都不会让代码看起来出错，却会在别处炸掉，而且报错信息
+# 指向的位置与根因相距很远：
+#
+#   换行符  web/syntax_test.go 用 "\n" 精确匹配源码，命中 CRLF 报
+#           「boot must preload...」；Makefile 在 Linux 报
+#           "invalid option name"。
+#   CSS 变量 自引用或循环让 var(--x) 解析为空，界面表现为某处
+#           突然没颜色，排查要翻几百个文件。
+#
+# 安装
+# ----------------------------------------------------------------
+#   bash scripts/install-hooks.sh          # 安装到 .git/hooks
+#   git commit --no-verify                 # 紧急时临时跳过
+#
+# 只检查暂存区里的文件，不做全仓库扫描，保证提交足够快。
+
+set -e
+
+root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+cd "$root" || exit 0
+
+fail=0
+
+# ------------------------------------------------------------------
+# 1. 换行符：只查本次提交涉及的文本文件
+# ------------------------------------------------------------------
+staged=$(git diff --cached --name-only --diff-filter=ACMR -z | \
+	tr '\0' '\n' | grep -vE '\.(png|jpg|jpeg|gif|webp|ico|bmp|woff2?|ttf|eot|otf|zip|gz|tar|bz2|7z|pdf|jar|wasm|mp4|mp3|svg|bin|ndjson)$' || true)
+
+if [ -n "$staged" ]; then
+	bad_crlf=$(printf '%s\n' "$staged" | while IFS= read -r f; do
+		[ -f "$f" ] || continue
+		# 不能用 grep $'\r'。钩子跑在 #!/bin/sh 下，$'\r' 是 bash 扩展，
+		# POSIX sh 会把它当成字面量 "r"，于是 grep 去找字母 r——几乎所有
+		# 源文件都含 r，结果全部被误判成 CRLF。改用便携写法：
+		# 删掉换行后仍能匹配 \r 才是真的 CRLF。
+		if tr -d '\n' < "$f" 2>/dev/null | LC_ALL=C grep -q "$(printf '\r')" 2>/dev/null; then
+			printf '    %s\n' "$f"
+		fi
+	done)
+	if [ -n "$bad_crlf" ]; then
+		printf '✗ 以下文件含 CRLF 换行：\n%s\n' "$bad_crlf"
+		printf '  修复：python3 scripts/check-line-endings.py --fix\n\n'
+		fail=1
+	fi
+fi
+
+# ------------------------------------------------------------------
+# 2. CSS 变量：自引用 / 循环引用 / 未定义且无 fallback
+# ------------------------------------------------------------------
+# 只在本次提交动到 CSS 时跑，避免无关提交被拖慢。
+staged_css=$(printf '%s\n' "$staged" | grep -E '\.css$' || true)
+if [ -n "$staged_css" ]; then
+	if command -v python3 >/dev/null 2>&1; then
+		if ! python3 scripts/check-css-vars.py >/dev/null 2>&1; then
+			printf '✗ CSS 变量检查未通过：\n'
+			python3 scripts/check-css-vars.py 2>&1 | sed 's/^/    /' || true
+			printf '\n'
+			fail=1
+		fi
+	else
+		printf '· 跳过 CSS 变量检查（未找到 python3）\n'
+	fi
+fi
+
+if [ "$fail" -ne 0 ]; then
+	printf '提交已被 pre-commit 拦下。确认无误后可用 git commit --no-verify 跳过。\n'
+	exit 1
+fi
+
+exit 0

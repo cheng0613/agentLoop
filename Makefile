@@ -1,4 +1,4 @@
-.PHONY: run test test-web test-mysql clean-mysql build build-chatbot build-gate-mcp css-check check coverage coverage-go coverage-chatbot coverage-web coverage-e2e
+.PHONY: run test test-web test-mysql clean-mysql build build-chatbot build-gate-mcp css-check line-endings hooks check coverage coverage-go coverage-chatbot coverage-web coverage-e2e
 
 GOCACHE ?= /tmp/agentflow-gocache
 # Use the local toolchain; go.mod requires go >= 1.26.11.
@@ -35,9 +35,20 @@ test-web:
 css-check:
 	python3 scripts/check-css-vars.py
 
+# line-endings guards the CRLF trap. A file written with CRLF breaks exact
+# string assertions in web/syntax_test.go (they match "
+") and makes
+# Makefile/shell scripts fail on Linux with "invalid option name".
+line-endings:
+	python3 scripts/check-line-endings.py
+
+# hooks installs the pre-commit gate. Run once per clone.
+hooks:
+	sh scripts/install-hooks.sh
+
 # check is the fast, dependency-free gate worth running before every commit:
 # the token graph plus the front-end tests.
-check: css-check test-web
+check: css-check line-endings test-web
 
 # coverage runs the same gates as CI. Needs web/native-chat
 # (make build-chatbot). COVERAGE_P lowers Go package parallelism on small hosts.
