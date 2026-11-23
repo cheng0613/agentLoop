@@ -241,6 +241,7 @@ html[data-theme="dark"] .platform-rail [data-tooltip]::before {
    描边必须用 rail 的真实背景色（--rail-surface），不能用 --panel：
    rail 在暗色下是 #0a0a0b，而 --panel 是 #2c2c2a，用后者会在红点外圈
    描出一圈灰边，把徽标「缩」进去，看着发暗、不醒目。 */
+.platform-rail .rail-btn.nav .nav-badge,
 .platform-rail .nav-badge {
   position: absolute;
   top: 4px;
@@ -254,6 +255,7 @@ html[data-theme="dark"] .platform-rail [data-tooltip]::before {
   display: block;
   z-index: 2;
 }
+.platform-rail .rail-btn.nav .nav-badge:not([hidden]):not(:empty),
 .platform-rail .nav-badge:not([hidden]):not(:empty) {
   min-width: 15px;
   height: 15px;
