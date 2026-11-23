@@ -50,7 +50,7 @@ html[data-theme='dark'] #workbenchHost {
   --text: #ececef;
   --text-2: #a8a8b2;
   --text-3: #75757f;
-  --accent: #5b8cff;
+  --accent: var(--blue);
   --accent-ink: #8db0ff;
   --accent-soft: rgba(91, 140, 255, 0.13);
   --ok: #4ade80;

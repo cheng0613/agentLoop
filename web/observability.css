@@ -294,7 +294,7 @@ html[data-theme="light"] .worker-log-line pre,html[data-theme="dark"] .worker-lo
 .graph-stage+.graph-stage::before{content:"→";position:absolute;left:-33px;top:calc(50% + 9px);transform:translateY(-50%);width:26px;text-align:center;color:var(--muted-2);font-size:15px;font-weight:700}
 
 /* ================= 统计页（ECharts 改版）：单一强调色、无渐变阴影、说明收进悬停 ================= */
-:root{--c1:#5b8cff;--c2:#3d5fae;--c3:#2a3d66;--c4:#4b5568}
+:root{--c1:var(--blue);--c2:var(--muted);--c3:var(--muted-2);--c4:var(--line-strong)}
 [data-theme="light"]{--c1:#4f7cf0;--c2:#8fb0f7;--c3:#c8d7fb;--c4:#c4cad6}
 :is(#observabilityView,#metricsView){--obs-r:12px}
 #observabilityView .obs-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
