@@ -83,40 +83,19 @@ html[data-theme="dark"] {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 设置区旧页面：旧基础令牌（styles / product-v3 / collaboration）在这些作用域内改为引用 --hui-*，
- * 只改变颜色，不改变任何尺寸与布局。 */
-:is(#settingsView, #sharedSchedulePublishModal, #sharedScheduleVersionModal, #projectsView, #repoDrawer, .pw-root, #runnersView, #agentsView, #agentModal, #metricsView, #businessDomainsView, #guideView, #platformView, #businessDomainManagementView) {
-  --text: var(--hui-text);
-  --text-strong: var(--hui-text);
-  --muted: var(--hui-muted);
-  --muted-2: var(--hui-tertiary);
-  --line: var(--hui-border);
-  --line-strong: var(--hui-border-strong);
-  --border: var(--hui-border);
-  --border-strong: var(--hui-border-strong);
-  --panel: var(--hui-surface);
-  --panel-2: var(--hui-canvas);
-  --panel-3: var(--hui-soft);
-  --bg-soft: var(--hui-canvas);
-  --hover: var(--hui-soft);
-  --primary: var(--hui-accent);
-  --blue: var(--hui-accent);
-  --blue-dim: var(--hui-accent);
-  --blue-soft: var(--hui-accent-soft);
-  --glow-blue: 0 0 0 3px var(--hui-accent-soft);
-  --accent-gradient: var(--hui-accent);
-  --shadow-sm: var(--hui-panel-shadow);
-  --v3-surface: var(--hui-surface);
-  --v3-soft: var(--hui-canvas);
-  --v3-ink: var(--hui-text);
-  --v3-ink-2: var(--hui-secondary);
-  --v3-ink-3: var(--hui-tertiary);
-  --v3-line: var(--hui-border);
-  --v3-line-2: var(--hui-border-strong);
-  --v3-accent: var(--hui-accent);
-  --v3-accent-soft: var(--hui-accent-soft);
-  --v3-accent-ink: var(--hui-accent);
-}
+/* 原先这里有一层「适配层」：把这些设置区视图内的主令牌（--text / --panel /
+ * --blue / --v3-* 等）反向重定向到 --hui-*。它的存在是因为早期 --hui-* 是
+ * 一套独立配色。
+ *
+ * 现在 --hui-* 已改为指向主令牌（--hui-accent: var(--blue) 等），两者互相
+ * 引用会形成闭环：
+ *   --blue  -> --hui-accent -> --blue
+ *   --panel -> --hui-surface -> --panel
+ *   --text  -> --hui-text    -> --text
+ * CSS 自定义属性的循环引用无效，导致这些视图的对应令牌解析为空。
+ *
+ * 因此删除这层重定向：这些视图直接使用 tokens.css 的主令牌，单向依赖，
+ * 不再有环。 */
 /* 上面把 --blue 映射为强调色后，旧规则里以 --blue 为实心底的白字在暗色下对比不足，统一改用 --hui-on-accent */
 :is(#settingsView, #projectsView, #repoDrawer, .pw-root, #runnersView, #agentsView, #agentModal, #metricsView, #businessDomainsView, #guideView, #platformView, #businessDomainManagementView) :is(.member-avatar.owner, .pager-page.active, .access-recommended) {
   color: var(--hui-on-accent);
