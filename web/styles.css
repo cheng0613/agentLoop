@@ -1,5 +1,15 @@
-/* AgentFlow 设计系统 v2 —— 基础层
-   统一令牌 + 亮/暗双主题。platform/observability/sops/sync/artifacts 均引用本层变量。
+/* AgentLoop 基础层
+   ================================================================
+   令牌（色值/字号/间距/圆角/阴影）已迁移到 tokens.css，本文件只保留
+   基础排版与滚动条样式。
+
+   下方两段 :root / [data-theme="light"] 是迁移期的**兜底副本**：
+   取值与 tokens.css 完全一致，作用是在 tokens.css 未加载或被误删时
+   界面不会塌掉。tokens.css 在本文件之前加载，因此实际生效的是它。
+
+   待全部视图改为只引用令牌、且验证 tokens.css 稳定加载后，可删除
+   这两个兜底块（预计在 UI 重构步骤 2 完成）。
+
    - 暗色（默认）：深邃靛蓝底 + 霓虹强调
    - 亮色：雾白底 + 品牌蓝强调，对比度满足 WCAG AA */
 :root{
@@ -25,7 +35,7 @@
   --accent-gradient-soft:linear-gradient(135deg,rgba(91,140,255,.18),rgba(139,92,246,.14));
 }
 
-/* —— 亮色主题 —— */
+/* —— 亮色主题（迁移期兜底副本，见文件头说明） —— */
 [data-theme="light"]{
   --bg:#f5f7fb; --bg-soft:#eef1f7; --panel:#ffffff; --panel-2:#f3f5fa; --panel-3:#e8ecf4;
   --line:rgba(30,41,59,.10); --line-strong:rgba(30,41,59,.18);
