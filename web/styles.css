@@ -31,8 +31,8 @@
   --fs-xs:10px; --fs-sm:11px; --fs-base:12.5px; --fs-md:13.5px; --fs-lg:16px; --fs-xl:22px; --fs-2xl:28px;
   /* —— 动效 —— */
   --ease:.18s cubic-bezier(.4,0,.2,1); --ease-spring:.32s cubic-bezier(.34,1.56,.64,1);
-  --accent-gradient:linear-gradient(135deg,#5b8cff 0%,#8b5cf6 100%);
-  --accent-gradient-soft:linear-gradient(135deg,rgba(91,140,255,.18),rgba(139,92,246,.14));
+  --accent-gradient:#d4d4d4;
+  --accent-gradient-soft:rgba(248,248,246,.08);
 }
 
 /* —— 亮色主题（迁移期兜底副本，见文件头说明） —— */
@@ -44,7 +44,7 @@
   --shadow:0 8px 30px rgba(15,23,42,.10); --shadow-sm:0 2px 10px rgba(15,23,42,.06);
   --blue-soft:rgba(91,140,255,.12);
   --red:#c63c4b;
-  --accent-gradient-soft:linear-gradient(135deg,rgba(91,140,255,.10),rgba(139,92,246,.08));
+  --accent-gradient-soft:rgba(38,38,38,.05);
 }
 
 *{box-sizing:border-box}
@@ -105,7 +105,7 @@ input::placeholder,textarea::placeholder{color:var(--muted-2)}
 
 /* ---------- 通用卡片（更立体、悬停微抬升） ---------- */
 .sh-card{
-  background:linear-gradient(180deg,var(--panel) 0%,var(--bg-soft) 100%);
+  background:var(--panel);
   border:1px solid var(--line);border-radius:var(--radius);
   padding:var(--sp-4) var(--sp-5);box-shadow:var(--shadow-sm);
   transition:box-shadow var(--ease),border-color var(--ease);
@@ -138,12 +138,12 @@ input::placeholder,textarea::placeholder{color:var(--muted-2)}
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-5)}
 .stat-card{
   position:relative;overflow:hidden;padding:14px 16px 14px 20px;
-  background:linear-gradient(135deg,var(--panel) 0%,var(--bg-soft) 100%);
+  background:var(--panel);
   border:1px solid var(--line);border-radius:var(--radius);cursor:pointer;
   transition:transform var(--ease),border-color var(--ease),box-shadow var(--ease);
 }
 .stat-card::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;
-  background:linear-gradient(180deg,var(--accent,var(--blue)),color-mix(in srgb,var(--accent,var(--blue)) 45%,transparent))}
+  background:var(--accent,var(--blue))}
 .stat-card:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent,var(--blue)) 40%,var(--line));box-shadow:var(--shadow)}
 .stat-card .label{color:var(--muted-2);font-size:var(--fs-sm)}
 .stat-card .value{font-size:var(--fs-2xl);font-weight:750;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--accent,var(--text));letter-spacing:-.01em}
@@ -217,7 +217,7 @@ input::placeholder,textarea::placeholder{color:var(--muted-2)}
 .skill-upload-progress{display:flex;align-items:center;gap:10px;font-size:var(--fs-sm);color:var(--muted)}
 .skill-upload-bar{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden;position:relative}
 .skill-upload-bar i{display:block;height:100%;background:var(--blue);border-radius:3px;transition:width .15s ease}
-.skill-upload-bar.indeterminate i{width:30%!important;animation:skill-upload-stripes 1s linear infinite;background:linear-gradient(90deg,transparent,var(--blue),transparent)}
+.skill-upload-bar.indeterminate i{width:30%!important;animation:skill-upload-stripes 1s linear infinite;background:var(--blue)}
 @keyframes skill-upload-stripes{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}
 .skill-upload-pct{font-variant-numeric:tabular-nums;color:var(--text-strong);min-width:36px;text-align:right}
 .skill-upload-cancel{border:1px solid var(--line-strong);background:var(--panel);color:var(--red);cursor:pointer;font-size:var(--fs-sm);font-weight:600;padding:4px 12px;border-radius:6px;flex-shrink:0}

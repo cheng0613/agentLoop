@@ -9,7 +9,7 @@ html[data-lang="en"] .topbar-project-label { white-space:nowrap }
 .toast-container { top:72px }
 .login-page { display:grid;place-items:center;min-height:100vh;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,sans-serif }
 .login-card { width:min(420px,calc(100vw - 48px));padding:36px;border:1px solid var(--line);border-radius:20px;background:var(--panel);box-shadow:var(--shadow) }
-.brand-mark { display:grid;place-items:center;width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#3b8eea,#8b5cf6);color:#fff;font-weight:700;font-size:20px;letter-spacing:-.02em;user-select:none }
+.brand-mark { display:grid;place-items:center;width:56px;height:56px;border-radius:12px;background:#262626;color:#f8f8f6;font-weight:700;font-size:20px;letter-spacing:-.02em;user-select:none }
 .login-card h1 { font-size:28px;letter-spacing:-1px;margin:14px 0 8px }
 .login-card>p,.login-help { color:var(--muted) }
 .login-card label { display:grid;gap:8px;margin:20px 0;font-size:14px }
