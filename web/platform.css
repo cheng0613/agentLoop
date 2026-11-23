@@ -473,7 +473,7 @@ html[data-theme="dark"] .issue-title-tag.tone-cyan{color:#67e8f9}
 .human-gate-brief .ap-artifact{display:flex;align-items:center;gap:7px;width:100%;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);font:inherit;font-size:12.5px;text-align:left;cursor:pointer;transition:background-color .14s ease,border-color .14s ease}
 .human-gate-brief .ap-artifact:hover{background:var(--hover);border-color:color-mix(in srgb,var(--line) 60%,var(--text) 40%)}
 .human-gate-brief .ap-artifact:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
-.human-gate-brief .ap-artifact-icon{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:4px;background:var(--subtle);color:var(--muted);font-size:9px;font-weight:700;letter-spacing:-.02em}
+.human-gate-brief .ap-artifact-icon{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:4px;background:var(--panel-2);color:var(--muted);font-size:9px;font-weight:700;letter-spacing:-.02em}
 .human-gate-brief .ap-artifact-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .human-gate-brief .ap-artifact-size{flex:none;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
 .human-gate-brief .ap-artifacts-more{font-size:11px;color:var(--muted);padding-left:2px}
@@ -2806,10 +2806,10 @@ textarea.pw-input{height:auto;min-height:64px;padding:9px 12px;line-height:1.55;
 .platform-provider-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px}
 .platform-provider-title{display:flex;align-items:center;gap:8px;min-width:200px}
 .platform-provider-title b{font-size:14px;color:var(--text)}
-.platform-provider-title code{font-size:11px;color:var(--muted);background:var(--subtle);padding:2px 6px;border-radius:4px}
+.platform-provider-title code{font-size:11px;color:var(--muted);background:var(--panel-2);padding:2px 6px;border-radius:4px}
 .platform-provider-state{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px}
 .platform-provider-state.is-on{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green-fg)}
-.platform-provider-state.is-off{background:var(--subtle);color:var(--muted)}
+.platform-provider-state.is-off{background:var(--panel-2);color:var(--muted)}
 .platform-provider-state.is-legacy{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber-fg)}
 .platform-provider-detail{flex:1;min-width:180px;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
 .platform-provider-actions{display:flex;gap:6px;flex-shrink:0}
@@ -2827,4 +2827,4 @@ textarea.pw-input{height:auto;min-height:64px;padding:9px 12px;line-height:1.55;
    团队统一网关部署下，Key 由平台管理员维护，个人只看到「能不能用」。 */
 .credential-cli-state{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
 .credential-cli-state.is-on{background:color-mix(in srgb,var(--green) 14%,transparent);color:var(--green-fg)}
-.credential-cli-state.is-off{background:var(--subtle);color:var(--muted)}
+.credential-cli-state.is-off{background:var(--panel-2);color:var(--muted)}

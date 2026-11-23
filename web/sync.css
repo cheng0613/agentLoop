@@ -284,7 +284,7 @@
 @media (prefers-reduced-motion: reduce) {
   #aiSchedulesView :is(.sched-exec-run, .sched-exec-row, .sched-exec-toggle > .harness-icon, .sched-exec-search input, .sched-exec-select select) { transition:none; }
 }
-#scheduleModal { --line:var(--hui-border);--text:var(--hui-text);--muted:var(--hui-secondary);--muted-2:var(--hui-muted);--panel:var(--hui-surface);--bg-soft:var(--hui-canvas); }
+/* 原先把 --line/--text/--muted/--panel/--bg-soft 重定向到 --hui-*。但 --hui-* 现在已指向这些主令牌，两者互相引用形成闭环（例如 --bg-soft -> --hui-canvas -> --bg -> --bg-soft），环上属性解析为空。删除后 #scheduleModal 直接继承主令牌，效果等价。 */
 #scheduleModal .schedule-head[hidden], #scheduleModal .schedule-job-list[hidden] { display:none; }
 #scheduleModal .schedule-fields>div>label:not(.schedule-check) { font-size:12.5px;font-weight:500; }
 #scheduleModal .schedule-field-hint { font-size:12px; }
