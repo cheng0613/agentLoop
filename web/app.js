@@ -844,6 +844,11 @@ function shouldAutoSSORedirect({isGuest, hostname, bypassAutoAuth, authErr, logi
 }
 
 async function boot(){
+  // 侧栏视觉对比开关：?ds=flat 用平铺式，默认卡片式。
+  // 选定后可以把这个参数和 chatbot/src/navigation.css 里的
+  // ds-flat-sidebar 规则一起去掉。
+  if(new URLSearchParams(location.search).get('ds')==='flat')document.body.classList.add('ds-flat-sidebar');
+  window.dsSidebarMode=new URLSearchParams(location.search).get('ds')==='flat'?'flat':'card';
   state.data = {runs:[],issues:[],tasks:[],workflowMetrics:[],syncLogs:[],agents:[],workflows:[],projects:[],repositories:[],users:[],rules:[],skills:[],mcpServers:[],executors:[],dockerfiles:[],environments:[],sandboxes:[]};
   bind(); renderProjectSwitcher(); updateApprovalBadge();
 
@@ -1524,12 +1529,21 @@ function mountNativeChat(){
   if(!frame)return;
   if(!frame.dataset.nativeBridge){
     frame.dataset.nativeBridge='1';
-    frame.addEventListener('load',()=>postNativeChatProject(frame));
+    frame.addEventListener('load',()=>{
+      postNativeChatProject(frame);
+      // 对比用：iframe 每次加载都推一次侧栏模式（选定方案后可删）。
+      frame.contentWindow?.postMessage({type:'agentloop-ds-sidebar',mode:window.dsSidebarMode||'card'},location.origin);
+    });
     window.addEventListener('message',event=>{
       if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
       const message=event.data||{};
+      if(message.type==='agentloop-ds-sidebar-request'){
+        frame.contentWindow?.postMessage({type:'agentloop-ds-sidebar',mode:window.dsSidebarMode||'card'},location.origin);
+      }
       if(message.type==='agentflow-chat-ready'){
         nativeChatReady=true;
+        // 通知 iframe 侧栏视觉模式（对比用，选定后可删）。
+        frame.contentWindow?.postMessage({type:'agentloop-ds-sidebar',mode:window.dsSidebarMode||'card'},location.origin);
         postPendingChatIssueMention(frame);
         postNativeChatProject(frame);
         finishBootLoader();

@@ -122,6 +122,48 @@
   background: transparent;
 }
 
+/* ------------------------------------------------------------------
+   两种侧栏视觉，用一个 body class 切换，方便对比后再定
+
+   默认（卡片式）：侧栏是一张独立小卡片，14px 上下留白、16px 圆角、
+     边框加浅阴影，底色 --navigation-rail 比正文略深。
+
+   body.ds-flat-sidebar（平铺式）：去掉圆角与边框，侧栏与正文同底色，
+     只在右缘留一条分隔线，rail / 会话列表 / 聊天区连成一片。
+
+   切换方式：在控制台执行 document.body.classList.add('ds-flat-sidebar')
+   ------------------------------------------------------------------ */
+
+body.ds-flat-sidebar .chat-shell:not(.sidebar-hidden)::before,
+body.ds-flat-sidebar .chat-shell:not(.sidebar-hidden)::after {
+  top: 0;
+  bottom: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* 底层不画底色：与外层容器共用同一背景，避免两种灰拼在一起。 */
+body.ds-flat-sidebar .chat-shell:not(.sidebar-hidden)::after {
+  background: var(--surface);
+}
+
+/* 上层只留右缘分隔线。 */
+body.ds-flat-sidebar .chat-shell:not(.sidebar-hidden)::before {
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+}
+
+body.ds-flat-sidebar .chat-shell .conversation-sidebar {
+  margin-bottom: 0;
+}
+
+/* 顶部品牌区原本贴在卡片圆角里，平铺后去掉那段内缩。 */
+body.ds-flat-sidebar .chat-shell:not(.sidebar-hidden) .brand {
+  top: 0;
+  height: var(--navigation-header-height);
+}
+
 .chat-shell .sidebar-title {
   height: 32px;
   padding: 0 8px;
