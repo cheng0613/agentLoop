@@ -4339,3 +4339,44 @@ body:not(.platform-rail-expanded) .rail-head-approvals {
   .room-list { max-height: 180px; }
 }
 
+/* 房间实时状态条：进行中时显示当前节点与 activity */
+.room-run-status {
+  margin-left: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.room-run-status[hidden] { display: none; }
+.room-run-status[data-tone="live"] {
+  border-color: color-mix(in srgb, #5b8cff 45%, var(--line));
+  color: #2f5bd0;
+}
+.room-run-status[data-tone="live"]::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pbPulse 1.4s ease-in-out infinite;
+  vertical-align: 1px;
+}
+.room-run-status[data-tone="succeeded"] {
+  border-color: color-mix(in srgb, #34d399 45%, var(--line));
+  color: #1f7a5a;
+}
+.room-run-status[data-tone="failed"] {
+  border-color: color-mix(in srgb, #c63c4b 45%, var(--line));
+  color: #a12b38;
+}
+[data-theme="dark"] .room-run-status[data-tone="live"] { color: #9cafff; }
+[data-theme="dark"] .room-run-status[data-tone="succeeded"] { color: #4ade9f; }
+[data-theme="dark"] .room-run-status[data-tone="failed"] { color: #f0899a; }
+

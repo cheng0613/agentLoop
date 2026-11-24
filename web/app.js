@@ -2105,6 +2105,7 @@ function switchView(name){
   if(name==='sops'){if(!staying&&state.data){sopCatalogMotion.reset();renderSOPCatalog()}refreshWorkflowMetrics()}
   if(name==='dashboard')refreshDashboard()
   if(name==='projectRoom')renderProjectRoom()
+  else if(typeof stopRoomStream==='function')stopRoomStream()
   if(name==='approvals')renderApprovals(false)
   if(name==='observability')refreshObs()
   if(name==='agents'){api('/api/agents',{silent:true}).then(agents=>{state.data.agents=agents;renderAgents()}).catch(e=>toast(e.message));renderAgents();applyAgentRoute()}

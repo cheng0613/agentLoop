@@ -2393,6 +2393,7 @@ function openProjectRoom(projectId){
 }
 
 function renderProjectRoom(){
+  stopRoomStream();
   const nameHost=$('#roomProjectName'),metaHost=$('#roomProjectMeta');
   const listHost=$('#roomList'),flowHost=$('#roomFlow');
   if(!listHost||!flowHost)return;
@@ -2446,6 +2447,7 @@ function renderProjectRoom(){
   const run=runs.find(r=>r.id===state.roomRunId)||null;
   if(!run){
     flowHost.innerHTML='<div class="empty-box">这个项目还没有 SOP 运行。在需求上启动 SOP 后，这里会按节点展示谁做了什么。</div>';
+    renderRoomStatus(null);
     return;
   }
   flowHost.dataset.run=run.id;
@@ -2453,14 +2455,115 @@ function renderProjectRoom(){
   void loadRoomFlow(run.id);
 }
 
-async function loadRoomFlow(runId){
+// ---- 房间实时流 ---------------------------------------------------
+// 订阅 /api/runs/{id}/stream（SSE）。事件里带整条 run：节点状态、activity、
+// output 都在，所以只用它更新气泡，不必再拉详情。
+// 断线或端点拒绝时退回轮询，终态则关流。
+const ROOM_ACTIVE=['queued','running','waiting'];
+
+function stopRoomStream(){
+  if(state.roomStream){
+    try{state.roomStream.close()}catch{}
+    state.roomStream=null;
+  }
+  if(state.roomPoll){
+    clearTimeout(state.roomPoll);
+    state.roomPoll=null;
+  }
+}
+
+// 保留滚动位置重绘：节点多时用户正看着下面，不能因为更新跳回顶部。
+function paintRoomFlow(run){
+  const host=$('#roomFlow');
+  if(!host||!run)return;
+  const top=host.scrollTop;
+  host.innerHTML=runFlowHTML(run,{heading:'节点汇报'});
+  bindRunArtifacts(host,run);
+  host.scrollTop=top;
+  renderRoomStatus(run);
+}
+
+function roomStatusText(run){
+  if(!run)return '';
+  if(ROOM_ACTIVE.includes(run.status)){
+    const focus=runFocusNode(run);
+    const activity=focus?String(run.nodes?.[focus.id]?.activity||'').trim():'';
+    if(!focus)return '排队中…';
+    return `正在执行：${focus.name}${activity?` · ${activity}`:''}`;
+  }
+  const progress=runProgress(run);
+  if(run.status==='succeeded')return `已完成 · ${progress.done}/${progress.total} 节点`;
+  if(run.status==='failed')return `运行失败 · ${progress.done}/${progress.total} 节点`;
+  if(run.status==='cancelled')return '已取消';
+  return runDisplayStatus(run);
+}
+
+function renderRoomStatus(run){
+  const host=$('#roomRunStatus');
+  if(!host)return;
+  const text=roomStatusText(run);
+  host.textContent=text||'';
+  host.dataset.tone=ROOM_ACTIVE.includes(run?.status)?'live':(run?.status||'');
+  host.hidden=!text;
+}
+
+function startRoomStream(runId){
+  stopRoomStream();
+  if(!runId)return;
+  const stream=new EventSource(`/api/runs/${encodeURIComponent(runId)}/stream?after=0&logsAfter=0`);
+  state.roomStream=stream;
+  stream.addEventListener('run',event=>{
+    if(state.roomStream!==stream)return;
+    let payload=null;
+    try{payload=JSON.parse(event.data)}catch{return}
+    const run=payload?.run;
+    if(!run||run.id!==runId)return;
+    state.roomRunDetail=run;
+    paintRoomFlow(run);
+    if(['succeeded','failed','cancelled'].includes(run.status)){
+      stopRoomStream();
+      // 终态后补一次详情：产物清单在流里是裁过的。
+      void loadRoomFlow(runId,{keepStream:true});
+      if(typeof refreshDashboard==='function')refreshDashboard();
+    }
+  });
+  stream.onerror=()=>{
+    if(state.roomStream!==stream)return;
+    try{stream.close()}catch{}
+    state.roomStream=null;
+    pollRoomRun(runId);
+  };
+}
+
+// 兜底轮询：SSE 不可用时每 3 秒取一次详情，终态停止。
+function pollRoomRun(runId){
+  if(state.roomPoll)clearTimeout(state.roomPoll);
+  const tick=async()=>{
+    state.roomPoll=null;
+    const flowHost=$('#roomFlow');
+    if(!flowHost||flowHost.dataset.run!==runId)return;
+    try{
+      const run=await api(`/api/runs/${encodeURIComponent(runId)}`,{silent:true});
+      if(flowHost.dataset.run!==runId)return;
+      state.roomRunDetail=run;
+      paintRoomFlow(run);
+      if(!ROOM_ACTIVE.includes(run.status))return;
+    }catch{}
+    state.roomPoll=setTimeout(tick,3000);
+  };
+  state.roomPoll=setTimeout(tick,1500);
+}
+
+async function loadRoomFlow(runId,{keepStream=false}={}){
   const flowHost=$('#roomFlow');
   if(!flowHost||flowHost.dataset.run!==runId)return;
   try{
     const run=await api(`/api/runs/${encodeURIComponent(runId)}`,{silent:true});
     if(flowHost.dataset.run!==runId)return;
-    flowHost.innerHTML=runFlowHTML(run,{heading:'节点汇报'});
-    bindRunArtifacts(flowHost,run);
+    state.roomRunDetail=run;
+    paintRoomFlow(run);
+    // 还在跑就订阅实时流；已结束则只展示快照。
+    if(!keepStream&&ROOM_ACTIVE.includes(run.status))startRoomStream(runId);
   }catch(error){
     flowHost.innerHTML='<div class="empty-box">节点汇报加载失败</div>';
   }
@@ -2475,11 +2578,12 @@ async function loadRoomFlow(runId){
 // 不依赖群会话，SOP 是单链也能完整展示。
 function runFlowHTML(run,{heading='节点汇报'}={}){
   const snap=run?.workflowSnapshot||{};
-  const defs=(snap.nodes||[]).filter(n=>n&&n.id);
+  // 流式推送里的 workflowSnapshot 可能被裁剪过，用 runNodeDefs 兜底到流程目录。
+  const defs=runNodeDefs(run);
   const edges=(snap.edges||[]).filter(e=>e&&e.source&&e.target);
   const agents=state.data.agents||[];
   const agentName=id=>agents.find(a=>a.id===id)?.name||'';
-  const nameOf=id=>defs.find(n=>n.id===id)?.name||id;
+  const nameOf=id=>runNodeName(run,id);
   const nextOf=id=>{
     const hit=edges.find(e=>e.source===id&&(e.when||'success')==='success')||edges.find(e=>e.source===id);
     return hit?nameOf(hit.target):'';
