@@ -3866,3 +3866,113 @@ body:not(.platform-rail-expanded) .rail-head-approvals {
 .approvals-dialog #approvalsView .approvals-heading {
   display: none;
 }
+
+/* --- 项目工作台 --------------------------------------------------- */
+/* 一级入口「项目」：按项目汇总需求进展、SOP 当前节点、产出与对话。
+   用 <details> 做展开，不需要额外状态。 */
+.project-board {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  max-width: 1560px;
+}
+.pb-group h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--muted);
+}
+.pb-group h2 span {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--subtle, #f4f4f5);
+  font-size: 11px;
+  font-weight: 500;
+}
+.pb-card {
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  overflow: hidden;
+}
+.pb-card > summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+.pb-card > summary::-webkit-details-marker { display: none; }
+.pb-card[open] > summary { border-bottom: 1px solid var(--line); }
+.pb-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.pb-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.pb-title b {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.pb-title small { color: var(--muted); font-size: 12px; }
+.pb-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text);
+}
+.pb-meta { color: var(--muted); font-size: 12px; }
+.pb-progress {
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--subtle, #f4f4f5);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.pb-body { padding: 6px 8px 10px; }
+.pb-issue {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.pb-issue:hover { background: var(--hover); }
+.pb-issue-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pb-issue-main b {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pb-issue-main small { color: var(--muted); font-size: 11.5px; }
+.pb-chat { flex: none; }
+

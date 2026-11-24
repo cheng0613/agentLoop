@@ -808,8 +808,17 @@ function staleRuns(){return scopedRuns(sopRuns(state.data?.runs).filter(isStaleR
 async function refreshDashboard(){
   try{
     const opt={silent:true};
-    const [runs,tasks,issues]=await Promise.all([api('/api/runs',opt),api('/api/tasks',opt),api('/api/issues',opt)]);
+    // 会话列表宿主原本不加载（工作台的侧栏在 iframe 内自己拉），
+    // 项目卡要显示「这个项目有多少对话」，所以这里多取一份。
+    const [runs,tasks,issues,sessions]=await Promise.all([
+      api('/api/runs',opt),api('/api/tasks',opt),api('/api/issues',opt),
+      api('/api/assistant/sessions',opt).catch(()=>null),
+    ]);
     state.data.runs=runs;state.data.tasks=tasks;state.data.issues=issues;
+    state.data.sessions=Array.isArray(sessions)?sessions:(state.data.sessions||[]);
+    // 只有真的取到列表才标 ready；取不到时项目卡不显示「对话 0」，
+    // 免得把「没权限/没联网」误读成「这个项目没有对话」。
+    state.data.sessionsReady=Array.isArray(sessions);
     renderDashboard();
   }catch{}
 }
@@ -1862,7 +1871,7 @@ function setPlatformRailExpanded(expanded,{persist=true}={}){
   const text=button.querySelector('.rail-label');
   if(text)text.textContent=label;
 }
-function viewTitles(){return {management:'设置',collaboration:'工作台',issues:'需求',aiSchedules:'定时任务',bots:'通道管理',assistant:'AI 助手',runs:'运行记录',approvals:'待我确认',sops:'流程',flow:'流程设计',agents:'角色',mcp:'能力资产',rules:'能力资产',skills:'能力资产',dockerfiles:'环境资产',environments:'环境资产',sandboxes:'环境资产',observability:'统计',projects:'项目配置',platform:'平台管理',runners:'执行机器',settings:'个人配置',access:'访问密钥',guide:'访问密钥'}}
+function viewTitles(){return {management:'设置',collaboration:'工作台',dashboard:'项目',issues:'需求',aiSchedules:'定时任务',bots:'通道管理',assistant:'AI 助手',runs:'运行记录',approvals:'待我确认',sops:'流程',flow:'流程设计',agents:'角色',mcp:'能力资产',rules:'能力资产',skills:'能力资产',dockerfiles:'环境资产',environments:'环境资产',sandboxes:'环境资产',observability:'统计',projects:'项目配置',platform:'平台管理',runners:'执行机器',settings:'个人配置',access:'访问密钥',guide:'访问密钥'}}
 // 设置侧栏只列一级入口；被合并进同一页的子视图（能力资产、环境资产的类型 Tab，
 // 从流程模板打开的流程设计）按 data-nav-match 高亮它们所属的入口。
 function settingsNavMatches(btn,name){return btn.dataset.view===name||String(btn.dataset.navMatch||'').split(/\s+/).includes(name)}
@@ -2008,7 +2017,6 @@ function switchView(name){
   }
   $$('details.collab-settings').forEach(menu=>menu.open=false);
   const titles=viewTitles();
-  if(name==='dashboard')name='collaboration';
   if(name==='access')name='guide';
   if(name==='assets')name='dockerfiles';
   if(name==='playbooks')name='sops';
@@ -2050,7 +2058,7 @@ function switchView(name){
   // 页面自己管理内部布局（流程设计有自己的角色面板，角色页是单行列表）。
   // 移出设置区时两处都要改：settingsManagementViews 与 noSidebarViews，
   // 只改前者会留下一个空的侧栏容器。
-  const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow', 'agents'];
+  const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow', 'agents', 'dashboard'];
   document.body.classList.toggle('no-sidebar', noSidebarViews.includes(name));
   document.body.classList.toggle('chat-next-active', name==='collaboration');
   if(name==='collaboration'||isPureManagement)mountNativeChat();

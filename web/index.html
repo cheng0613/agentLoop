@@ -109,6 +109,12 @@
         <span class="rail-label">AI 工作台</span>
       </button>
 
+      <!-- 1b. 项目：项目总览。按项目看需求进展、SOP 当前节点、产出与对话。 -->
+      <button class="rail-btn nav" data-view="dashboard" data-tooltip="项目" aria-label="项目">
+        <svg class="agent-icon harness-icon" data-icon="folder" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span class="rail-label">项目</span>
+      </button>
+
       <!-- 2. 统计 -->
       <button class="rail-btn nav" data-view="observability" data-tooltip="统计" aria-label="统计">
         <svg class="agent-icon harness-icon" data-icon="chart" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 17V9"/><path d="M12 17V7"/><path d="M16 17v-5"/></svg>
@@ -235,7 +241,7 @@
     <!-- 工作台 -->
     <section id="dashboardView" class="view page-view">
       <div class="page-heading dash-heading">
-        <div><p class="eyebrow">日常入口</p><h1>工作总览</h1><p>先处理失败和待确认的需求，再看进行中的和最近结果。</p></div>
+        <div><p class="eyebrow">项目</p><h1>项目工作台</h1><p>按项目看需求进展、SOP 跑到哪个节点、有哪些产出；点项目展开需求明细。</p></div>
         <div class="heading-actions">
           <button id="refreshDashboard" class="button ghost">↻ 刷新</button>
           <button id="dashImportTAPD" class="button ghost" type="button" data-legacy-tracker hidden>导入 TAPD</button>
@@ -244,24 +250,7 @@
         </div>
       </div>
       <div id="dashStats" class="stat-grid"></div>
-      <div class="dash-grid">
-        <div class="sh-card dash-col-left">
-          <div class="sh-card-title"><span class="sh-card-icon amber">!</span>需要我处理<span class="sub" data-issue-filter="attention">全部 →</span></div>
-          <div id="dashAttention" class="dash-list"></div>
-        </div>
-        <div class="sh-card dash-col-mid">
-          <div class="sh-card-title"><span class="sh-card-icon blue">◷</span>正在推进<span class="sub" data-issue-filter="active">全部 →</span></div>
-          <div id="dashActive" class="dash-list"></div>
-        </div>
-        <div class="sh-card dash-col-right">
-          <div class="sh-card-title"><span class="sh-card-icon green">✓</span>最近结果</div>
-          <div id="dashResults" class="dash-list"></div>
-        </div>
-      </div>
-      <div class="sh-card dash-feed-card">
-        <div class="sh-card-title"><span class="sh-card-icon blue">⟳</span>外部同步与活动<span class="sub" id="dashFeedHint">Activity Feed</span></div>
-        <div id="dashFeed" class="dash-feed"></div>
-      </div>
+      <div id="projectBoard" class="project-board"></div>
     </section>
 
     <section id="aiSchedulesView" class="view page-view">

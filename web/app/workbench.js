@@ -2192,38 +2192,120 @@ function renderUserBadge(){
   }
   renderUserProfilePopover();
 }
+// 项目工作台：把「项目 → 需求 → SOP 运行 → 节点/产出」串到一个页面。
+// 数据全部来自已有接口（issues / runs / sessions），不新增后端。
+// 项目是否完成：所有需求都已闭环，且没有仍在排队的 SOP 运行。
 function renderDashboard(){
+  const statsHost=$('#dashStats'),boardHost=$('#projectBoard');
+  if(!statsHost||!boardHost)return;
+  const ACTIVE=['queued','running','waiting'];
+  const projects=(state.data.projects||[]).filter(p=>!p.archivedAt)
+    .sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'zh'));
   const issues=state.data.issues||[];
-  const projectIssues=issues.filter(i=>!state.projectFilter||i.projectId===state.projectFilter);
-  const attention=projectIssues.filter(i=>issueRunHealth(i)==='attention');
-  const waiting=projectIssues.filter(i=>issueCurrentStage(i).key==='waiting');
-  const confirm=projectIssues.filter(i=>issueCurrentStage(i).key==='confirm');
-  const active=projectIssues.filter(i=>issueRunHealth(i)==='active'&&issueCurrentStage(i).key!=='waiting');
-  const closed=projectIssues.filter(i=>issueRunHealth(i)==='closed');
-  updateApprovalBadge();
-  const needMe=[...waiting,...confirm,...attention.filter(i=>!waiting.includes(i)&&!confirm.includes(i))];
-  const statCards=[
-    {label:'需要介入',value:attention.length,foot:'待确认结论、失败或已中断',color:'#c63c4b',filter:'attention'},
+  const runs=(state.data.runs||[]).filter(r=>r.kind!=='workspace');
+  const sessions=state.data.sessions||[];
+
+  const rows=projects.map(project=>{
+    const list=issues.filter(i=>i.projectId===project.id);
+    const pRuns=runs.filter(r=>runProjectId(r)===project.id);
+    const active=pRuns.filter(r=>ACTIVE.includes(r.status));
+    const focus=[...pRuns].sort((a,b)=>(Date.parse(b.updatedAt||b.createdAt)||0)-(Date.parse(a.updatedAt||a.createdAt)||0))[0]||null;
+    const open=list.filter(i=>issueRunHealth(i)!=='closed');
+    const conversations=sessions.filter(s=>(s.projectId||'')===project.id&&!s.archived);
+    const artifacts=pRuns.reduce((n,r)=>n+(Number(r.artifactCount)||0),0);
+    const stamp=Math.max(0,...pRuns.map(r=>Date.parse(r.updatedAt||r.createdAt)||0),...list.map(i=>Date.parse(i.updatedAt||0)||0));
+    return{project,list,pRuns,active,focus,open,conversations,artifacts,stamp,
+      done:list.length>0&&open.length===0&&active.length===0};
+  });
+  // 最近有动静的项目排在前面。
+  const byFresh=(a,b)=>b.stamp-a.stamp;
+  const ongoing=rows.filter(r=>!r.done).sort(byFresh),finished=rows.filter(r=>r.done).sort(byFresh);
+  const sessionsReady=state.data.sessionsReady===true;
+
+  // 顶部四张卡用跨项目口径：先看该处理什么，再看是哪个项目。
+  const cards=[
+    {label:'进行中项目',value:ongoing.length,foot:'还有需求没闭环',color:'#5b8cff'},
     {label:'待我确认',value:approvalItems().length,foot:'批准后才会继续跑',color:'#fbbf24',to:'approvals'},
-    {label:'正在推进',value:active.length,foot:'Agent 正在执行',color:'#5b8cff',filter:'active'},
-    {label:'已经完成',value:closed.length,foot:'本项目已闭环',color:'#34d399',filter:'closed'},
+    {label:'进行中需求',value:rows.reduce((n,r)=>n+r.open.length,0),foot:'正在推进或待处理',color:'#c63c4b'},
+    {label:'累计产出',value:rows.reduce((n,r)=>n+r.artifacts,0),foot:'各项目不可变快照合计',color:'#34d399'},
   ];
-  const statsHost=$('#dashStats');
-  statsHost.innerHTML=statCards.map(c=>`<div class="stat-card" ${c.filter!=null?`data-issue-filter="${c.filter}"`:`data-jump="${c.to}"`} style="--accent:${c.color}"><div class="label">${c.label}</div><div class="value">${c.value}</div><div class="foot">${c.foot}</div></div>`).join('');
-  jumpBind(statsHost);jumpBind($('#dashboardView'));
-  const row=(i)=>{
-    const p=(state.data.projects||[]).find(x=>x.id===i.projectId),out=issueOutcome(i),stage=issueCurrentStage(i);
-    return `<div class="row-item ${out.key}" data-issue="${escapeHTML(i.id)}"><span class="dot ${out.key}"></span><div style="flex:1;min-width:0"><div class="strong ellipsis">${escapeHTML(i.title)}</div><div class="muted">${escapeHTML(issueKeyLabel(i))} · ${escapeHTML(stage.label)}</div></div><span class="status ${out.key}">${escapeHTML(out.short)}</span></div>`;
+  statsHost.innerHTML=cards.map(c=>`<div class="stat-card"${c.to?` data-jump="${c.to}"`:''} style="--accent:${c.color}"><div class="label">${c.label}</div><div class="value">${c.value}</div><div class="foot">${c.foot}</div></div>`).join('');
+  jumpBind(statsHost);
+
+  const rel=ms=>{
+    if(!ms)return '还没有活动';
+    const m=Math.round((Date.now()-ms)/60000);
+    if(m<1)return '刚刚';
+    if(m<60)return `${m} 分钟前`;
+    const h=Math.round(m/60);
+    if(h<24)return `${h} 小时前`;
+    const d=Math.round(h/24);
+    return d<30?`${d} 天前`:new Date(ms).toLocaleDateString();
   };
-  const bindIssueRows=host=>{host.querySelectorAll('[data-issue]').forEach(el=>el.onclick=()=>openIssueDetail(el.dataset.issue))};
-  $('#dashAttention').innerHTML=needMe.length?needMe.slice(0,8).map(row).join(''):'<div class="empty-box">没有需要你处理的需求</div>';
-  $('#dashActive').innerHTML=active.length?active.slice(0,8).map(row).join(''):'<div class="empty-box">当前没有进行中的需求</div>';
-  const results=closed.filter(i=>!issueManuallyClosed(i)&&!issueTrackerClosed(i)).sort((a,b)=>new Date(b.updatedAt||0)-new Date(a.updatedAt||0)).slice(0,8);
-  $('#dashResults').innerHTML=results.length?results.map(row).join(''):'<div class="empty-box">还没有跑完的需求</div>';
-  bindIssueRows($('#dashAttention'));bindIssueRows($('#dashActive'));bindIssueRows($('#dashResults'));
-  const cfg=state.data.syncConfig||{},logs=state.data.syncLogs||[];
-  const synced=knownTime(cfg.lastSyncAt),syncResult=logs[0]?.status==='success'?'成功':logs[0]?.status==='failed'?'失败':'';
-  $('#dashFeedHint').textContent=synced?`最近同步 ${synced.toLocaleString()}${syncResult?` · ${syncResult}`:''}`:'从未同步';
-  const feed=logs.slice(0,8).map(l=>`<div class="tl-item"><div><b>${l.direction==='pull'?'拉取':'推送'} · ${l.source==='github'?'GitHub':l.source==='gongfeng'?'工蜂':l.source==='tapd'?'TAPD':escapeHTML(l.source||'')}</b> <span class="muted">${escapeHTML(l.message||l.action)}</span></div><div class="muted" style="font-size:10.5px;margin-top:2px">${new Date(l.startedAt).toLocaleString()} · ${l.status==='success'?'成功':`失败 ${escapeHTML(l.message||'')}`}</div></div>`).join('');
-  $('#dashFeed').innerHTML=feed||'<div class="tl-item"><div class="muted">尚未同步。绑定 GitHub 仓库后，可在「需求列表」里点击「同步 GitHub」。</div></div>';
+
+  const issueRow=i=>{
+    const stage=issueCurrentStage(i),out=issueOutcome(i);
+    const {run}=issueExecution(i);
+    const prog=run?runProgress(run):null;
+    return `<button type="button" class="pb-issue" data-issue="${escapeHTML(i.id)}">
+      <span class="dot ${escapeHTML(out.key)}"></span>
+      <span class="pb-issue-main"><b>${escapeHTML(i.title||i.id)}</b><small>${escapeHTML(stage.label)}${run?` · ${escapeHTML(runDisplayStatus(run))}`:''}</small></span>
+      ${prog&&prog.total?`<span class="pb-progress">${prog.done}/${prog.total}</span>`:''}
+      <span class="status ${escapeHTML(out.key)}">${escapeHTML(out.short)}</span>
+    </button>`;
+  };
+
+  const card=row=>{
+    const p=row.project,focus=row.focus;
+    const wfName=focus?(focus.workflowSnapshot?.name||focus.workflowId||'SOP'):'';
+    const prog=focus?runProgress(focus):null;
+    const sop=focus
+      ? `<span class="status ${escapeHTML(runDisplayStatusClass(focus))}">${escapeHTML(runDisplayStatus(focus))}</span>
+         <b>${escapeHTML(wfName)}</b>${prog&&prog.total?`<span class="pb-progress">${prog.done}/${prog.total}</span>`:''}`
+      : '<span class="muted">还没有 SOP 运行</span>';
+    const counts=row.list.length
+      ? `需求 ${row.list.length}${row.open.length?` · 进行中 ${row.open.length}`:''}`
+      : '还没有需求';
+    const metaParts=[`产出 ${row.artifacts}`];
+    if(sessionsReady)metaParts.push(`对话 ${row.conversations.length}`);
+    metaParts.push(rel(row.stamp));
+    const meta=metaParts.join(' · ');
+    return `<details class="pb-card" data-project="${escapeHTML(p.id)}">
+      <summary>
+        <div class="pb-head">
+          <div class="pb-title"><b>${escapeHTML(p.name||p.id)}</b><small>${escapeHTML(counts)}</small></div>
+          <button type="button" class="button ghost small pb-chat" data-chat-project="${escapeHTML(p.id)}">继续对话</button>
+        </div>
+        <div class="pb-line">${sop}</div>
+        <div class="pb-line pb-meta">${escapeHTML(meta)}</div>
+      </summary>
+      <div class="pb-body">${row.list.length?row.list.map(issueRow).join(''):'<div class="empty-box">这个项目还没有需求</div>'}</div>
+    </details>`;
+  };
+
+  const group=(title,list,emptyText)=>list.length
+    ? `<section class="pb-group"><h2>${title}<span>${list.length}</span></h2>${list.map(card).join('')}</section>`
+    : `<section class="pb-group"><h2>${title}<span>0</span></h2><div class="empty-box">${emptyText}</div></section>`;
+
+  boardHost.innerHTML=projects.length
+    ? group('进行中',ongoing,'所有项目都已闭环')+group('已完成',finished,'还没有闭环的项目')
+    : '<div class="empty-box">还没有项目。在「项目配置」里新建一个，或在 AI 工作台用快速接入创建。</div>';
+
+  boardHost.querySelectorAll('[data-issue]').forEach(el=>{
+    el.onclick=e=>{e.preventDefault();e.stopPropagation();openIssueDetail(el.dataset.issue)};
+  });
+  boardHost.querySelectorAll('[data-chat-project]').forEach(el=>{
+    el.onclick=e=>{e.preventDefault();e.stopPropagation();openProjectChat(el.dataset.chatProject)};
+  });
+}
+
+// 从项目卡直接进入工作台，并把宿主项目切到该项目。复用顶栏下拉的切换链路：
+// 写 localStorage、重拉数据、通知 iframe 同步项目上下文都在那里。
+function openProjectChat(projectId){
+  const select=$('#projectSwitcher');
+  if(select&&projectId&&select.value!==projectId){
+    select.value=projectId;
+    select.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+  switchView('collaboration');
 }
