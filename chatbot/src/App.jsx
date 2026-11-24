@@ -1002,23 +1002,11 @@ export default function App() {
       input.current?.setSelectionRange(value.caret, value.caret);
     });
   }
-  // 侧栏只列当前项目的会话。项目之间的切换由宿主的 rail 负责，
-  // 这里不需要再按项目分组把所有项目都摆出来。
-  //
-  // 例外是搜索：输入关键字时放开范围，否则「搜不到别的项目里的会话」
-  // 会让人以为记录丢了。置顶会话同样不受项目限制——用户主动钉住的条目
-  // 应当一直看得见。
-  const projectScopedSessions = (() => {
-    const all = chat.sessions || [];
-    if (query.trim()) return all;
-    const pinnedIds = new Set(pinned || []);
-    const current = chat.projectId || "";
-    return all.filter(
-      (session) =>
-        pinnedIds.has(session.id) ||
-        (session.projectId || "") === current,
-    );
-  })();
+  // 侧栏严格只列当前项目的会话，搜索也限定在这个范围内。
+  // 项目之间的切换由宿主 rail 负责，这里再列一遍别的项目是重复的。
+  const projectScopedSessions = (chat.sessions || []).filter(
+    (session) => (session.projectId || "") === (chat.projectId || ""),
+  );
   const sidebarSections = splitSidebarSections(
     projectScopedSessions,
     chat.projects,
@@ -1258,19 +1246,16 @@ export default function App() {
       ].filter(Boolean).join(" ")}
       style={{ "--sidebar-width": `${sidebarWidth}px` }}
     >
+      {/* 侧栏顶部原本是 AgentLoop 品牌，与宿主 rail 左上角的品牌重复，
+          对「这一列是什么」没有信息量。换成当前项目名：侧栏列的就是
+          这个项目的会话，标题写项目名才对得上。 */}
       <header className="brand">
-        <button
-          className="brand-home"
-          onClick={startNewChat}
-          aria-label="AgentLoop 首页"
-          inert={!sidebar}
-          aria-hidden={!sidebar || undefined}
-        >
-          <span className="brand-icon">
-            <HarnessIcon name="workflow" size={20} />
+        <span className="brand-project" title={projectName}>
+          <span className="brand-icon" aria-hidden="true">
+            <HarnessIcon name={chat.projectId ? "folder" : "user"} size={15} />
           </span>
-          <strong>AgentLoop</strong>
-        </button>
+          <strong>{projectName}</strong>
+        </span>
         <IconButton
           className="sidebar-toggle"
           data-hover-ink-control=""

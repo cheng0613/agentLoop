@@ -119,7 +119,9 @@
 }
 
 .chat-shell > .brand > .brand-home,
-.chat-shell.sidebar-hidden > .brand > .brand-home {
+.chat-shell > .brand > .brand-project,
+.chat-shell.sidebar-hidden > .brand > .brand-home,
+.chat-shell.sidebar-hidden > .brand > .brand-project {
   display: flex;
   flex-shrink: 1;
   min-width: 0;
@@ -142,7 +144,8 @@
   height: var(--navigation-header-height);
 }
 
-.chat-shell:is(.sidebar-hidden, .sidebar-entering) > .brand > .brand-home {
+.chat-shell:is(.sidebar-hidden, .sidebar-entering) > .brand > .brand-home,
+.chat-shell:is(.sidebar-hidden, .sidebar-entering) > .brand > .brand-project {
   max-width: 0;
   opacity: 0;
   pointer-events: none;
