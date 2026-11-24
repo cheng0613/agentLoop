@@ -62,7 +62,9 @@ func TestAssetsStylesheetFollowsHarnessTokens(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{":root {\n", `html[data-theme="dark"] {`, "--hui-stage: #f4f3f8;", "--hui-stage: #18181c;"} {
+	// --hui-* 现在是对主令牌的映射（--hui-stage: var(--panel-2)），不再写死色值。
+	// 断言引用关系而不是具体颜色：色值由 tokens.css 决定，换主题时这里不该跟着改。
+	for _, want := range []string{":root {" + "\n", `html[data-theme="dark"] {`, "--hui-stage: var(--panel-2);"} {
 		if !strings.Contains(string(tokenCSS), want) {
 			t.Fatalf("harness-ui.css token block is missing %q", want)
 		}

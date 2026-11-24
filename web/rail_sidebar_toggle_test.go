@@ -28,7 +28,7 @@ func TestRailSidebarToggleSitsAboveSettings(t *testing.T) {
 	if !strings.Contains(button, `aria-expanded="false"`) || !strings.Contains(button, `data-tooltip="展开导航"`) {
 		t.Fatal("icon rail starts as icons and offers to expand")
 	}
-	for _, label := range []string{"AI 工作台", "统计", "需求列表", "待我确认", "设置"} {
+	for _, label := range []string{"AI 工作台", "统计", "需求", "待我确认", "设置"} {
 		if !strings.Contains(html, `<span class="rail-label">`+label+`</span>`) {
 			t.Fatalf("expanded rail missing label %s", label)
 		}

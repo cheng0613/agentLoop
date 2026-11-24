@@ -1162,16 +1162,25 @@ func TestTAPDImportUI(t *testing.T) {
 	if dashImport < 0 || dashNew < 0 || dashImport > dashNew {
 		t.Fatal("工作总览 must place 导入 TAPD to the left of 新建需求")
 	}
+	// 设置侧栏按「个人 / 项目 / 能力 / 环境 / 开放与平台」分组，各组内再列页面。
+	// 流程与角色已上提到左侧 rail，不再出现在这里。
 	projectGroup := strings.Index(page, `<p>项目</p>`)
-	flowGroup := strings.Index(page, `<p>流程与任务</p>`)
-	agentGroup := strings.Index(page, `<p>Agent 能力</p>`)
-	runsNav := strings.Index(page, `data-view="runs"`)
+	abilityGroup := strings.Index(page, `<p>能力</p>`)
+	platformGroup := strings.Index(page, `<p>开放与平台</p>`)
 	projectsNav := strings.Index(page, `data-view="projects"`)
-	if flowGroup < 0 || agentGroup < 0 || !(flowGroup < runsNav && runsNav < agentGroup) {
-		t.Fatal("运行记录 must sit under 流程与任务")
+	botsNav := strings.Index(page, `data-view="bots"`)
+	if projectGroup < 0 || abilityGroup < 0 || platformGroup < 0 {
+		t.Fatal("设置侧栏 must keep its 项目 / 能力 / 开放与平台 groups")
 	}
-	if projectGroup < 0 || !(projectGroup < projectsNav && projectsNav < flowGroup) {
-		t.Fatal("项目配置 must sit under 项目, before 流程与任务")
+	if !(projectGroup < projectsNav && projectsNav < abilityGroup) {
+		t.Fatal("项目配置 must sit under 项目, before 能力")
+	}
+	// 通道管理属于项目协作配置，与项目配置同组。
+	if !(projectGroup < botsNav && botsNav < abilityGroup) {
+		t.Fatal("通道管理 must sit under 项目, alongside 项目配置")
+	}
+	if !(abilityGroup < platformGroup) {
+		t.Fatal("能力 must sit before 开放与平台")
 	}
 	js, err := readAppBundle()
 	if err != nil {
@@ -1597,7 +1606,6 @@ func TestIssueFilterAndManualCloseUI(t *testing.T) {
 		`<option value="todo">待处理 / 待执行</option>`,
 		`<option value="done">已完成</option>`,
 		`<option value="closed">已关闭</option>`,
-		`data-dtab="operations"`,
 		`未指定责任人`,
 	} {
 		if !strings.Contains(html, want) {
@@ -2536,33 +2544,25 @@ func TestCodexStyleLeftMiniRailLayout(t *testing.T) {
 		t.Fatal("#platformRail must sit before .platform-sidebar in DOM")
 	}
 
-	// 2. 左侧小栏只留 4 个日常入口和设置；流程模板、运行记录、定时任务收进设置导航。
-	for _, view := range []string{"collaboration", "observability", "issues", "approvals", "settings"} {
+	// 2. 左侧小栏承载日常入口：工作台、统计、需求、待我确认，以及角色与流程。
+	// 流程（sops）已从设置导航上提到 rail，与角色并列，因为它和日常派发直接相关。
+	for _, view := range []string{"collaboration", "observability", "issues", "approvals", "sops", "settings"} {
 		needle := `data-view="` + view + `"`
 		sub := page[railIdx:sidebarIdx]
 		if !strings.Contains(sub, needle) {
 			t.Fatalf("#platformRail must contain %s nav button", needle)
 		}
 	}
-	for _, view := range []string{"sops", "runs", "aiSchedules"} {
-		needle := `data-view="` + view + `"`
-		if strings.Contains(page[railIdx:sidebarIdx], needle) {
-			t.Fatalf("#platformRail must not contain %s; it lives in the settings navigation", needle)
-		}
-		if !strings.Contains(page[sidebarIdx:], needle) {
-			t.Fatalf("settings navigation must contain %s", needle)
-		}
-	}
 	// 图标栏第 2 位仍是统计；需求列表紧跟其后，两者都是日常工作入口。
 	railNav := page[railIdx:sidebarIdx]
-	if !strings.Contains(railNav, `data-view="issues" data-tooltip="需求列表" aria-label="需求列表"`) {
-		t.Fatal("#platformRail must contain the issues entry labelled 需求列表")
+	if !strings.Contains(railNav, `data-view="issues" data-tooltip="需求" aria-label="需求"`) {
+		t.Fatal("#platformRail must contain the issues entry labelled 需求")
 	}
 	if !strings.Contains(railNav, `data-view="observability" data-tooltip="统计" aria-label="统计"`) {
 		t.Fatal("#platformRail observability button must be labelled 统计")
 	}
 	if strings.Index(railNav, `data-view="observability"`) > strings.Index(railNav, `data-view="issues"`) {
-		t.Fatal("统计 must stay before 需求列表 in #platformRail")
+		t.Fatal("统计 must stay before 需求 in #platformRail")
 	}
 	if strings.Index(railNav, `data-view="issues"`) > strings.Index(railNav, `data-view="approvals"`) {
 		t.Fatal("需求列表 must sit before 待我确认 in #platformRail")
@@ -2640,15 +2640,16 @@ func TestCodexStyleLeftMiniRailLayout(t *testing.T) {
 		t.Fatal(err)
 	}
 	appJs := string(appJsBytes)
-	if !strings.Contains(appJs, "const noSidebarViews = ['issues', 'approvals', 'observability'];") {
-		t.Fatal("app.js must hide the sidebar on the rail-only pages: 需求列表, 待我确认, 统计")
+	// sops / flow / agents 自带内部布局（流程设计器有角色面板），同样不该再套一层侧栏。
+	if !strings.Contains(appJs, "const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow', 'agents', 'aiSchedules'];") {
+		t.Fatal("app.js must hide the sidebar on the rail-only pages: 需求、待我确认、统计、流程、角色、定时任务")
 	}
 	managed := appJs[strings.Index(appJs, "const settingsManagementViews="):]
 	managed = managed[:strings.Index(managed, "\n")]
 	if strings.Contains(managed, "'observability'") {
 		t.Fatal("统计 must not enter settings management mode")
 	}
-	for _, view := range []string{"'sops'", "'runs'", "'aiSchedules'", "'bots'"} {
+	for _, view := range []string{"'runs'", "'bots'"} {
 		if !strings.Contains(managed, view) {
 			t.Fatalf("%s moved into the settings sidebar and must enter settings management mode", view)
 		}
