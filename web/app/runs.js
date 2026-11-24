@@ -135,16 +135,27 @@ document.addEventListener('visibilitychange',()=>{syncQueuedRunRefresh();if(queu
 let refreshRunsPending=null;
 async function refreshRuns(background=false,runsView=false){if(refreshRunsPending)return refreshRunsPending;refreshRunsPending=(async()=>{try{const opt=background?{silent:true}:{};const runs=await api('/api/runs',opt);const list=sortRunsDescending(runs);state.data.runs=list;updateApprovalBadge();renderRuns();if(runsView){const [tasks,issues]=await Promise.all([api('/api/tasks',{silent:true}),api('/api/issues',{silent:true})]);state.data.tasks=tasks;state.data.issues=issues;if(activeViewName()==='runs')renderRuns()}else if(!background){const [tasks,issues]=await Promise.all([api('/api/tasks',opt),api('/api/issues',opt)]);state.data.tasks=tasks;state.data.issues=issues;renderRuns()}if(!state.selectedRun)return;const summary=list.find(x=>x.id===state.selectedRun);if(!summary){if($('#runsDetailSection')?.hidden===false)return;state.selectedRun=null;state.activeRun=null;renderRunDetail(null);return}if(background)return;if($('#runsDetailSection')?.hidden===false)return;selectRun(state.selectedRun,true)}catch(e){if(!background)toast(e.message)}finally{refreshRunsPending=null}})();return refreshRunsPending}
 function runProgress(r){const nodes=Object.values(r.nodes||{}).filter(Boolean),done=nodes.filter(n=>['succeeded','failed','cancelled'].includes(n.status)).length,total=Math.max(nodes.length,done);return {done:Math.min(done,total),total,pct:total?Math.round(Math.min(done,total)*100/total):0}}
+// 节点定义：运行列表接口不带 workflowSnapshot.nodes（只带名称），所以按
+// workflowId 到流程目录里找节点名；目录里也没有时才退回节点 id。
+function runNodeDefs(r){
+  const inline=(r?.workflowSnapshot?.nodes||[]).filter(n=>n&&n.id);
+  if(inline.length)return inline;
+  const wfId=r?.workflowId||r?.workflowSnapshot?.id||'';
+  const wf=(state.data?.workflows||[]).find(w=>w.id===wfId);
+  return (wf?.nodes||[]).filter(n=>n&&n.id);
+}
+function runNodeName(r,id){
+  return runNodeDefs(r).find(n=>n.id===id)?.name||id;
+}
 // 当前停在哪个节点：运行中取 running，待确认取 waiting_approval，失败取
 // failed。按流程定义顺序找，返回 {id,name,status}；没有可指认的节点时返回 null。
 function runFocusNode(r){
   const nodes=r?.nodes||{};
-  const defs=(r?.workflowSnapshot?.nodes||[]).filter(n=>n&&n.id);
+  const defs=runNodeDefs(r);
   const ids=defs.length?defs.map(n=>n.id):Object.keys(nodes);
-  const nameOf=id=>defs.find(n=>n.id===id)?.name||id;
   for(const group of [['running'],['waiting_approval','waiting'],['failed']]){
     const id=ids.find(x=>group.includes(nodes[x]?.status));
-    if(id&&nodes[id])return{id,name:nameOf(id),status:nodes[id].status};
+    if(id&&nodes[id])return{id,name:runNodeName(r,id),status:nodes[id].status};
   }
   return null;
 }

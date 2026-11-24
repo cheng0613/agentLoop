@@ -4088,3 +4088,63 @@ body:not(.platform-rail-expanded) .rail-head-approvals {
   line-height: 1.6;
 }
 
+/* 节点进展：按流程定义铺开每个节点，不依赖群会话 */
+.pb-chain-wrap {
+  margin: 6px 8px 0;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.pb-chain-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.pb-chain-head b { color: var(--text); font-size: 12.5px; font-weight: 600; }
+.pb-chain-head span { color: var(--muted); font-size: 11.5px; }
+.pb-chain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+.pb-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.pb-step i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .55;
+}
+.pb-step.ok { border-color: color-mix(in srgb, #34d399 45%, var(--line)); color: #1f7a5a; }
+.pb-step.ok i { opacity: 1; }
+.pb-step.run { border-color: #5b8cff; color: #2f5bd0; }
+.pb-step.run i { opacity: 1; animation: pbPulse 1.4s ease-in-out infinite; }
+.pb-step.wait { border-color: #d9a01a; color: #8a6410; }
+.pb-step.wait i { opacity: 1; }
+.pb-step.fail { border-color: #c63c4b; color: #a12b38; }
+.pb-step.fail i { opacity: 1; }
+.pb-arrow { color: var(--muted); opacity: .5; font-size: 11px; }
+[data-theme="dark"] .pb-step.ok { color: #4ade9f; }
+[data-theme="dark"] .pb-step.run { color: #9cafff; }
+[data-theme="dark"] .pb-step.wait { color: #f2c46d; }
+[data-theme="dark"] .pb-step.fail { color: #f0899a; }
+@keyframes pbPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .25; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pb-step.run i { animation: none; }
+}
+

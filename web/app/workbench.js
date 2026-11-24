@@ -2263,12 +2263,35 @@ function renderDashboard(){
     if(sessionsReady)metaParts.push(`对话 ${row.conversations.length}`);
     metaParts.push(rel(row.stamp));
     const meta=metaParts.join(' · ');
+    // 节点链：不依赖群会话，直接按流程定义把每个节点及其状态铺开，
+    // 一眼看出跑到哪、卡在哪。
+    const chain=focus?(()=>{
+      const defs=runNodeDefs(focus);
+      const ids=defs.length?defs.map(n=>n.id):Object.keys(focus.nodes||{});
+      if(!ids.length)return '';
+      const steps=ids.map((id,index)=>{
+        const st=focus.nodes?.[id]?.status||'pending';
+        const cls=st==='succeeded'?'ok':st==='running'?'run'
+          :['waiting_approval','waiting'].includes(st)?'wait'
+          :st==='failed'?'fail':'idle';
+        return `${index?'<span class="pb-arrow" aria-hidden="true">›</span>':''}<span class="pb-step ${cls}" title="${escapeHTML(statusText(st)||'待执行')}"><i></i>${escapeHTML(runNodeName(focus,id))}</span>`;
+      }).join('');
+      return `<div class="pb-chain-wrap"><div class="pb-chain-head"><b>节点进展</b><span>${escapeHTML(focus.workflowSnapshot?.name||runNodeName(focus,'')||'SOP')}</span></div><div class="pb-chain">${steps}</div></div>`;
+    })():'';
     const arts=Number(focus?.artifactCount)||0;
-    // 只认真正属于这次运行的群会话。普通对话不能拿来充数——它的内容
-    // 和这条 SOP 无关，显示出来会误导（之前就错绑过一次）。
-    const chat=row.conversations.find(s=>s.shared===true&&s.runId&&s.runId===focus?.id)||null;
+    // 汇报来源按可信度排序：
+    //   1. 属于这次运行的群会话（shared + runId 对得上）；
+    //   2. 该项目的定时任务汇报会话（source=scheduled，常见于「MainBot 定期
+    //      汇总」这类 AI 定时任务，写入固定会话）。
+    // 普通对话一律不取——它的内容和这条 SOP 无关，错绑会误导。
+    const groupSession=row.conversations.find(s=>s.shared===true&&s.runId&&s.runId===focus?.id)||null;
+    const scheduledSession=row.conversations
+      .filter(s=>s.source==='scheduled')
+      .sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0))[0]||null;
+    const chat=groupSession||scheduledSession||null;
+    const chatKind=groupSession?'群汇报':(scheduledSession?'定时汇报':'');
     const groupNoSession=!chat&&focus&&runIsGroupMode(focus);
-    return `<details class="pb-card" data-project="${escapeHTML(p.id)}"${focus?` data-run="${escapeHTML(focus.id)}"`:''} data-arts="${arts}"${chat?` data-session="${escapeHTML(chat.id)}"`:''}>
+    return `<details class="pb-card" data-project="${escapeHTML(p.id)}"${focus?` data-run="${escapeHTML(focus.id)}"`:''} data-arts="${arts}"${chat?` data-session="${escapeHTML(chat.id)}" data-chat-kind="${escapeHTML(chatKind)}"`:''}>
       <summary>
         <div class="pb-head">
           <div class="pb-title"><b>${escapeHTML(p.name||p.id)}</b><small>${escapeHTML(counts)}</small></div>
@@ -2279,7 +2302,8 @@ function renderDashboard(){
       </summary>
       <div class="pb-body">
         <div class="pb-issues">${row.list.length?row.list.map(issueRow).join(''):'<div class="empty-box">这个项目还没有需求</div>'}</div>
-        ${chat?`<div class="pb-chat-feed" data-chat-host>载入群里最新汇报…</div>`
+        ${chain}
+        ${chat?`<div class="pb-chat-feed" data-chat-host>载入最新汇报…</div>`
           :(groupNoSession?`<div class="pb-chat-feed">这次运行是群协作模式，但还没有生成群会话</div>`:'')}
         ${arts?`<div class="pb-artifacts" data-arts-host>载入产出清单…</div>`:''}
       </div>
@@ -2341,7 +2365,8 @@ async function loadProjectChat(card){
     const looksLikeDraft=text=>/^\s*[\[{]/.test(String(text||''));
     const msgs=(session?.messages||[]).filter(m=>m&&m.content&&!looksLikeDraft(m.content)).slice(-3);
     if(!msgs.length){host.textContent='这个群还没有汇报';return}
-    host.innerHTML=`<div class="pb-chat-head"><b>群里最新汇报</b><span>${msgs.length} 条</span></div>
+    const kind=card.dataset.chatKind||'汇报';
+    host.innerHTML=`<div class="pb-chat-head"><b>最新${escapeHTML(kind)}</b><span>${msgs.length} 条</span></div>
       <div class="pb-chat-list">${msgs.map(m=>{
         const who=m.speakerName||m.authorName||(m.role==='user'?'我':'助手');
         const body=plain(m.content);
