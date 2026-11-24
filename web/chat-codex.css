@@ -195,19 +195,26 @@
 .sidebar-conversations h3 .collab-task-actions{margin-left:auto}
 /* Keep global business navigation alongside the embedded workbench, including
    narrow windows where the legacy shell otherwise hides the icon rail. */
+/* 工作台：rail + 内容两列。列宽交给 product-v4.css 的 .app-shell 统一管，
+   这里只声明「工作台不要设置侧栏那一列」。 */
 body.chat-next-active .app-shell{grid-template-columns:var(--rail-w) minmax(0,1fr)!important}
 body.chat-next-active .platform-rail{display:flex!important}
 @media(max-width:1000px){
   body .platform-rail{display:flex!important}
   body .app-shell,body.no-sidebar .app-shell{grid-template-columns:var(--rail-w) minmax(0,1fr)!important}
   body.ai-assistant-open .app-shell,body.no-sidebar.ai-assistant-open .app-shell{grid-template-columns:var(--rail-w) minmax(0,1fr) var(--ai-panel-w,380px)!important}
-  body.chat-next-active .app-shell{grid-template-columns:var(--rail-w) minmax(0,1fr)!important}
   body.sidebar-open .platform-sidebar{left:calc(var(--rail-w) + var(--shell-inset-x))!important;width:min(var(--sidebar-w),calc(100vw - var(--rail-w) - var(--shell-inset-x)))!important;max-width:min(var(--sidebar-w),calc(100vw - var(--rail-w) - var(--shell-inset-x)))!important}
   /* The drawer's generic .nav padding must not flatten the indented sub-items. */
   body.sidebar-open .platform-sidebar .nav.nav-child{padding:0 10px 0 44px!important;margin:0!important}
 }
 body.chat-next-active .platform-sidebar{display:none!important}
-body.chat-next-active .topbar{display:none!important}
+/* 工作台保留一条极简 header：只留项目名与右侧操作，页面标题那句副标题
+   在这个页面里没有信息量，隐掉；header 本身不再整个隐藏——隐藏后 iframe
+   直接顶到卡片上沿，和 rail 的首行对不齐。 */
+body.chat-next-active .topbar{display:flex!important}
+body.chat-next-active .topbar .page-context>span{display:none!important}
+body.chat-next-active .topbar .page-context b{font-size:13px;font-weight:500;color:var(--muted)}
+body.chat-next-active .topbar .topbar-project-label{display:none}
 body.chat-next-active .shell-main{display:flex;flex-direction:column;width:auto!important;margin-left:0!important;min-width:0;height:100%;overflow:hidden}
 body.chat-next-active .shell-main>main{overflow:hidden;scrollbar-gutter:auto;display:flex;flex-direction:column}
 body.chat-next-active #collaborationView.page-view.active{display:flex;flex-direction:column;flex:1;min-height:0;height:auto;padding:0;overflow:hidden}

@@ -13,6 +13,8 @@ html[data-theme="dark"]{--v4-canvas:var(--bg);--v4-navy:var(--panel);--v4-shadow
   --sidebar-w: 304px;
   --shell-canvas: #fff;
   --shell-inset-x: 14px;
+  --shell-inset-y: 14px;
+  --shell-radius: 12px;
   --rail-surface: #fff;
   --rail-hover: #ededed;
   --rail-active: #eaeaea;
@@ -27,20 +29,38 @@ html[data-theme="dark"] {
   --rail-ink: #ededf0;
   --rail-muted: #a1a1aa;
 }
+/* ---------------------------------------------------------------
+   外壳：一处定义整体骨架
+   ---------------------------------------------------------------
+   之前 .app-shell 的列布局散在 5 个文件里互相 !important 覆盖
+   （platform.css / product-v3.css / chat-codex.css / frame.css），
+   又有 padding-left 与 rail 的 margin 叠在一起，内容区被推偏 14px。
+   这里统一成一套：外壳留一圈内边距，rail 与内容区并排落在里面，
+   共用同一张圆角卡片，中间一条分隔线。
+   --------------------------------------------------------------- */
 .app-shell {
   display: grid !important;
   grid-template-columns: var(--rail-w) var(--sidebar-w) minmax(0, 1fr) !important;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   box-sizing: border-box;
-  padding-left: var(--shell-inset-x);
+  padding: var(--shell-inset-y) var(--shell-inset-x);
+  gap: 0;
   overflow: hidden;
   background: var(--shell-canvas);
   transition: grid-template-columns var(--ease, 0.2s ease);
 }
+/* 设置侧栏隐藏时（display:none 或被别处规则关掉）不再占一列。
+   :has() 直接看实际状态，省得每处隐藏侧栏的地方都补一条列定义。 */
+.app-shell:not(:has(> .platform-sidebar:not([hidden]))) ,
+body.no-sidebar .app-shell {
+  grid-template-columns: var(--rail-w) minmax(0, 1fr) !important;
+}
 @media (max-width: 850px) {
   :root {
     --shell-inset-x: 0px;
+    --shell-inset-y: 0px;
   }
 }
 body.ai-assistant-open .app-shell {
@@ -75,15 +95,16 @@ body.no-sidebar .platform-sidebar {
   width: var(--rail-w) !important;
   max-width: var(--rail-w) !important;
   transition: width var(--rail-expand-duration, 240ms) cubic-bezier(.16, 1, .3, 1), max-width var(--rail-expand-duration, 240ms) cubic-bezier(.16, 1, .3, 1);
-  height: calc(100vh - 28px) !important;
-  height: calc(100dvh - 28px) !important;
+  /* 高度与边距由 .app-shell 的 grid 与内边距决定，rail 自己不再写死尺寸，
+     否则会和外壳的内边距叠加，把内容区推偏。 */
+  height: 100% !important;
   min-height: 0;
-  margin: 14px 0 !important;
+  margin: 0 !important;
   box-sizing: border-box !important;
   background: var(--rail-surface) !important;
-  /* 一条贯穿上下的分隔线，把 rail 与右侧内容区分开。 */
+  /* 卡片左侧：右上、右下用外壳的圆角，这里只处理左边两个角。 */
   border-right: 1px solid var(--line) !important;
-  border-radius: 16px 0 0 16px;
+  border-radius: var(--shell-radius) 0 0 var(--shell-radius);
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -522,16 +543,21 @@ body.platform-rail-expanded .platform-rail #userName {
   display: flex !important;
   flex-direction: column !important;
 }
+/* 卡片右侧：接续 rail 的卡片，右上、右下圆角。 */
 .shell-main {
   width: 100% !important;
   max-width: 100% !important;
   margin-left: 0 !important;
-  height: 100vh !important;
+  height: 100% !important;
   min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   background: var(--v3-bg, var(--bg));
+  border-radius: 0 var(--shell-radius) var(--shell-radius) 0;
+  border: 1px solid var(--line);
+  border-left: 0;
+  box-sizing: border-box;
 }
 .platform-sidebar .brand {
   display: none !important;
