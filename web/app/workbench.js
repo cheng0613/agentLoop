@@ -2264,8 +2264,10 @@ function renderDashboard(){
     metaParts.push(rel(row.stamp));
     const meta=metaParts.join(' · ');
     const arts=Number(focus?.artifactCount)||0;
-    // 优先取这次运行的群会话，没有就取该项目最近的会话。
-    const chat=row.conversations.find(s=>s.runId&&s.runId===focus?.id)||row.conversations[0]||null;
+    // 只认真正属于这次运行的群会话。普通对话不能拿来充数——它的内容
+    // 和这条 SOP 无关，显示出来会误导（之前就错绑过一次）。
+    const chat=row.conversations.find(s=>s.shared===true&&s.runId&&s.runId===focus?.id)||null;
+    const groupNoSession=!chat&&focus&&runIsGroupMode(focus);
     return `<details class="pb-card" data-project="${escapeHTML(p.id)}"${focus?` data-run="${escapeHTML(focus.id)}"`:''} data-arts="${arts}"${chat?` data-session="${escapeHTML(chat.id)}"`:''}>
       <summary>
         <div class="pb-head">
@@ -2277,7 +2279,8 @@ function renderDashboard(){
       </summary>
       <div class="pb-body">
         <div class="pb-issues">${row.list.length?row.list.map(issueRow).join(''):'<div class="empty-box">这个项目还没有需求</div>'}</div>
-        ${chat?`<div class="pb-chat-feed" data-chat-host>载入群里最新汇报…</div>`:''}
+        ${chat?`<div class="pb-chat-feed" data-chat-host>载入群里最新汇报…</div>`
+          :(groupNoSession?`<div class="pb-chat-feed">这次运行是群协作模式，但还没有生成群会话</div>`:'')}
         ${arts?`<div class="pb-artifacts" data-arts-host>载入产出清单…</div>`:''}
       </div>
     </details>`;
@@ -2334,7 +2337,9 @@ async function loadProjectChat(card){
     .trim();
   try{
     const session=await api(`/api/assistant/sessions/${encodeURIComponent(id)}`,{silent:true});
-    const msgs=(session?.messages||[]).filter(m=>m&&m.content).slice(-3);
+    // 群会话里会混进工具调用草稿（整段 JSON），那不是给人看的汇报，跳过。
+    const looksLikeDraft=text=>/^\s*[\[{]/.test(String(text||''));
+    const msgs=(session?.messages||[]).filter(m=>m&&m.content&&!looksLikeDraft(m.content)).slice(-3);
     if(!msgs.length){host.textContent='这个群还没有汇报';return}
     host.innerHTML=`<div class="pb-chat-head"><b>群里最新汇报</b><span>${msgs.length} 条</span></div>
       <div class="pb-chat-list">${msgs.map(m=>{
