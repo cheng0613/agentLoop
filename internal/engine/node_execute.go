@@ -366,6 +366,7 @@ func (e *Engine) executeNode(ctx context.Context, runID string, wf domain.Workfl
 		nr.StartedAt = time.Now().UTC()
 		nr.GateResult = nil
 		e.event(r, node.ID, "node.started", node.Name+" 开始执行")
+		e.announceNode(r, node.ID, "node.started", "开始执行，等待它的产出")
 	})
 	if !started {
 		return
@@ -1120,6 +1121,7 @@ func (e *Engine) executeNode(ctx context.Context, runID string, wf domain.Workfl
 			nr.Status = "succeeded"
 			nr.FinishedAt = time.Now().UTC()
 			e.event(r, node.ID, "node.succeeded", node.Name+" 已完成")
+			e.announceNode(r, node.ID, "node.succeeded", "已完成，产出已登记")
 		}
 	})
 	for _, artifact := range artifacts {

@@ -3927,3 +3927,46 @@ a.draft-title {
   padding-left: 10px;
   border-left: 1px solid var(--line);
 }
+
+/* SOP 节点汇报：引擎写进会话的系统消息，按发言人分气泡 */
+.sop-report {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--subtle, #f8f8f8);
+}
+.sop-report-avatar {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface, #fff);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.sop-report-body { flex: 1; min-width: 0; }
+.sop-report-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+.sop-report-head b { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.sop-report-head time,
+.sop-report-head .message-time { color: var(--muted); font-size: 11px; }
+.sop-report-body p {
+  margin: 0;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+[data-theme="dark"] .sop-report { background: var(--subtle, #1c1c21); }
+

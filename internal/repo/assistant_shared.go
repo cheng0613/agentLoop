@@ -25,6 +25,41 @@ func (r *AssistantRepo) SharedAssistantSession(id string) (domain.AssistantSessi
 	item := decodeAssistantSession(row)
 	return item, validSharedAssistantSession(item)
 }
+// AppendRunChatEvent 把一条系统合成的 SOP 进度消息写进该运行的共享会话，
+// 会话不存在时先创建。按 Trigger + TriggerID 幂等：同一事件（同一节点同一
+// 状态同一尝试次数）重复到达不会重复落库，引擎重试或重放都安全。
+//
+// 返回是否真的写入（已存在则为 false）。
+func (r *AssistantRepo) AppendRunChatEvent(runID, projectID, title string, ownerID int64, msg domain.AssistantMessage) (bool, error) {
+	if strings.TrimSpace(runID) == "" || strings.TrimSpace(projectID) == "" {
+		return false, nil
+	}
+	session, err := r.EnsureRunAssistantSession(runID, projectID, title, ownerID)
+	if err != nil {
+		return false, err
+	}
+	if msg.Trigger != "" && msg.TriggerID != "" {
+		for _, existing := range session.Messages {
+			if existing.Trigger == msg.Trigger && existing.TriggerID == msg.TriggerID {
+				return false, nil
+			}
+		}
+	}
+	if msg.CreatedAt.IsZero() {
+		msg.CreatedAt = time.Now().UTC()
+	}
+	session.Messages = append(session.Messages, msg)
+	session.UpdatedAt = msg.CreatedAt
+	owner := ownerID
+	if owner <= 0 {
+		owner = session.UserID
+	}
+	if err := r.PutAssistantSession(owner, session); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func (r *AssistantRepo) EnsureRunAssistantSession(runID, projectID, title string, userID int64, execution ...domain.AssistantExecutionTarget) (domain.AssistantSession, error) {
 	id := RunAssistantSessionID(runID)
 	if item, ok := r.SharedAssistantSession(id); ok {

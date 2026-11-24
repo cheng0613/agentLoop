@@ -2569,6 +2569,24 @@ async function loadRoomFlow(runId,{keepStream=false}={}){
   }
 }
 
+// 打开这次运行的共享会话：引擎会把节点进度写进去，所以它看起来就是一个
+// 按节点播报的群聊。会话不存在时后端会按需创建。
+async function openRunConversation(runId){
+  if(!runId){toast('先选一条运行','err');return}
+  try{
+    const session=await api(`/api/runs/${encodeURIComponent(runId)}/conversation`,{silent:true});
+    const url=new URL(location.href);
+    url.searchParams.set('chatSession',session.id);
+    history.replaceState({},'',url);
+    switchView('collaboration');
+    const frame=$('#chatNextFrame');
+    const ready=frame&&frame.dataset.src==='native'&&nativeChatReady;
+    if(ready)frame.contentWindow?.postMessage({type:'agentflow-chat-open-session',sessionId:session.id},location.origin);
+  }catch(error){
+    toast(error.message,'err');
+  }
+}
+
 // 节点汇报流：把「谁执行、做了什么、产出什么、交给谁」按节点铺成一条
 // 对话式的行进记录。数据全部来自 /api/runs/{id}：
 //   workflowSnapshot.nodes[] → 节点名与执行角色（agentId）

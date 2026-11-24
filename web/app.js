@@ -1125,6 +1125,7 @@ function bind(){
 	$('#refreshDashboard').onclick=refreshDashboard;
   $('#roomBack').onclick=()=>switchView('dashboard');
   $('#roomChat').onclick=()=>openProjectChat(state.roomProjectId||state.projectFilter);
+  $('#roomChatFeed').onclick=()=>openRunConversation(state.roomRunId);
   $('#roomNewIssue').onclick=()=>switchView('issues');
 	$('#refreshIssues').onclick=refreshIssues;
 	$('#refreshSOPs').onclick=refreshWorkflowMetrics;

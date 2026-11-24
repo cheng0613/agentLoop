@@ -78,6 +78,7 @@ func (e *Engine) nodeFailedAt(runID string, node domain.WorkflowNode, attempt, g
 		} else {
 			nr.Status = "failed"
 			e.event(r, node.ID, "node.failed", err.Error())
+			e.announceNode(r, node.ID, "node.failed", "执行失败")
 		}
 		shouldReject = !configurationFailure && allowReject && nr.Status == "failed" && node.RejectTo != "" && r.Nodes[node.RejectTo] != nil && r.Nodes[node.RejectTo].ReworkCount < max(1, node.MaxReworks)
 	})

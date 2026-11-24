@@ -1569,7 +1569,26 @@ export default function App() {
                 <div className="loading-session">正在恢复对话…</div>
               ) : null}
               {messages.map((message, index) =>
-                isProposalTimeout(message, messages[index - 1]) ? null : confirmationCaption(message, messages[index - 1]) ? (
+                message.trigger === "sop_node" ? (
+                  // SOP 节点汇报：引擎在节点开始/完成/失败时写进会话的消息。
+                  // 走独立气泡，保留发言人，不用「已处理」那套执行轨迹包裹。
+                  <article
+                    key={`sop-node:${index}`}
+                    className="sop-report"
+                    data-message-index={index}
+                  >
+                    <span className="sop-report-avatar" aria-hidden="true">
+                      {String(message.speakerName || "S").trim().slice(0, 1)}
+                    </span>
+                    <div className="sop-report-body">
+                      <div className="sop-report-head">
+                        <b>{String(message.speakerName || "SOP").trim()}</b>
+                        <MessageTime messages={messages} index={index} />
+                      </div>
+                      <p>{message.content}</p>
+                    </div>
+                  </article>
+                ) : isProposalTimeout(message, messages[index - 1]) ? null : confirmationCaption(message, messages[index - 1]) ? (
                   <div
                     key={index}
                     className="confirmation-note"
