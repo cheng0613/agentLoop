@@ -30,8 +30,6 @@ import {
   formatElapsed,
   confirmationCaption,
   isProposalTimeout,
-  canChatInProject,
-  projectPickerOptions,
 } from "./api";
 import {
   RichContent,
@@ -48,7 +46,7 @@ import RunAlerts from "./RunAlerts";
 import { runProblems, useConversationRuns } from "./runs.js";
 import { reconcileOperation, visibleSidebarArtifact } from "./platform.js";
 import { isGeneratedArtifact, shouldRevealArtifactPanel } from "./artifact-autoreveal.js";
-import { IconButton, Dialog, Menu, SelectMenu, CredentialAction } from "./ui";
+import { IconButton, Dialog, Menu, CredentialAction } from "./ui";
 import { CLIInstallAction } from "./cli-install.jsx";
 import { credentialHint, openCredentialSettings } from "./credentials";
 import { groupSessionHistory, scheduledSession, sessionProjectName } from "./session-history.js";
@@ -382,8 +380,6 @@ export default function App() {
     sessionPress = useRef(null),
     sessionClickSuppressed = useRef(null),
     mentionPicker = useRef(),
-    projectPicker = useRef(null),
-    headerProjectPicker = useRef(null),
     fileInput = useRef(),
     scroll = useRef(),
     follow = useRef(true),
@@ -486,29 +482,6 @@ export default function App() {
   const pinnedExecutor = lockedExecutorId
     ? (chat.executors || []).find((item) => item.id === lockedExecutorId)
     : undefined;
-  const projectOptions = projectPickerOptions(
-    chat.projects,
-    chat.user,
-    chat.session,
-  );
-  const projectActions = [
-    {
-      id: "new-project",
-      label: "新建项目",
-      icon: "plus",
-      onSelect: () => setQuickAccessOpen(true),
-    },
-  ];
-  function chooseProject(id) {
-    const project = chat.projects.find((p) => p.id === id);
-    if (project && !canChatInProject(project, chat.user)) {
-      chat.setError(
-        `你还不是「${project.name}」的成员，不能在这个项目里对话。请项目 Owner 把你加入项目，或先用「个人对话」。`,
-      );
-      return;
-    }
-    void chat.selectProject(id);
-  }
   function useStarter(prompt) {
     setText(prompt);
     setMention(null);
@@ -1345,44 +1318,9 @@ export default function App() {
           {chat.session ? (
             <>
               {conversationStarted ? <ExecutionMachinePicker chat={chat} onManage={() => navigate("runners")} /> : null}
-              {projectName ? (
-                <div className="menu-anchor conversation-project-anchor">
-                  {/* The conversation's project; picking another one opens a
-                      new chat there (a personal chat is bound in place). */}
-                  <button
-                    ref={headerProjectPicker}
-                    type="button"
-                    className="conversation-project"
-                    title={`当前项目：${projectName}，点击切换项目`}
-                    aria-label={`当前项目：${projectName}，切换项目`}
-                    aria-haspopup="listbox"
-                    aria-expanded={menu?.type === "header-project"}
-                    onClick={() =>
-                      setMenu(
-                        menu?.type === "header-project"
-                          ? null
-                          : { type: "header-project" },
-                      )
-                    }
-                  >
-                    <HarnessIcon name="folder" size={12} interactive={false} />
-                    <span>{projectName}</span>
-                    <HarnessIcon name="chevron-down" size={11} interactive={false} />
-                  </button>
-                  <SelectMenu
-                    open={menu?.type === "header-project"}
-                    label="切换项目"
-                    value={chat.projectId}
-                    options={projectOptions}
-                    onSelect={chooseProject}
-                    onClose={closeMenu}
-                    anchorRef={headerProjectPicker}
-                    searchable
-                    emptyText="没有匹配的项目"
-                    actions={projectActions}
-                  />
-                </div>
-              ) : null}
+              {/* 项目切换统一由宿主顶栏负责：宿主切项目时会通过
+                  agentflow-project-context 消息调用 selectProject，这里
+                  再放一个完全相同的入口只会让人分不清改的是哪一个。 */}
               {showEnvironmentPicker ? <SandboxPicker chat={chat} onCreate={() => navigate("sandboxes", { action: "create", projectId: chat.projectId })} /> : null}
               <Participants session={chat.session} users={chat.users} />
             </>
@@ -1904,44 +1842,8 @@ export default function App() {
                 {!conversationStarted ? (
                 <div className="composer-context">
                   <ExecutionMachinePicker chat={chat} onManage={() => navigate("runners")} />
-                  <ChevronRightSmall />
-                  <div className="menu-anchor">
-                    <button
-                      ref={projectPicker}
-                      className={`context-pill project-picker${chat.projectId ? "" : " is-unset"}`}
-                      title="对话所属的项目：需求、仓库、角色和 SOP 都按项目区分"
-                      aria-label="选择项目"
-                      aria-haspopup="listbox"
-                      aria-expanded={menu?.type === "project"}
-                      onClick={() =>
-                        setMenu(
-                          menu?.type === "project" ? null : { type: "project" },
-                        )
-                      }
-                    >
-                      <HarnessIcon name="folder" size={14} />
-                      <span>
-                        {chat.projectId
-                          ? projectName
-                          : chat.activeId
-                            ? "绑定项目"
-                            : "选择项目"}
-                      </span>
-                      <HarnessIcon name="chevron-down" size={12} />
-                    </button>
-                    <SelectMenu
-                      open={menu?.type === "project"}
-                      label="项目"
-                      value={chat.projectId}
-                      options={projectOptions}
-                      onSelect={chooseProject}
-                      onClose={closeMenu}
-                      anchorRef={projectPicker}
-                      searchable
-                      emptyText="没有匹配的项目"
-                      actions={projectActions}
-                    />
-                  </div>
+                  {/* 项目不再出现在这里：切换由宿主顶栏负责，当前项目名在
+                      侧栏标题已经写过一次，重复第三遍只会让人分不清哪个能点。 */}
                   {showEnvironmentPicker && chat.projectId ? <ChevronRightSmall /> : null}
                   {showEnvironmentPicker ? <SandboxPicker chat={chat} onCreate={() => navigate("sandboxes", { action: "create", projectId: chat.projectId })} /> : null}
                 </div>

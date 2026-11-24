@@ -183,7 +183,7 @@ describe("App", () => {
     await user.click(screen.getByRole("option", { name: "显示", exact: true }));
     await user.click(screen.getByRole("button", { name: "完成", exact: true }));
     const environment = screen.getByRole("button", { name: /^运行环境/ });
-    expect(environment.closest(".composer-context")).toContainElement(screen.getByLabelText("选择项目"));
+    expect(environment.closest(".composer-context")).not.toBeNull();
     expect(environment.closest(".composer-toolbar")).toBeNull();
     view.unmount();
     view = render(<App />);
@@ -342,18 +342,13 @@ describe("App", () => {
     fireEvent.keyDown(document, { key: "k", ctrlKey: true });
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     fireEvent.keyDown(document, { key: "Escape" });
-    await user.click(screen.getByLabelText("选择项目"));
-    expect(screen.getByRole("listbox", { name: "项目" })).toBeInTheDocument();
-    fireEvent.keyDown(document, { key: "Escape" });
-    // With no project the picker is highlighted so newcomers notice it.
-    expect(screen.getByLabelText("选择项目")).toHaveClass("is-unset");
     await user.click(screen.getByText("接入测试环境"));
     expect(screen.getByRole("textbox").value).toMatch(/^带我一步步接入测试环境/);
     await user.click(screen.getByText("选用 SOP 与角色"));
     expect(screen.getByRole("textbox").value).toMatch(/产品、前端、后端交付 SOP/);
   });
 
-  test("questions and replies show when they were sent, and the header switches project", async () => {
+  test("questions and replies show when they were sent", async () => {
     const user = userEvent.setup();
     const previous = { ...chat };
     const today = (h, m) => {
@@ -384,15 +379,6 @@ describe("App", () => {
     expect(times).toEqual(["08:05", "08:06", "09:01", "09:02"]);
     expect(document.querySelectorAll(".message-author time.message-time")).toHaveLength(2);
     expect(document.querySelectorAll(".message-actions time.message-time")).toHaveLength(2);
-
-    const switcher = screen.getByRole("button", { name: "当前项目：示例项目，切换项目" });
-    // jsdom has no layout; give the anchor a box so the menu stays open.
-    switcher.getBoundingClientRect = () => ({ top: 10, bottom: 30, left: 600, right: 700, width: 100, height: 20 });
-    await user.click(switcher);
-    const list = screen.getByRole("listbox", { name: "切换项目" });
-    expect(list).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("option", { name: /个人对话/ }));
-    expect(chat.selectProject).toHaveBeenCalledWith("");
     view.unmount();
     Object.assign(chat, previous);
   });

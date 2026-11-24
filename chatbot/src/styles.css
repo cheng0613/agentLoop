@@ -360,51 +360,6 @@ small {
     transform: none;
   }
 }
-.conversation-project-anchor {
-  flex-shrink: 0;
-}
-/* The project capsule is also the project switcher. */
-.conversation-project {
-  flex-shrink: 0;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  max-width: 180px;
-  margin-right: 6px;
-  padding: 1px 8px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--subtle);
-  color: var(--navigation-secondary, var(--muted));
-  font: inherit;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 18px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background-color 0.15s;
-}
-.conversation-project > span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.conversation-project > svg {
-  flex-shrink: 0;
-}
-.conversation-project:hover,
-.conversation-project[aria-expanded="true"] {
-  border-color: var(--line-strong, var(--line));
-  background: var(--hover);
-  color: var(--text);
-}
-.conversation-project:focus-visible {
-  outline: 2px solid var(--focus, #5273dc);
-  outline-offset: 1px;
-}
 .header-actions {
   display: flex;
   align-items: center;
@@ -2522,13 +2477,6 @@ a.project-entry {
     padding-top: 30px;
   }
 }
-/* The project switcher stays reachable on laptops; only a phone-width frame
-   (where the brand already fills the header) hides it. */
-@media (max-width: 520px) {
-  .conversation-project-anchor {
-    display: none;
-  }
-}
 @media (max-width: 850px) {
   .chat-shell,
   .chat-shell.with-panel,
@@ -3803,31 +3751,6 @@ a.draft-title {
    under the textarea when a side panel narrows the conversation. */
 .composer-context > .menu-anchor {
   flex-shrink: 0;
-}
-.composer-context > .menu-anchor:has(.project-picker) {
-  flex-shrink: 1;
-  min-width: 0;
-}
-.project-picker {
-  max-width: 100%;
-}
-/* The project decides where requirements, repositories and SOPs live, so the
-   picker reads as a choice rather than a breadcrumb. */
-.project-picker span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 600;
-  color: var(--text);
-}
-.project-picker.is-unset {
-  padding: 0 8px;
-  border: 1px dashed var(--home-blue, #5273dc);
-  background: color-mix(in srgb, var(--home-blue, #5273dc) 8%, transparent);
-}
-.project-picker.is-unset span,
-.project-picker.is-unset svg {
-  color: var(--home-blue, #5273dc);
 }
 .composer {
   container-type: inline-size;

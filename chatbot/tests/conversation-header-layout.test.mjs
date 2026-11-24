@@ -33,51 +33,10 @@ test("the title button fills the remaining width instead of stopping at 450px", 
   assert.doesNotMatch(styles, /\.conversation-title[^{]*\{[^}]*max-width:\s*450px/);
 });
 
-test("only the title text shrinks; icon, pencil, project and badge keep their size", () => {
-  assert.match(rule(".conversation-status"), /flex-shrink:\s*0/);
-  assert.match(rule(".conversation-title > .icon-button"), /flex-shrink:\s*0/);
-  assert.match(rule(".conversation-project"), /flex-shrink:\s*0/);
-  assert.match(rule(".conversation-title > .preview-badge"), /flex-shrink:\s*0/);
-});
 
-test("the project name renders as a theme-aware capsule", () => {
-  const project = rule(".conversation-project");
-  assert.match(project, /border:\s*1px solid var\(--line\)/);
-  assert.match(project, /background:\s*var\(--subtle\)/);
-  assert.match(project, /color:\s*var\(--navigation-secondary/);
-  assert.match(project, /border-radius:\s*999px/);
-  assert.match(project, /padding:\s*1px 8px/);
-  assert.match(project, /font-size:\s*11px/);
-  assert.match(project, /max-width:\s*180px/);
-  assert.match(project, /margin-right:\s*6px/);
-  assert.doesNotMatch(project, /margin-left/);
-  assert.match(project, /text-overflow:\s*ellipsis/);
-});
 
-test("an empty project name does not render an empty capsule", () => {
-  assert.match(app, /\{projectName \? \(\s*<div className="menu-anchor conversation-project-anchor">/);
-});
 
-test("the project capsule is a button that opens the project switcher", () => {
-  const actions = app.slice(app.indexOf('<div className="header-actions">'));
-  const capsule = actions.slice(actions.indexOf('className="conversation-project"') - 200, actions.indexOf("<Participants session={chat.session}"));
-  assert.match(capsule, /<button\s+ref=\{headerProjectPicker\}\s+type="button"/);
-  assert.match(capsule, /aria-haspopup="listbox"/);
-  assert.match(capsule, /aria-expanded=\{menu\?\.type === "header-project"\}/);
-  assert.match(capsule, /<SelectMenu\s+open=\{menu\?\.type === "header-project"\}[\s\S]*onSelect=\{chooseProject\}[\s\S]*anchorRef=\{headerProjectPicker\}/);
-  assert.match(rule(".conversation-project"), /cursor:\s*pointer/);
-  assert.match(rule(".conversation-project > span"), /text-overflow:\s*ellipsis/);
-});
 
-test("the project capsule sits in header-actions just before the participants", () => {
-  const title = app.slice(app.indexOf('<div className="conversation-title">'), app.indexOf('<div className="header-actions">'));
-  assert.doesNotMatch(title, /conversation-project/);
-  const actions = app.slice(app.indexOf('<div className="header-actions">'));
-  const project = actions.indexOf('className="conversation-project"');
-  const participants = actions.indexOf("<Participants session={chat.session}");
-  assert.notEqual(project, -1);
-  assert.ok(project < participants, "project capsule should precede Participants");
-});
 
 test("the title icon shows the same reply status as the sidebar", () => {
   assert.match(app, /import ConversationStatusIcon from "\.\/ConversationStatusIcon"/);
@@ -159,8 +118,3 @@ test("read-only sessions still omit the pencil", () => {
   assert.match(app, /\{!chat\.readOnly \? \(\s*<IconButton\s+label="重命名会话"/);
 });
 
-test("the project switcher stays visible on laptop widths and hides only at phone width", () => {
-  assert.doesNotMatch(mediaBlock("max-width: 1250px"), /conversation-project/);
-  assert.match(mediaBlock("max-width: 520px"), /\.conversation-project-anchor\s*\{\s*display:\s*none/);
-  assert.match(mediaBlock("max-width: 850px"), /\.conversation-title\s*\{\s*display:\s*none/);
-});
