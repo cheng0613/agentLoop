@@ -67,8 +67,8 @@
   content: "";
   box-sizing: border-box;
   position: absolute;
-  top: 14px;
-  bottom: 14px;
+  top: 0;
+  bottom: 0;
   left: 0;
   width: min(var(--sidebar-width), 100%);
   opacity: 1;
@@ -79,18 +79,16 @@
     opacity 160ms ease;
 }
 
+/* 平铺：侧栏与正文同底色，之间只留一条分隔线（视觉定义见 navigation.css）。 */
 .chat-shell::before {
   z-index: 1;
-  border: 1px solid var(--navigation-border);
-  border-radius: 16px;
-  background: var(--surface);
-  box-shadow: 0 2px 8px #00000006;
+  border: 0;
+  border-right: 1px solid var(--line);
 }
 
 .chat-shell::after {
   z-index: 0;
-  border-radius: 0 16px 16px 0;
-  background: var(--navigation-rail);
+  background: var(--surface);
 }
 
 .chat-shell:is(.sidebar-hidden, .sidebar-entering) > .conversation-sidebar,
@@ -107,10 +105,10 @@
 .chat-shell:not(.sidebar-hidden) > .brand {
   position: absolute;
   left: 0;
-  top: 14px;
+  top: 0;
   z-index: 11;
   width: min(var(--sidebar-width), 100vw);
-  height: calc(var(--navigation-header-height) - 14px);
+  height: var(--navigation-header-height);
   margin-top: 0;
   padding: 0 16px 0 18px;
   border: 0;

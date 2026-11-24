@@ -1002,15 +1002,36 @@ export default function App() {
       input.current?.setSelectionRange(value.caret, value.caret);
     });
   }
-  const sidebarSections = splitSidebarSections(chat.sessions, chat.projects, {
-    archived,
-    mineOnly,
-    currentUserId: chat.user?.id,
-    query,
-    pinned,
-    activeId: chat.activeId,
-    hideIdleRuns: true,
-  });
+  // 侧栏只列当前项目的会话。项目之间的切换由宿主的 rail 负责，
+  // 这里不需要再按项目分组把所有项目都摆出来。
+  //
+  // 例外是搜索：输入关键字时放开范围，否则「搜不到别的项目里的会话」
+  // 会让人以为记录丢了。置顶会话同样不受项目限制——用户主动钉住的条目
+  // 应当一直看得见。
+  const projectScopedSessions = (() => {
+    const all = chat.sessions || [];
+    if (query.trim()) return all;
+    const pinnedIds = new Set(pinned || []);
+    const current = chat.projectId || "";
+    return all.filter(
+      (session) =>
+        pinnedIds.has(session.id) ||
+        (session.projectId || "") === current,
+    );
+  })();
+  const sidebarSections = splitSidebarSections(
+    projectScopedSessions,
+    chat.projects,
+    {
+      archived,
+      mineOnly,
+      currentUserId: chat.user?.id,
+      query,
+      pinned,
+      activeId: chat.activeId,
+      hideIdleRuns: true,
+    },
+  );
   const searchGroups = groupSessionHistory(chat.sessions, chat.projects, {
     query,
     pinned,
