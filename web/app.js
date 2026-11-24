@@ -1123,6 +1123,9 @@ function bind(){
   $('#agentForm').addEventListener('input',()=>renderAgentPreview(state.agentDraft));
   $('#agentForm').addEventListener('change',()=>renderAgentPreview(state.agentDraft)); $('#refreshRuns').onclick=()=>refreshRuns(false);$('#runBackBtn')&&($('#runBackBtn').onclick=()=>showRunList());
 	$('#refreshDashboard').onclick=refreshDashboard;
+  $('#roomBack').onclick=()=>switchView('dashboard');
+  $('#roomChat').onclick=()=>openProjectChat(state.roomProjectId||state.projectFilter);
+  $('#roomNewIssue').onclick=()=>switchView('issues');
 	$('#refreshIssues').onclick=refreshIssues;
 	$('#refreshSOPs').onclick=refreshWorkflowMetrics;
   $('#agentSearch').oninput=renderAgents;$('#agentPrev').onclick=agentWizardPrev;$('#agentNext').onclick=agentWizardNext;$$('[data-wizard-steps="agent"] [data-agent-tab]').forEach(b=>b.onclick=()=>setAgentTab(b.dataset.agentTab));$$('[data-wizard-steps="agent-create"] [data-create-step]').forEach(b=>b.onclick=()=>{if(!b.disabled)setAgentCreateStep(Number(b.dataset.createStep))});bindAgentModalInputs();$$('.agent-close').forEach(b=>b.onclick=()=>$('#agentModal').classList.remove('open'));
@@ -1871,7 +1874,7 @@ function setPlatformRailExpanded(expanded,{persist=true}={}){
   const text=button.querySelector('.rail-label');
   if(text)text.textContent=label;
 }
-function viewTitles(){return {management:'设置',collaboration:'工作台',dashboard:'项目',issues:'需求',aiSchedules:'定时任务',bots:'通道管理',assistant:'AI 助手',runs:'运行记录',approvals:'待我确认',sops:'流程',flow:'流程设计',agents:'角色',mcp:'能力资产',rules:'能力资产',skills:'能力资产',dockerfiles:'环境资产',environments:'环境资产',sandboxes:'环境资产',observability:'统计',projects:'项目配置',platform:'平台管理',runners:'执行机器',settings:'个人配置',access:'访问密钥',guide:'访问密钥'}}
+function viewTitles(){return {management:'设置',collaboration:'工作台',dashboard:'项目',projectRoom:'项目',issues:'需求',aiSchedules:'定时任务',bots:'通道管理',assistant:'AI 助手',runs:'运行记录',approvals:'待我确认',sops:'流程',flow:'流程设计',agents:'角色',mcp:'能力资产',rules:'能力资产',skills:'能力资产',dockerfiles:'环境资产',environments:'环境资产',sandboxes:'环境资产',observability:'统计',projects:'项目配置',platform:'平台管理',runners:'执行机器',settings:'个人配置',access:'访问密钥',guide:'访问密钥'}}
 // 设置侧栏只列一级入口；被合并进同一页的子视图（能力资产、环境资产的类型 Tab，
 // 从流程模板打开的流程设计）按 data-nav-match 高亮它们所属的入口。
 function settingsNavMatches(btn,name){return btn.dataset.view===name||String(btn.dataset.navMatch||'').split(/\s+/).includes(name)}
@@ -2060,7 +2063,7 @@ function switchView(name){
   // 页面自己管理内部布局（流程设计有自己的角色面板，角色页是单行列表）。
   // 移出设置区时两处都要改：settingsManagementViews 与 noSidebarViews，
   // 只改前者会留下一个空的侧栏容器。
-  const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow', 'agents', 'dashboard'];
+  const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow', 'agents', 'dashboard', 'projectRoom'];
   document.body.classList.toggle('no-sidebar', noSidebarViews.includes(name));
   document.body.classList.toggle('chat-next-active', name==='collaboration');
   if(name==='collaboration'||isPureManagement)mountNativeChat();
@@ -2101,6 +2104,7 @@ function switchView(name){
   if(name==='assistant')loadAssistantSettings();
   if(name==='sops'){if(!staying&&state.data){sopCatalogMotion.reset();renderSOPCatalog()}refreshWorkflowMetrics()}
   if(name==='dashboard')refreshDashboard()
+  if(name==='projectRoom')renderProjectRoom()
   if(name==='approvals')renderApprovals(false)
   if(name==='observability')refreshObs()
   if(name==='agents'){api('/api/agents',{silent:true}).then(agents=>{state.data.agents=agents;renderAgents()}).catch(e=>toast(e.message));renderAgents();applyAgentRoute()}

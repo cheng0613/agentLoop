@@ -239,6 +239,25 @@
       <div id="platformAdminPanel" class="platform-admin-panel"></div>
     </section>
     <!-- 工作台 -->
+    <!-- 项目房间：点项目卡进入。左栏需求/运行，右栏该运行的节点汇报流。 -->
+    <section id="projectRoomView" class="view page-view room-view">
+      <div class="page-heading room-head">
+        <button type="button" class="button ghost small" id="roomBack">← 返回项目</button>
+        <div class="room-title">
+          <h1 id="roomProjectName">项目</h1>
+          <span id="roomProjectMeta" class="muted"></span>
+        </div>
+        <div class="room-actions">
+          <button type="button" class="button primary small" id="roomNewIssue">＋ 新建需求</button>
+          <button type="button" class="button ghost small" id="roomChat">继续对话</button>
+        </div>
+      </div>
+      <div class="room-body">
+        <aside class="room-list" id="roomList" aria-label="需求与运行"></aside>
+        <div class="room-flow" id="roomFlow" aria-live="polite"></div>
+      </div>
+    </section>
+
     <section id="dashboardView" class="view page-view">
       <div class="page-heading dash-heading">
         <div><p class="eyebrow">项目</p><h1>项目工作台</h1><p>按项目看需求进展、SOP 跑到哪个节点、有哪些产出；点项目展开需求明细。</p></div>

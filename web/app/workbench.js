@@ -2295,7 +2295,10 @@ function renderDashboard(){
       <summary>
         <div class="pb-head">
           <div class="pb-title"><b>${escapeHTML(p.name||p.id)}</b><small>${escapeHTML(counts)}</small></div>
-          <button type="button" class="button ghost small pb-chat" data-chat-project="${escapeHTML(p.id)}">继续对话</button>
+          <span class="pb-actions">
+            <button type="button" class="button ghost small pb-open" data-open-project="${escapeHTML(p.id)}">进入</button>
+            <button type="button" class="button ghost small pb-chat" data-chat-project="${escapeHTML(p.id)}">继续对话</button>
+          </span>
         </div>
         <div class="pb-line">${sop}</div>
         <div class="pb-line pb-meta">${escapeHTML(meta)}</div>
@@ -2305,7 +2308,7 @@ function renderDashboard(){
         ${chain}
         ${chat?`<div class="pb-chat-feed" data-chat-host>载入最新汇报…</div>`
           :(groupNoSession?`<div class="pb-chat-feed">这次运行是群协作模式，但还没有生成群会话</div>`:'')}
-        ${arts?`<div class="pb-artifacts" data-arts-host>载入产出清单…</div>`:''}
+        ${focus?`<div class="pb-run-detail" data-run-host>载入节点汇报…</div>`:''}
       </div>
     </details>`;
   };
@@ -2324,11 +2327,14 @@ function renderDashboard(){
   boardHost.querySelectorAll('[data-chat-project]').forEach(el=>{
     el.onclick=e=>{e.preventDefault();e.stopPropagation();openProjectChat(el.dataset.chatProject)};
   });
+  boardHost.querySelectorAll('[data-open-project]').forEach(el=>{
+    el.onclick=e=>{e.preventDefault();e.stopPropagation();openProjectRoom(el.dataset.openProject)};
+  });
   // 产出清单按需加载：列表接口只带数量，展开时才去取最近一次运行的详情。
   boardHost.querySelectorAll('.pb-card').forEach(card=>{
     card.addEventListener('toggle',()=>{
       if(!card.open)return;
-      void loadProjectArtifacts(card);
+      void loadProjectRun(card);
       void loadProjectChat(card);
     });
   });
@@ -2378,31 +2384,189 @@ async function loadProjectChat(card){
   }
 }
 
-// 把某次运行的交付物列进展开区。数据来自 /api/runs/{id}，点条目直接预览。
-async function loadProjectArtifacts(card){
-  const host=card.querySelector('[data-arts-host]');
+// 项目房间：左栏列出该项目的需求（各挂最近一次 SOP 运行），右栏渲染所选
+// 运行的节点汇报流。点项目卡进入，左上角返回列表。
+function openProjectRoom(projectId){
+  state.roomProjectId=projectId||state.projectFilter||'';
+  state.roomRunId='';
+  switchView('projectRoom');
+}
+
+function renderProjectRoom(){
+  const nameHost=$('#roomProjectName'),metaHost=$('#roomProjectMeta');
+  const listHost=$('#roomList'),flowHost=$('#roomFlow');
+  if(!listHost||!flowHost)return;
+  const projectId=state.roomProjectId||state.projectFilter||'';
+  state.roomProjectId=projectId;
+  const project=(state.data.projects||[]).find(p=>p.id===projectId)||null;
+  const projectIssues=(state.data.issues||[]).filter(i=>i.projectId===projectId);
+  if(nameHost)nameHost.textContent=project?.name||projectId||'项目';
+  if(metaHost){
+    const n=projectIssues.length;
+    metaHost.textContent=project?.description?`${project.description} · ${n} 个需求`:`${n} 个需求`;
+  }
+
+  const runs=(state.data.runs||[]).filter(r=>r.kind!=='workspace'&&runProjectId(r)===projectId)
+    .sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
+  // 需求与运行的关联：运行记录里带 issueId；没有时退回到 humanContext 里的提及。
+  const runOf=issueId=>runs.find(r=>r.issueId===issueId||String(r.humanContext||'').includes(issueId))||null;
+
+  const ACTIVE=['queued','running','waiting'];
+  if(!state.roomRunId||!runs.some(r=>r.id===state.roomRunId)){
+    const pick=runs.filter(r=>ACTIVE.includes(r.status))[0]||runs[0];
+    state.roomRunId=pick?.id||'';
+  }
+
+  const row=issue=>{
+    const run=runOf(issue.id);
+    const prog=run?runProgress(run):null;
+    const stage=issueCurrentStage(issue),out=issueOutcome(issue);
+    const current=run&&run.id===state.roomRunId;
+    const focusNode=run?runFocusNode(run):null;
+    return `<button type="button" class="room-item${current?' is-current':''}" data-room-run="${escapeHTML(run?.id||'')}" data-room-issue="${escapeHTML(issue.id)}">
+      <span class="room-item-top"><b>${escapeHTML(issue.title||issue.id)}</b>
+        <span class="status ${escapeHTML(out.key)}">${escapeHTML(out.short)}</span></span>
+      <span class="room-item-sub">${escapeHTML(stage.label)}${focusNode?` · ${escapeHTML(focusNode.name)}`:''}${prog&&prog.total?` · ${prog.done}/${prog.total}`:''}</span>
+    </button>`;
+  };
+
+  listHost.innerHTML=projectIssues.length
+    ? projectIssues.map(row).join('')
+    : '<div class="empty-box">这个项目还没有需求</div>';
+
+  listHost.querySelectorAll('[data-room-run]').forEach(el=>{
+    el.onclick=()=>{
+      const runId=el.dataset.roomRun;
+      if(!runId){openIssueDetail(el.dataset.roomIssue);return}
+      state.roomRunId=runId;
+      renderProjectRoom();
+    };
+  });
+
+  const run=runs.find(r=>r.id===state.roomRunId)||null;
+  if(!run){
+    flowHost.innerHTML='<div class="empty-box">这个项目还没有 SOP 运行。在需求上启动 SOP 后，这里会按节点展示谁做了什么。</div>';
+    return;
+  }
+  flowHost.dataset.run=run.id;
+  flowHost.innerHTML='<div class="empty-box">正在载入节点汇报…</div>';
+  void loadRoomFlow(run.id);
+}
+
+async function loadRoomFlow(runId){
+  const flowHost=$('#roomFlow');
+  if(!flowHost||flowHost.dataset.run!==runId)return;
+  try{
+    const run=await api(`/api/runs/${encodeURIComponent(runId)}`,{silent:true});
+    if(flowHost.dataset.run!==runId)return;
+    flowHost.innerHTML=runFlowHTML(run,{heading:'节点汇报'});
+    bindRunArtifacts(flowHost,run);
+  }catch(error){
+    flowHost.innerHTML='<div class="empty-box">节点汇报加载失败</div>';
+  }
+}
+
+// 节点汇报流：把「谁执行、做了什么、产出什么、交给谁」按节点铺成一条
+// 对话式的行进记录。数据全部来自 /api/runs/{id}：
+//   workflowSnapshot.nodes[] → 节点名与执行角色（agentId）
+//   workflowSnapshot.edges[] → 节点之间的交接关系
+//   nodes[nodeId]            → 状态、耗时、尝试次数、执行器、输出
+//   artifacts[]              → 按 nodeId 归到各自节点
+// 不依赖群会话，SOP 是单链也能完整展示。
+function runFlowHTML(run,{heading='节点汇报'}={}){
+  const snap=run?.workflowSnapshot||{};
+  const defs=(snap.nodes||[]).filter(n=>n&&n.id);
+  const edges=(snap.edges||[]).filter(e=>e&&e.source&&e.target);
+  const agents=state.data.agents||[];
+  const agentName=id=>agents.find(a=>a.id===id)?.name||'';
+  const nameOf=id=>defs.find(n=>n.id===id)?.name||id;
+  const nextOf=id=>{
+    const hit=edges.find(e=>e.source===id&&(e.when||'success')==='success')||edges.find(e=>e.source===id);
+    return hit?nameOf(hit.target):'';
+  };
+  const arts=run?.artifacts||[];
+  const ids=defs.length?defs.map(n=>n.id):Object.keys(run?.nodes||{});
+  if(!ids.length)return '<div class="empty-box">这次运行没有节点记录</div>';
+  const bubbles=ids.map(id=>{
+    const def=defs.find(n=>n.id===id)||{};
+    const st=run?.nodes?.[id]||{};
+    const status=st.status||'pending';
+    const cls=status==='succeeded'?'ok':status==='running'?'run'
+      :['waiting_approval','waiting'].includes(status)?'wait'
+      :status==='failed'?'fail':'idle';
+    const role=def.type==='approval'?'人工确认':def.type==='script'?'脚本'
+      :(agentName(def.agentId)||'未配置角色');
+    const ms=(st.startedAt&&st.finishedAt)?(Date.parse(st.finishedAt)-Date.parse(st.startedAt)):0;
+    const bits=[def.name||id];
+    if(ms>0)bits.push(pbDuration(ms));
+    if(st.attempt>1||st.reworkCount>0)bits.push(`第 ${st.attempt||1} 次${st.reworkCount?` · 返工 ${st.reworkCount}`:''}`);
+    if(st.provider||st.model)bits.push([st.provider,st.model].filter(Boolean).join(' / '));
+    const mine=arts.filter(a=>a.nodeId===id);
+    const output=pbPlain(st.output);
+    const short=output.length>160?`${output.slice(0,160)}…`:output;
+    const errorText=st.error?pbPlain(st.error).slice(0,120):'';
+    const next=nextOf(id);
+    return `<div class="pb-bubble ${cls}">
+      <span class="pb-avatar" aria-hidden="true">${escapeHTML((role||'?').slice(0,1))}</span>
+      <div class="pb-bubble-body">
+        <div class="pb-bubble-head">
+          <b>${escapeHTML(role)}</b>
+          <span class="pb-badge ${cls}">${escapeHTML(statusText(status)||'待执行')}</span>
+          <small>${escapeHTML(bits.join(' · '))}</small>
+        </div>
+        ${short?`<p class="pb-bubble-text">${escapeHTML(short)}</p>`:''}
+        ${errorText?`<p class="pb-bubble-text pb-bubble-error">${escapeHTML(errorText)}</p>`:''}
+        ${mine.length?`<div class="pb-bubble-arts">${mine.map(a=>`<button type="button" class="pb-art-chip" data-artifact="${escapeHTML(a.id)}" title="${escapeHTML(a.path||'')}">${escapeHTML(a.name||a.path||a.id)}</button>`).join('')}</div>`:''}
+        ${next?`<div class="pb-bubble-handoff">移交 → <b>${escapeHTML(next)}</b></div>`:'<div class="pb-bubble-handoff pb-end">流程终点</div>'}
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="pb-flow-head"><b>${escapeHTML(heading)}</b><span>${ids.length} 个节点 · ${escapeHTML(snap.name||'')}</span></div>
+    <div class="pb-flow">${bubbles}</div>`;
+}
+
+function bindRunArtifacts(host,run){
+  host.querySelectorAll('[data-artifact]').forEach(b=>{
+    b.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      if(typeof previewArtifact==='function')previewArtifact(run,b.dataset.artifact);
+    };
+  });
+}
+
+// 摘要清洗：去掉代码块、图片、标题等 markdown 记号，压成一行的口语化摘要。
+function pbPlain(text){
+  return String(text||'')
+    .replace(/```[\s\S]*?```/g,' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g,' ')
+    .replace(/[#>*_`~|-]{1,}/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+// 项目卡展开时的加载：与房间页共用同一套气泡渲染。
+async function loadProjectRun(card){
+  const host=card.querySelector('[data-run-host]');
   const runId=card.dataset.run;
   if(!host||!runId||host.dataset.loaded)return;
   host.dataset.loaded='1';
   try{
     const run=await api(`/api/runs/${encodeURIComponent(runId)}`,{silent:true});
-    const arts=(run?.artifacts||[]);
-    if(!arts.length){host.textContent='这次运行还没有登记产出';return}
-    host.innerHTML=`<div class="pb-artifacts-head"><b>最近一次运行的产出</b><span>${arts.length} 个 · 按节点与尝试次数保留版本</span></div>
-      <div class="pb-artifact-list">${arts.map(a=>`<button type="button" class="pb-artifact" data-artifact="${escapeHTML(a.id)}" title="${escapeHTML(a.path||a.name||'')}">
-        <span class="pb-artifact-icon">${a.mediaType==='application/json'?'{}':'MD'}</span>
-        <span class="pb-artifact-main"><b>${escapeHTML(a.name||a.path||a.id)}</b><small>${escapeHTML(a.path||'')}</small></span>
-        <small class="pb-artifact-size">${Math.max(1,Math.ceil((a.size||0)/1024))} KB</small>
-      </button>`).join('')}</div>`;
-    host.querySelectorAll('[data-artifact]').forEach(b=>{
-      b.onclick=e=>{
-        e.preventDefault();e.stopPropagation();
-        if(typeof previewArtifact==='function')previewArtifact(run,b.dataset.artifact);
-      };
-    });
+    host.innerHTML=runFlowHTML(run,{heading:'节点汇报'});
+    bindRunArtifacts(host,run);
   }catch(error){
-    host.textContent='产出清单加载失败';
+    host.textContent='节点汇报加载失败';
   }
+}
+
+// 节点耗时：2 分 23 秒 / 45 秒 / 1 小时 3 分
+function pbDuration(ms){
+  const total=Math.max(0,Math.round(ms/1000));
+  if(total<60)return `${total} 秒`;
+  const m=Math.floor(total/60),s=total%60;
+  if(m<60)return s?`${m} 分 ${s} 秒`:`${m} 分`;
+  const h=Math.floor(m/60);
+  return `${h} 小时 ${m%60} 分`;
 }
 
 // 从项目卡直接进入工作台，并把宿主项目切到该项目。复用顶栏下拉的切换链路：

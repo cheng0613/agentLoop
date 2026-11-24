@@ -4148,3 +4148,194 @@ body:not(.platform-rail-expanded) .rail-head-approvals {
   .pb-step.run i { animation: none; }
 }
 
+/* 节点汇报流：每个节点一条，角色 + 状态 + 耗时 + 产物 + 移交 */
+.pb-run-detail {
+  margin: 6px 8px 0;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+.pb-flow-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.pb-flow-head b { color: var(--text); font-size: 12.5px; font-weight: 600; }
+.pb-flow-head span { color: var(--muted); font-size: 11.5px; }
+.pb-flow { display: flex; flex-direction: column; gap: 10px; }
+.pb-bubble {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+.pb-bubble.idle { opacity: .62; }
+.pb-avatar {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--subtle, #f4f4f5);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.pb-bubble.ok .pb-avatar { background: color-mix(in srgb, #34d399 18%, transparent); color: #1f7a5a; }
+.pb-bubble.run .pb-avatar { background: color-mix(in srgb, #5b8cff 18%, transparent); color: #2f5bd0; }
+.pb-bubble.wait .pb-avatar { background: color-mix(in srgb, #d9a01a 18%, transparent); color: #8a6410; }
+.pb-bubble.fail .pb-avatar { background: color-mix(in srgb, #c63c4b 18%, transparent); color: #a12b38; }
+.pb-bubble-body { flex: 1; min-width: 0; }
+.pb-bubble-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pb-bubble-head b { color: var(--text); font-size: 13px; font-weight: 600; }
+.pb-bubble-head small { color: var(--muted); font-size: 11.5px; }
+.pb-badge {
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+}
+.pb-badge.ok { border-color: color-mix(in srgb, #34d399 45%, var(--line)); color: #1f7a5a; }
+.pb-badge.run { border-color: #5b8cff; color: #2f5bd0; }
+.pb-badge.wait { border-color: #d9a01a; color: #8a6410; }
+.pb-badge.fail { border-color: #c63c4b; color: #a12b38; }
+.pb-bubble-text {
+  margin: 6px 0 0;
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+.pb-bubble-error { color: #a12b38; }
+.pb-bubble-arts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.pb-art-chip {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--subtle, #f7f7f8);
+  color: var(--text);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.pb-art-chip:hover { border-color: var(--line-strong, var(--line)); }
+.pb-bubble-handoff {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.pb-bubble-handoff b { color: var(--text); font-weight: 600; }
+.pb-end { opacity: .7; }
+[data-theme="dark"] .pb-bubble.ok .pb-avatar,
+[data-theme="dark"] .pb-badge.ok { color: #4ade9f; }
+[data-theme="dark"] .pb-bubble.run .pb-avatar,
+[data-theme="dark"] .pb-badge.run { color: #9cafff; }
+[data-theme="dark"] .pb-bubble.wait .pb-avatar,
+[data-theme="dark"] .pb-badge.wait { color: #f2c46d; }
+[data-theme="dark"] .pb-bubble.fail .pb-avatar,
+[data-theme="dark"] .pb-badge.fail,
+[data-theme="dark"] .pb-bubble-error { color: #f0899a; }
+
+/* --- 项目房间：左需求 / 右节点汇报流 ------------------------------ */
+/* 与 #runsView 同一套约束：撑满可用高度并内部滚动，否则页面会被
+   节点流撑到几千像素高。 */
+#projectRoomView.page-view.active {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  width: 100%;
+  max-width: none;
+  display: flex !important;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 18px clamp(20px, 2.2vw, 36px) 0;
+  box-sizing: border-box;
+}
+/* 带 page-heading 是为了让 body.view-has-heading 生效、顶栏标题让位；
+   布局仍由这里的规则决定（product-v4.css 在 platform.css 之后加载）。 */
+.room-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.room-title { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.room-title h1 { margin: 0; font-size: 17px; font-weight: 600; color: var(--text); }
+.room-title .muted { font-size: 12px; color: var(--muted); }
+.room-actions { margin-left: auto; display: flex; gap: 8px; }
+.room-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 18px;
+  padding: 14px 0 18px;
+}
+.room-list {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 6px;
+}
+.room-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.room-item:hover { background: var(--hover); }
+.room-item.is-current { border-color: var(--line); background: var(--subtle, #f7f7f8); }
+.room-item-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.room-item-top b {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.room-item-sub { color: var(--muted); font-size: 11.5px; }
+.room-flow {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+.pb-actions { display: inline-flex; gap: 6px; flex: none; }
+@media (max-width: 900px) {
+  .room-body { grid-template-columns: 1fr; }
+  .room-list { max-height: 180px; }
+}
+
