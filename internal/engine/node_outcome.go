@@ -16,6 +16,7 @@ func (e *Engine) waitApproval(runID string, node domain.WorkflowNode, msg string
 		nr.Status = "waiting_approval"
 		nr.FinishedAt = time.Now().UTC()
 		e.event(r, node.ID, "gate.waiting", msg)
+		e.announceNode(r, node.ID, "gate.waiting", msg)
 	})
 }
 
@@ -75,6 +76,7 @@ func (e *Engine) nodeFailedAt(runID string, node domain.WorkflowNode, attempt, g
 			nr.Activity = "返工预算耗尽，等待人工决策"
 			nr.Error = fmt.Sprintf("上游节点 %s 返工次数已用尽（MaxReworks=%d），无法再次打回，等待人工决策（批准=接受当前结果继续下游）。Agent 理由：%s", node.RejectTo, max(1, node.MaxReworks), err.Error())
 			e.event(r, node.ID, "gate.waiting", "返工预算耗尽，等待人工决策："+err.Error())
+			e.announceNode(r, node.ID, "gate.waiting", "返工预算耗尽，等待人工决策")
 		} else {
 			nr.Status = "failed"
 			e.event(r, node.ID, "node.failed", err.Error())

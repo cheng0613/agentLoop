@@ -144,6 +144,14 @@ function runNodeDefs(r){
   const wf=(state.data?.workflows||[]).find(w=>w.id===wfId);
   return (wf?.nodes||[]).filter(n=>n&&n.id);
 }
+// 交接关系同样可能被裁剪，按 workflowId 到流程目录兜底。
+function runNodeEdges(r){
+  const inline=(r?.workflowSnapshot?.edges||[]).filter(e=>e&&e.source&&e.target);
+  if(inline.length)return inline;
+  const wfId=r?.workflowId||r?.workflowSnapshot?.id||'';
+  const wf=(state.data?.workflows||[]).find(w=>w.id===wfId);
+  return (wf?.edges||[]).filter(e=>e&&e.source&&e.target);
+}
 function runNodeName(r,id){
   return runNodeDefs(r).find(n=>n.id===id)?.name||id;
 }

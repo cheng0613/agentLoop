@@ -4380,3 +4380,20 @@ body:not(.platform-rail-expanded) .rail-head-approvals {
 [data-theme="dark"] .room-run-status[data-tone="succeeded"] { color: #4ade9f; }
 [data-theme="dark"] .room-run-status[data-tone="failed"] { color: #f0899a; }
 
+/* 等待人工确认：琥珀色，和「正在执行」的蓝色区分 */
+.room-run-status[data-tone="waiting"] {
+  border-color: color-mix(in srgb, #d9a01a 50%, var(--line));
+  color: #8a6410;
+}
+.room-run-status[data-tone="waiting"]::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: 1px;
+}
+[data-theme="dark"] .room-run-status[data-tone="waiting"] { color: #f2c46d; }
+

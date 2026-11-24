@@ -1117,6 +1117,7 @@ func (e *Engine) executeNode(ctx context.Context, runID string, wf domain.Workfl
 			nr.Status = "waiting_approval"
 			nr.FinishedAt = time.Now().UTC()
 			e.event(r, node.ID, "gate.waiting", "等待人工验证："+manualGateName)
+			e.announceNode(r, node.ID, "gate.waiting", "等待人工验证："+manualGateName)
 		} else {
 			nr.Status = "succeeded"
 			nr.FinishedAt = time.Now().UTC()

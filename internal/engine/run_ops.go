@@ -261,6 +261,7 @@ func (e *Engine) pass(runID, nodeID, humanContext string, expected ...NodeExpect
 	appendArtifact(&r, nodeID, n.Attempt, "decision", "decision.md", "text/markdown", []byte(decision))
 	e.event(&r, nodeID, "node.passed", "人工通过该节点，继续下游")
 	appendControlTelemetry(&r, nodeID, "node.passed", "人工通过该节点，继续下游")
+	e.announceNode(&r, nodeID, "node.passed", "人工确认通过，继续下游")
 	r.CancelRequested = false
 	r.PauseRequested = false
 	r.Status = "running"

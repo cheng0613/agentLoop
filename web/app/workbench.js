@@ -2487,8 +2487,13 @@ function roomStatusText(run){
   if(!run)return '';
   if(ROOM_ACTIVE.includes(run.status)){
     const focus=runFocusNode(run);
-    const activity=focus?String(run.nodes?.[focus.id]?.activity||'').trim():'';
+    const focusStatus=focus?String(run.nodes?.[focus.id]?.status||''):'';
     if(!focus)return '排队中…';
+    // 人工门禁是「等人」，不是「在跑」，两种状态必须分开说。
+    if(run.status==='waiting'||['waiting_approval','waiting'].includes(focusStatus)){
+      return `等待人工确认：${focus.name}`;
+    }
+    const activity=String(run.nodes?.[focus.id]?.activity||'').trim();
     return `正在执行：${focus.name}${activity?` · ${activity}`:''}`;
   }
   const progress=runProgress(run);
@@ -2503,7 +2508,9 @@ function renderRoomStatus(run){
   if(!host)return;
   const text=roomStatusText(run);
   host.textContent=text||'';
-  host.dataset.tone=ROOM_ACTIVE.includes(run?.status)?'live':(run?.status||'');
+  // 等待人工确认是「等人」，用独立色调，不跟「正在跑」混为一谈。
+  const waiting=run?.status==='waiting'||runFocusNode(run)?.status==='waiting_approval';
+  host.dataset.tone=waiting?'waiting':(ROOM_ACTIVE.includes(run?.status)?'live':(run?.status||''));
   host.hidden=!text;
 }
 
@@ -2598,7 +2605,7 @@ function runFlowHTML(run,{heading='节点汇报'}={}){
   const snap=run?.workflowSnapshot||{};
   // 流式推送里的 workflowSnapshot 可能被裁剪过，用 runNodeDefs 兜底到流程目录。
   const defs=runNodeDefs(run);
-  const edges=(snap.edges||[]).filter(e=>e&&e.source&&e.target);
+  const edges=runNodeEdges(run);
   const agents=state.data.agents||[];
   const agentName=id=>agents.find(a=>a.id===id)?.name||'';
   const nameOf=id=>runNodeName(run,id);
@@ -2639,7 +2646,8 @@ function runFlowHTML(run,{heading='节点汇报'}={}){
         ${short?`<p class="pb-bubble-text">${escapeHTML(short)}</p>`:''}
         ${errorText?`<p class="pb-bubble-text pb-bubble-error">${escapeHTML(errorText)}</p>`:''}
         ${mine.length?`<div class="pb-bubble-arts">${mine.map(a=>`<button type="button" class="pb-art-chip" data-artifact="${escapeHTML(a.id)}" title="${escapeHTML(a.path||'')}">${escapeHTML(a.name||a.path||a.id)}</button>`).join('')}</div>`:''}
-        ${next?`<div class="pb-bubble-handoff">移交 → <b>${escapeHTML(next)}</b></div>`:'<div class="pb-bubble-handoff pb-end">流程终点</div>'}
+        ${next?`<div class="pb-bubble-handoff">移交 → <b>${escapeHTML(next)}</b></div>`
+          :(status==='pending'?'':'<div class="pb-bubble-handoff pb-end">流程终点</div>')}
       </div>
     </div>`;
   }).join('');
