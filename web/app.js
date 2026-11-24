@@ -1486,8 +1486,16 @@ function bindGlobalModals(){
 // the project picker instead of silently landing in the default project. The
 // default project still scopes the workbench pages.
 function nativeChatProjectId(){
-  const chosen=new URL(location.href).searchParams.has('projectId')||!!localStorage.getItem('agentflow.activeProject');
-  return chosen?($('#projectSwitcher')?.value||state.projectFilter||''):'';
+  // 直接把当前项目传下去。
+  //
+  // 这里原本还有一道 chosen 判断：只有 URL 带 projectId 或 localStorage 里
+  // 存过 activeProject 才算「用户选过」，否则返回空。但 state.projectFilter
+  // 在启动时就已经兜底成了 defaultProjectId，首次访问也会有一个确定的项目；
+  // 那道判断只会让第一次进入时 iframe 收到空的 projectId，于是工作台把它
+  // 当成「个人对话」——侧栏标题显示个人对话、严格的项目会话过滤也就一条都
+  // 看不到。
+  const select=$('#projectSwitcher');
+  return select?.value||state.projectFilter||'';
 }
 function postNativeChatProject(frame){
   frame.contentWindow?.postMessage({type:'agentflow-project-context',projectId:nativeChatProjectId()},location.origin);
