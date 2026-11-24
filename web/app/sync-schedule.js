@@ -594,11 +594,15 @@ function renderScheduleJobList(list,jobs,kind,canRun){
 }
 async function saveScheduleJob(e){
   e.preventDefault();
+  // 定时任务必须归属一个真实项目：它跑出来的会话要落进该项目的会话列表，
+  // 而侧栏严格按项目过滤，落不到项目就等于丢进一个看不见的地方。
+  // 原来这里兜底成 'platform'，后端也照单全收，等于允许出现无主任务。
+  if(!state.projectFilter)return toast('请先选择项目再保存定时任务');
   const f=e.currentTarget,cron=f.elements.scheduleMode.value==='cron',assistant=f.elements.jobKind.value==='assistant';
   const payload={
     id:f.elements.id.value,
     name:f.elements.name.value.trim()||(assistant?'':'触发配置'),
-    projectId:state.projectFilter||'platform',
+    projectId:state.projectFilter,
     skipDispatch:assistant,
     notifications:assistant?notificationPayload(scheduleNotificationBindings):[],
     workflowId:assistant?'':f.elements.workflowId.value,

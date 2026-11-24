@@ -37,8 +37,18 @@ func (h *scheduleHandlers) scheduleJobs(c *gin.Context) {
 			return
 		}
 		existingJob, _ := h.repo.ScheduleJob(job.ID)
-		if job.ProjectID == "" {
-			job.ProjectID = "platform"
+		// 定时任务必须归属一个真实项目：它跑出来的会话要进该项目的会话列表，
+		// 而工作台严格按项目过滤，无主任务等于把会话丢进看不见的地方。
+		// 原来缺省落 "platform"，那个项目并不在项目列表里。
+		//
+		// 更新已有任务时允许省略 projectId，继承它原来的归属——调用方只改
+		// 个别字段（开关、限流）的请求不该被要求把整个任务重发一遍。
+		if strings.TrimSpace(job.ProjectID) == "" && existingJob.ID != "" {
+			job.ProjectID = existingJob.ProjectID
+		}
+		if strings.TrimSpace(job.ProjectID) == "" {
+			c.JSON(400, map[string]string{"error": "定时任务必须绑定项目"})
+			return
 		}
 		// Saving by id must not let a writer of one project take over (or move)
 		// another project's job.
@@ -117,8 +127,9 @@ func (h *scheduleHandlers) scheduleJobs(c *gin.Context) {
 		if job.SkipDispatch {
 			job.AssistantModel = assistantScheduledModel(job.AssistantModel, loadAssistantModels(c.Request.Context(), ""))
 		}
-		if job.ProjectID == "" {
-			job.ProjectID = "platform"
+		if strings.TrimSpace(job.ProjectID) == "" {
+			c.JSON(400, map[string]string{"error": "定时任务必须绑定项目"})
+			return
 		}
 		// The job runs with its owner's key and identity; never take that from
 		// the request.

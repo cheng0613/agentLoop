@@ -64,6 +64,7 @@ func TestMiscScheduleRemainingHelpersAndHTTP(t *testing.T) {
 	longPrompt := strings.Repeat("x", 8000)
 	longRec := cvBRequest(t, f, http.MethodPost, "/api/schedule-jobs", map[string]any{
 		"name": "long", "skipDispatch": true, "assistantPrompt": longPrompt,
+		"projectId": "platform",
 	}, true)
 	if longRec.Code != http.StatusOK {
 		t.Fatalf("long prompt = %d: %s", longRec.Code, longRec.Body.String())
