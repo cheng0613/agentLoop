@@ -2232,16 +2232,7 @@ function renderDashboard(){
   statsHost.innerHTML=cards.map(c=>`<div class="stat-card"${c.to?` data-jump="${c.to}"`:''} style="--accent:${c.color}"><div class="label">${c.label}</div><div class="value">${c.value}</div><div class="foot">${c.foot}</div></div>`).join('');
   jumpBind(statsHost);
 
-  const rel=ms=>{
-    if(!ms)return '还没有活动';
-    const m=Math.round((Date.now()-ms)/60000);
-    if(m<1)return '刚刚';
-    if(m<60)return `${m} 分钟前`;
-    const h=Math.round(m/60);
-    if(h<24)return `${h} 小时前`;
-    const d=Math.round(h/24);
-    return d<30?`${d} 天前`:new Date(ms).toLocaleDateString();
-  };
+  const rel=pbRelTime;
 
   const issueRow=i=>{
     const stage=issueCurrentStage(i),out=issueOutcome(i);
@@ -2259,9 +2250,11 @@ function renderDashboard(){
     const p=row.project,focus=row.focus;
     const wfName=focus?(focus.workflowSnapshot?.name||focus.workflowId||'SOP'):'';
     const prog=focus?runProgress(focus):null;
+    const focusNode=focus?runFocusNode(focus):null;
+    const nodeBit=focusNode?`<span class="pb-node">› ${escapeHTML(focusNode.name)}</span>`:'';
     const sop=focus
       ? `<span class="status ${escapeHTML(runDisplayStatusClass(focus))}">${escapeHTML(runDisplayStatus(focus))}</span>
-         <b>${escapeHTML(wfName)}</b>${prog&&prog.total?`<span class="pb-progress">${prog.done}/${prog.total}</span>`:''}`
+         <b>${escapeHTML(wfName)}</b>${nodeBit}${prog&&prog.total?`<span class="pb-progress">${prog.done}/${prog.total}</span>`:''}`
       : '<span class="muted">还没有 SOP 运行</span>';
     const counts=row.list.length
       ? `需求 ${row.list.length}${row.open.length?` · 进行中 ${row.open.length}`:''}`
@@ -2270,7 +2263,10 @@ function renderDashboard(){
     if(sessionsReady)metaParts.push(`对话 ${row.conversations.length}`);
     metaParts.push(rel(row.stamp));
     const meta=metaParts.join(' · ');
-    return `<details class="pb-card" data-project="${escapeHTML(p.id)}">
+    const arts=Number(focus?.artifactCount)||0;
+    // 优先取这次运行的群会话，没有就取该项目最近的会话。
+    const chat=row.conversations.find(s=>s.runId&&s.runId===focus?.id)||row.conversations[0]||null;
+    return `<details class="pb-card" data-project="${escapeHTML(p.id)}"${focus?` data-run="${escapeHTML(focus.id)}"`:''} data-arts="${arts}"${chat?` data-session="${escapeHTML(chat.id)}"`:''}>
       <summary>
         <div class="pb-head">
           <div class="pb-title"><b>${escapeHTML(p.name||p.id)}</b><small>${escapeHTML(counts)}</small></div>
@@ -2279,7 +2275,11 @@ function renderDashboard(){
         <div class="pb-line">${sop}</div>
         <div class="pb-line pb-meta">${escapeHTML(meta)}</div>
       </summary>
-      <div class="pb-body">${row.list.length?row.list.map(issueRow).join(''):'<div class="empty-box">这个项目还没有需求</div>'}</div>
+      <div class="pb-body">
+        <div class="pb-issues">${row.list.length?row.list.map(issueRow).join(''):'<div class="empty-box">这个项目还没有需求</div>'}</div>
+        ${chat?`<div class="pb-chat-feed" data-chat-host>载入群里最新汇报…</div>`:''}
+        ${arts?`<div class="pb-artifacts" data-arts-host>载入产出清单…</div>`:''}
+      </div>
     </details>`;
   };
 
@@ -2297,6 +2297,82 @@ function renderDashboard(){
   boardHost.querySelectorAll('[data-chat-project]').forEach(el=>{
     el.onclick=e=>{e.preventDefault();e.stopPropagation();openProjectChat(el.dataset.chatProject)};
   });
+  // 产出清单按需加载：列表接口只带数量，展开时才去取最近一次运行的详情。
+  boardHost.querySelectorAll('.pb-card').forEach(card=>{
+    card.addEventListener('toggle',()=>{
+      if(!card.open)return;
+      void loadProjectArtifacts(card);
+      void loadProjectChat(card);
+    });
+  });
+}
+
+// 相对时间：项目卡与群汇报共用。
+function pbRelTime(ms){
+  if(!ms)return '还没有活动';
+  const m=Math.round((Date.now()-ms)/60000);
+  if(m<1)return '刚刚';
+  if(m<60)return `${m} 分钟前`;
+  const h=Math.round(m/60);
+  if(h<24)return `${h} 小时前`;
+  const d=Math.round(h/24);
+  return d<30?`${d} 天前`:new Date(ms).toLocaleDateString();
+}
+
+// 群里的最新汇报：SOP 各节点的角色在群会话里说明完成了什么、交付了什么。
+// 只在展开时拉一次会话详情；会话列表拿不到（未登录/无权限）时整块不渲染。
+async function loadProjectChat(card){
+  const host=card.querySelector('[data-chat-host]');
+  const id=card.dataset.session;
+  if(!host||!id||host.dataset.loaded)return;
+  host.dataset.loaded='1';
+  const plain=text=>String(text||'')
+    .replace(/```[\s\S]*?```/g,' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g,' ')
+    .replace(/[#>*_`~|-]{1,}/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+  try{
+    const session=await api(`/api/assistant/sessions/${encodeURIComponent(id)}`,{silent:true});
+    const msgs=(session?.messages||[]).filter(m=>m&&m.content).slice(-3);
+    if(!msgs.length){host.textContent='这个群还没有汇报';return}
+    host.innerHTML=`<div class="pb-chat-head"><b>群里最新汇报</b><span>${msgs.length} 条</span></div>
+      <div class="pb-chat-list">${msgs.map(m=>{
+        const who=m.speakerName||m.authorName||(m.role==='user'?'我':'助手');
+        const body=plain(m.content);
+        const short=body.length>110?`${body.slice(0,110)}…`:body;
+        return `<div class="pb-chat-item"><div class="pb-chat-who"><b>${escapeHTML(who)}</b><span>${escapeHTML(pbRelTime(Date.parse(m.createdAt)||0))}</span></div><p>${escapeHTML(short)}</p></div>`;
+      }).join('')}</div>`;
+  }catch(error){
+    host.textContent='群汇报加载失败';
+  }
+}
+
+// 把某次运行的交付物列进展开区。数据来自 /api/runs/{id}，点条目直接预览。
+async function loadProjectArtifacts(card){
+  const host=card.querySelector('[data-arts-host]');
+  const runId=card.dataset.run;
+  if(!host||!runId||host.dataset.loaded)return;
+  host.dataset.loaded='1';
+  try{
+    const run=await api(`/api/runs/${encodeURIComponent(runId)}`,{silent:true});
+    const arts=(run?.artifacts||[]);
+    if(!arts.length){host.textContent='这次运行还没有登记产出';return}
+    host.innerHTML=`<div class="pb-artifacts-head"><b>最近一次运行的产出</b><span>${arts.length} 个 · 按节点与尝试次数保留版本</span></div>
+      <div class="pb-artifact-list">${arts.map(a=>`<button type="button" class="pb-artifact" data-artifact="${escapeHTML(a.id)}" title="${escapeHTML(a.path||a.name||'')}">
+        <span class="pb-artifact-icon">${a.mediaType==='application/json'?'{}':'MD'}</span>
+        <span class="pb-artifact-main"><b>${escapeHTML(a.name||a.path||a.id)}</b><small>${escapeHTML(a.path||'')}</small></span>
+        <small class="pb-artifact-size">${Math.max(1,Math.ceil((a.size||0)/1024))} KB</small>
+      </button>`).join('')}</div>`;
+    host.querySelectorAll('[data-artifact]').forEach(b=>{
+      b.onclick=e=>{
+        e.preventDefault();e.stopPropagation();
+        if(typeof previewArtifact==='function')previewArtifact(run,b.dataset.artifact);
+      };
+    });
+  }catch(error){
+    host.textContent='产出清单加载失败';
+  }
 }
 
 // 从项目卡直接进入工作台，并把宿主项目切到该项目。复用顶栏下拉的切换链路：
