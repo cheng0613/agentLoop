@@ -29,6 +29,14 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+
+# Windows 控制台默认 GBK，打印 ✓ 之类的字符会抛 UnicodeEncodeError，
+# 让一个本来通过、只在这里崩溃的检查看起来像是失败。
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

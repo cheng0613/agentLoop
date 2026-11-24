@@ -2,23 +2,23 @@
 :root {
   --harness-flow: cubic-bezier(.16, 1, .3, 1);
 }
-body :is(.button, .icon-button, .theme-toggle, .command-trigger, .nav,
+body :is(.button, .icon-button, .theme-toggle, .nav,
   .collab-new-chat, .user-badge, .rail-brand) {
   transition: background-color 200ms ease, color 200ms ease,
     border-color 200ms ease, box-shadow 200ms ease,
     opacity 180ms ease !important;
 }
-body :is(.button, .icon-button, .theme-toggle, .command-trigger, .collab-new-chat,
+body :is(.button, .icon-button, .theme-toggle, .collab-new-chat,
   .user-badge, .rail-brand):is(:hover, :active) {
   transform: none;
 }
-body :is(.button, .icon-button, .theme-toggle, .command-trigger, .nav,
+body :is(.button, .icon-button, .theme-toggle, .nav,
   .user-badge, .rail-brand):focus-visible {
   outline: 2px solid color-mix(in srgb, var(--blue) 70%, transparent);
   outline-offset: 3px;
 }
 @media (hover: hover) {
-  body :is(.button, .icon-button, .theme-toggle, .command-trigger, .collab-new-chat):not(:disabled):not([aria-disabled="true"]):not([aria-readonly="true"]):hover {
+  body :is(.button, .icon-button, .theme-toggle, .collab-new-chat):not(:disabled):not([aria-disabled="true"]):not([aria-readonly="true"]):hover {
     box-shadow: 0 4px 12px color-mix(in srgb, var(--text) 8%, transparent);
   }
 }
@@ -52,13 +52,13 @@ body :is([disabled], [aria-disabled="true"], [aria-readonly="true"], [inert]) .h
   transition: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  body :is(.button, .icon-button, .theme-toggle, .command-trigger, .nav,
+  body :is(.button, .icon-button, .theme-toggle, .nav,
     .collab-new-chat, .user-badge, .rail-brand,
     .nav-group-chevron, .page-view, .modal-card, .command-dialog, .user-profile-popover) {
     animation: none !important;
     transition: none !important;
   }
-  body :is(.button, .icon-button, .theme-toggle, .command-trigger, .nav,
+  body :is(.button, .icon-button, .theme-toggle, .nav,
     .collab-new-chat, .user-badge, .rail-brand):is(:hover, :active) { transform: none !important; }
   body .platform-rail .rail-btn,
   body .platform-rail .rail-btn:is(:hover, :active) {

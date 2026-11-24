@@ -75,6 +75,12 @@
   <aside class="platform-rail" id="platformRail" aria-label="全局导航">
     <nav class="rail-nav">
       <span style="display:none">日常工作</span>
+      <!-- 0. 搜索：全局搜索的唯一入口，点开命令面板（⌘K 同效）。 -->
+      <button class="rail-btn" id="railSearchBtn" type="button" data-tooltip="搜索" aria-label="搜索" aria-keyshortcuts="Meta+K Control+K">
+        <svg class="agent-icon harness-icon" data-icon="search" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <span class="rail-label">搜索</span>
+      </button>
+
       <!-- 1. AI 工作台 (Codex 风格 Home 房子图标) -->
       <button class="rail-btn nav" data-view="collaboration" data-tooltip="AI 工作台" aria-label="AI 工作台">
         <svg class="agent-icon harness-icon" data-icon="home-start" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3.5 10 7.3-6a1.9 1.9 0 0 1 2.4 0l7.3 6"/><path d="M5.5 8.4v10.1A1.5 1.5 0 0 0 7 20h3v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5h3a1.5 1.5 0 0 0 1.5-1.5V8.4"/></svg>
@@ -175,7 +181,6 @@
   <!-- 顶栏：页面上下文 + 全局项目切换 + 关键操作 -->
   <header class="topbar">
     <div class="page-context"><b id="pageTitle">AI 工作台</b><span>／ Agent 原生研发协作平台</span></div>
-    <button id="commandPaletteTrigger" class="command-trigger" type="button"><span><svg class="agent-icon harness-icon" data-icon="search" data-icon-motion="idle" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span><b>搜索需求、运行、SOP 或 Agent</b><kbd>⌘K</kbd></button>
     <div class="topbar-spacer"></div>
     <div class="topbar-project">
       <label class="topbar-project-label">项目</label>

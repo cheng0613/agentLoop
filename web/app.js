@@ -1079,7 +1079,8 @@ function bind(){
       }
     });
   }
-  $('#commandPaletteTrigger').onclick=openCommandPalette;
+  // 全局搜索的唯一入口在 rail。顶栏那个搜索框已移除，⌘K 仍然有效。
+  $('#railSearchBtn').onclick=openCommandPalette;
   $('#commandPalette').onclick=e=>{if(e.target===$('#commandPalette'))closeCommandPalette()};
   $('#commandSearch').oninput=renderCommandResults;
   $('#commandResults').onclick=e=>{const item=e.target.closest('[data-command-index]');if(item)executeCommand(Number(item.dataset.commandIndex))};
