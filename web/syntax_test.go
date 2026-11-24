@@ -2641,17 +2641,18 @@ func TestCodexStyleLeftMiniRailLayout(t *testing.T) {
 	}
 	appJs := string(appJsBytes)
 	// sops / flow / agents 自带内部布局（流程设计器有角色面板），同样不该再套一层侧栏。
-	if !strings.Contains(appJs, "const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow', 'agents', 'aiSchedules'];") {
-		t.Fatal("app.js must hide the sidebar on the rail-only pages: 需求、待我确认、统计、流程、角色、定时任务")
+	// 定时任务不在此列：它现在是设置侧栏「流程与任务」里的入口，需要侧栏导航。
+	if !strings.Contains(appJs, "const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow', 'agents'];") {
+		t.Fatal("app.js must hide the sidebar on the rail-only pages: 需求、待我确认、统计、流程、角色")
 	}
 	managed := appJs[strings.Index(appJs, "const settingsManagementViews="):]
 	managed = managed[:strings.Index(managed, "\n")]
 	if strings.Contains(managed, "'observability'") {
 		t.Fatal("统计 must not enter settings management mode")
 	}
-	for _, view := range []string{"'runs'", "'bots'"} {
+	for _, view := range []string{"'runs'", "'aiSchedules'", "'bots'"} {
 		if !strings.Contains(managed, view) {
-			t.Fatalf("%s moved into the settings sidebar and must enter settings management mode", view)
+			t.Fatalf("%s lives in the settings sidebar and must enter settings management mode", view)
 		}
 	}
 	if !strings.Contains(appJs, "observability:'统计'") {

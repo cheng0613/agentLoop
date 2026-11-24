@@ -1595,7 +1595,7 @@ let settingsSidebarWasManaged=false;
 // 「流程」与「流程设计」已提升为一级导航（rail），不再属于设置区。
 // 留在列表里会让这两页渲染设置侧栏：流程页出现一个空侧栏，流程设计页
 // 出现完整设置菜单，且正文被侧栏挤到右侧。
-const settingsManagementViews=['settings','assistant','projects','bots','runs','mcp','rules','skills','runners','dockerfiles','environments','sandboxes','guide','platform'];
+const settingsManagementViews=['settings','assistant','projects','bots','runs','aiSchedules','mcp','rules','skills','runners','dockerfiles','environments','sandboxes','guide','platform'];
 const settingsRouteMotion=matchMedia('(prefers-reduced-motion: reduce)');
 let settingsRouteTransition=null;
 let settingsRouteApplying=false;
@@ -1967,7 +1967,7 @@ function switchView(name){
   // 页面自己管理内部布局（流程设计有自己的角色面板，角色页是单行列表）。
   // 移出设置区时两处都要改：settingsManagementViews 与 noSidebarViews，
   // 只改前者会留下一个空的侧栏容器。
-  const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow', 'agents', 'aiSchedules'];
+  const noSidebarViews = ['issues', 'approvals', 'observability', 'sops', 'flow', 'agents'];
   document.body.classList.toggle('no-sidebar', noSidebarViews.includes(name));
   document.body.classList.toggle('chat-next-active', name==='collaboration');
   if(name==='collaboration'||isPureManagement)mountNativeChat();
