@@ -590,10 +590,14 @@ func promoteClarifiedIssueTodo(issue *domain.Issue) {
 	}
 }
 
-const (
-	clarificationHeading       = "## AgentLoop 澄清结论"
-	legacyClarificationHeading = "## AgentFlow 澄清结论"
-)
+const clarificationHeading = "## AgentLoop 澄清结论"
+
+// 品牌改过两次：AgentFlow → LoopForge → AgentLoop。早期版本写进描述里的
+// 标题块都要能被识别，否则重新澄清时旧块删不掉，同一需求会攒出多个结论。
+var legacyClarificationHeadings = []string{
+	"## AgentFlow 澄清结论",
+	"## LoopForge 澄清结论",
+}
 
 func appendClarificationDescription(description, summary string) string {
 	summary = strings.TrimSpace(summary)
@@ -604,7 +608,7 @@ func appendClarificationDescription(description, summary string) string {
 	desc := strings.TrimRight(description, " \t\n")
 	// Descriptions written before the rename still carry the old heading; replace
 	// that block too so a re-clarified issue keeps a single conclusion.
-	for _, heading := range []string{clarificationHeading, legacyClarificationHeading} {
+	for _, heading := range append([]string{clarificationHeading}, legacyClarificationHeadings...) {
 		if i := strings.Index(desc, heading); i >= 0 {
 			desc = strings.TrimRight(desc[:i], " \t\n")
 		}
