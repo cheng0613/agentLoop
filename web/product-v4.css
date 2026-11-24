@@ -81,7 +81,8 @@ body.no-sidebar .platform-sidebar {
   margin: 14px 0 !important;
   box-sizing: border-box !important;
   background: var(--rail-surface) !important;
-  border-right: 0;
+  /* 一条贯穿上下的分隔线，把 rail 与右侧内容区分开。 */
+  border-right: 1px solid var(--line) !important;
   border-radius: 16px 0 0 16px;
   display: flex !important;
   flex-direction: column !important;
@@ -3693,14 +3694,21 @@ html[data-theme="dark"] #runnersView .runner-runtime-icon:is(.codex,.claude-code
 /* --- rail 顶部工具条 --------------------------------------------- */
 /* 收起/展开、菜单、前进后退放在 rail 顶端一行，最右是待我确认。
    收起态（56px）里这一行换行排布，展开态（304px）里一行放下。 */
+/* 高度与内容区 .topbar 对齐（56px），让两边的工具栏落在同一水平线上。 */
 .rail-head {
   flex: none;
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 4px 6px 6px;
+  height: 56px;
+  padding: 0 6px;
   width: 100%;
   box-sizing: border-box;
+}
+.rail-head-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 .rail-head-spacer {
   flex: 1 1 auto;
@@ -3709,8 +3717,8 @@ html[data-theme="dark"] #runnersView .runner-runtime-icon:is(.codex,.claude-code
 .rail-head-btn {
   position: relative;
   flex: none;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 0;
   border-radius: 8px;
@@ -3752,12 +3760,15 @@ html[data-theme="dark"] #runnersView .runner-runtime-icon:is(.codex,.claude-code
   display: none;
 }
 
-/* 收起态只有 56px：工具条折成两行，保证按钮不挤成一条线。 */
+/* 收起态只有 56px 宽：工具条折成两行，并允许它长高（不再固定 56px），
+   保证五个按钮都放得下。 */
 body:not(.platform-rail-expanded) .rail-head {
   flex-wrap: wrap;
   justify-content: center;
   gap: 2px;
   row-gap: 2px;
+  height: auto;
+  min-height: 56px;
   padding: 6px 4px;
 }
 body:not(.platform-rail-expanded) .rail-head-spacer {
