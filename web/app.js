@@ -1894,7 +1894,9 @@ function restoredView(){
   const saved=localStorage.getItem('agentflow.activeView');
   if(saved==='playbooks')return 'sops';
   if(saved==='management')return 'settings';
-  if(titles[saved]&&saved!=='dashboard')return saved;
+  // dashboard 原本是死页面（被重定向掉），所以这里特意排除；现在它是
+  // 一级入口「项目」，刷新后应当回到原处。
+  if(titles[saved])return saved;
   return 'collaboration';
 }
 function routePart(index){
