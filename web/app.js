@@ -1000,9 +1000,23 @@ function bind(){
     }else switchView(btn.dataset.view);
   });
   $('#settingsSidebarToggle')?.addEventListener('click',()=>{cancelSettingsRouteTransition();setSettingsSidebarExpanded(!settingsSidebarExpanded())});
+  // rail 默认展开；窄屏一律收起（放不下 304px），且不覆盖用户的选择。
+  setPlatformRailExpanded(railExpandable() && initialRailExpanded(), {persist:false});
+  matchMedia('(min-width:1001px)').addEventListener('change',event=>{
+    if(!event.matches)setPlatformRailExpanded(false,{persist:false});
+  });
   $('#railSidebarToggle')?.addEventListener('click',()=>{
     setPlatformRailExpanded(!platformRailExpanded());
   });
+  // 待我确认：改为弹窗，不再占用一个独立页面。
+  $('#railApprovalsBtn')?.addEventListener('click',()=>openApprovalsDialog());
+  bindApprovalsDialog();
+  // 前进/后退：走浏览器的历史栈，与 hash 路由（applyRoute）保持一致。
+  $('#railBackBtn')?.addEventListener('click',()=>history.back());
+  $('#railForwardBtn')?.addEventListener('click',()=>history.forward());
+  syncRailHistoryButtons();
+  window.addEventListener('popstate',syncRailHistoryButtons);
+  window.addEventListener('locationchange',syncRailHistoryButtons);
   document.addEventListener('click',event=>{
     if(document.body.classList.contains('management-mode')&&event.target instanceof Element&&event.target.closest('.collab-rail-toggle')){
       event.preventDefault();event.stopImmediatePropagation();
@@ -1767,10 +1781,65 @@ function setSettingsSidebarExpanded(expanded){
     });
   }
 }
+// rail 默认展开。展开态持久化：用户收起过一次，下次进来保持收起。
+const RAIL_EXPANDED_KEY='agentflow.railExpanded';
+function initialRailExpanded(){
+  try{
+    const saved=localStorage.getItem(RAIL_EXPANDED_KEY);
+    if(saved!==null)return saved==='1';
+  }catch{}
+  return true; // 首次进入默认展开
+}
+// 窄屏放不下展开态：这类视口一律收起，也不覆盖用户的选择。
+function railExpandable(){return matchMedia('(min-width:1001px)').matches}
+// 前进/后退按钮的可用状态。浏览器不暴露可读的历史长度（history.length 含
+// 其他标签页），所以跟着自己的 hash 路由记录走：initRailHistory 记下每次
+// pushState 的序号，这里比较当前序号与首尾。
+function syncRailHistoryButtons(){
+  const back=$('#railBackBtn'), forward=$('#railForwardBtn');
+  if(!back||!forward)return;
+  const seq=(history.state&&Number(history.state.railSeq))||0;
+  const max=railHistoryMax||seq;
+  back.disabled=seq<=0;
+  forward.disabled=seq>=max;
+}
+let railHistoryMax=0;
+
+// 待我确认：从独立页面改成弹窗。内容仍渲染进 #approvalsView 里那几个
+// 固定容器（#approvalStats/#approvalBatch/#approvalList），所以
+// approvals.js 与它那 112 处 #approvalsView 限定的样式都不用改。
+function openApprovalsDialog(){
+  const host=$('#approvalsDialog');
+  if(!host)return;
+  // .modal 默认 display:none，靠 .open 显示；#approvalsView 在弹窗里也
+  // 需要 active 态，否则它那套 #approvalsView 限定的样式不生效。
+  host.classList.add('open');
+  const inner=$('#approvalsView');
+  if(inner)inner.classList.add('active');
+  state.currentView='approvals';
+  renderApprovals(true).catch(()=>{});
+  requestAnimationFrame(()=>host.querySelector('[data-approvals-close]')?.focus());
+}
+function closeApprovalsDialog(){
+  $('#approvalsDialog')?.classList.remove('open');
+}
+// 弹窗交互：点遮罩或按 Esc 关闭。
+function bindApprovalsDialog(){
+  const host=$('#approvalsDialog');
+  if(!host||host.dataset.bound)return;
+  host.dataset.bound='1';
+  host.addEventListener('click',event=>{
+    if(event.target===host||event.target.closest?.('[data-approvals-close]'))closeApprovalsDialog();
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&host.classList.contains('open'))closeApprovalsDialog();
+  });
+}
 function platformRailExpanded(){return document.body.classList.contains('platform-rail-expanded')}
-function setPlatformRailExpanded(expanded){
+function setPlatformRailExpanded(expanded,{persist=true}={}){
   expanded=!!expanded;
   document.body.classList.toggle('platform-rail-expanded',expanded);
+  if(persist){try{localStorage.setItem(RAIL_EXPANDED_KEY,expanded?'1':'0')}catch{}}
   const button=$('#railSidebarToggle');
   if(!button)return;
   const label=expanded?'只显示图标':'展开导航';
@@ -1923,6 +1992,12 @@ function persistView(name,push=false){
   else history.replaceState(null,'',next);
 }
 function switchView(name){
+  // 待我确认已从独立页面改成弹窗：任何 switchView('approvals') 的入口
+  // （命令面板、旧链接、快捷入口）都重定向到弹窗，不再切视图。
+  if(name==='approvals'){
+    if(typeof openApprovalsDialog==='function')openApprovalsDialog();
+    return;
+  }
   $$('details.collab-settings').forEach(menu=>menu.open=false);
   const titles=viewTitles();
   if(name==='dashboard')name='collaboration';

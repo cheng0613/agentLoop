@@ -20,7 +20,8 @@ function openRunFromId(id,opts={}){
 }
 function updateApprovalBadge(){
   const n=approvalItems().length;
-  const badge=$('#approvalNavBadge');
+  // 待我确认已从 rail 菜单项改成顶部工具条上的弹窗入口，角标跟着搬过去。
+  const badge=$('#railApprovalBadge');
   if(!badge)return;
   badge.hidden=!n;
   badge.textContent=n||'';

@@ -73,6 +73,28 @@
 
   <!-- 全局业务导航：56px 图标栏 -->
   <aside class="platform-rail" id="platformRail" aria-label="全局导航">
+    <!-- 顶栏工具条：展开/收起、菜单、前进后退，最右是待我确认。
+         收起/展开按钮从底部挪到这里，和宿主其余导航操作放在一处。 -->
+    <div class="rail-head">
+      <button type="button" class="rail-head-btn" id="railSidebarToggle" data-tooltip="收起导航" aria-label="收起导航" aria-expanded="true" aria-controls="platformRail">
+        <svg class="agent-icon harness-icon" data-icon="panel-left" data-icon-motion="idle" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+      </button>
+      <button type="button" class="rail-head-btn" id="railMenuBtn" data-tooltip="菜单" aria-label="菜单" aria-haspopup="menu" aria-expanded="false">
+        <svg class="agent-icon harness-icon" data-icon="menu" data-icon-motion="idle" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+      </button>
+      <button type="button" class="rail-head-btn" id="railBackBtn" data-tooltip="后退" aria-label="后退" disabled>
+        <svg class="agent-icon harness-icon" data-icon="chevron-left" data-icon-motion="idle" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <button type="button" class="rail-head-btn" id="railForwardBtn" data-tooltip="前进" aria-label="前进" disabled>
+        <svg class="agent-icon harness-icon" data-icon="chevron-right" data-icon-motion="idle" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <span class="rail-head-spacer"></span>
+      <button type="button" class="rail-head-btn rail-head-approvals" id="railApprovalsBtn" data-tooltip="待我确认" aria-label="待我确认" aria-haspopup="dialog">
+        <svg class="agent-icon harness-icon" data-icon="check" data-icon-motion="idle" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h7"/><path d="m15 16 2 2 4-4"/></svg>
+        <span class="rail-head-badge" id="railApprovalBadge" hidden></span>
+      </button>
+    </div>
+
     <nav class="rail-nav">
       <span style="display:none">日常工作</span>
       <!-- 0. 搜索：全局搜索的唯一入口，点开命令面板（⌘K 同效）。 -->
@@ -99,12 +121,6 @@
         <span class="rail-label">需求</span>
       </button>
 
-      <!-- 4. 待我确认 (带审批徽标) -->
-      <button class="rail-btn nav" data-view="approvals" data-tooltip="待我确认" aria-label="待我确认">
-        <svg class="agent-icon harness-icon" data-icon="gate" data-icon-motion="idle" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path class="gate-shield" d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path class="gate-check agent-check-draw" pathLength="1" d="m9 12 2 2 4-4"/></svg>
-        <span class="rail-label">待我确认</span>
-        <span id="approvalNavBadge" class="nav-badge" hidden></span>
-      </button>
 
       <!-- 5. 角色（伙伴，可独立对话） -->
       <button class="rail-btn nav" data-view="agents" data-tooltip="角色" aria-label="角色">
@@ -122,10 +138,6 @@
     <div class="rail-bottom">
       <div class="rail-divider" role="separator"></div>
 
-      <button type="button" class="rail-btn" id="railSidebarToggle" data-tooltip="展开导航" aria-label="展开导航" aria-expanded="false" aria-controls="platformRail">
-        <svg class="agent-icon harness-icon" data-icon="panel-left" data-icon-motion="idle" width="18" height="18" aria-hidden="true" focusable="false"></svg>
-        <span class="rail-label">展开导航</span>
-      </button>
 
       <!-- 设置 -->
       <button class="rail-btn nav" id="railSettingsEntry" data-view="settings" data-tooltip="设置" aria-label="设置" aria-controls="settingsSidebar" aria-expanded="false">
@@ -387,18 +399,6 @@
     </section>
 
     <!-- 待我处理 -->
-    <section id="approvalsView" class="view page-view">
-      <div class="page-heading approvals-heading">
-        <div><p class="eyebrow">需要拍板</p><h1>待我确认</h1><p>流程跑到人工确认节点时会停在这里。你批准后继续，退回则按 SOP 返工。</p></div>
-        <div class="heading-actions">
-          <span class="live-state" id="approvalLiveState" title="列表不会自动刷新，点右侧按钮获取最新"><i></i> <span data-updated>未加载</span></span>
-          <button id="refreshApprovals" class="button ghost" type="button"><svg class="agent-icon harness-icon" data-icon="refresh" width="14" height="14" aria-hidden="true" focusable="false"></svg>刷新</button>
-        </div>
-      </div>
-      <div id="approvalStats" class="approval-stats"></div>
-      <div id="approvalBatch" class="approval-batch" hidden></div>
-      <div id="approvalList" class="approval-list"></div>
-    </section>
 
     <!-- SOP 流程库 -->
     <section id="sopsView" class="view page-view">
@@ -1314,6 +1314,30 @@
     </div>
   </div>
   <div id="revisionModal" class="modal"><div class="modal-card revision-card"><button type="button" class="modal-close" id="revisionClose">×</button><div class="wizard-head"><div><p class="eyebrow">版本历史</p><h2 id="revisionTitle">版本历史</h2><p>对比上一版并回退。回退会生成新版本，不会改已经跑完的记录。</p></div></div><div id="revisionList" class="revision-list"></div><pre id="revisionDiff" class="revision-diff">选择一个历史版本查看差异。</pre><div class="wizard-actions"><button type="button" class="button ghost" id="revisionClose2">关闭</button><button type="button" class="button primary" id="revisionRestore" disabled>回退到此版本</button></div></div></div>
+  <!-- 待我确认：从独立页面改成弹窗。内部保留 id="approvalsView"，
+       approvals.js 与所有 #approvalsView 限定的样式都不用改。 -->
+  <div id="approvalsDialog" class="modal approvals-dialog" hidden>
+    <div class="modal-card approvals-dialog-card" role="dialog" aria-modal="true" aria-labelledby="approvalsDialogTitle">
+      <header class="approvals-dialog-head">
+        <div>
+          <p class="eyebrow">需要拍板</p>
+          <h2 id="approvalsDialogTitle">待我确认</h2>
+          <p>流程跑到人工确认节点时会停在这里。你批准后继续，退回则按 SOP 返工。</p>
+        </div>
+        <div class="approvals-dialog-actions">
+          <span class="live-state" id="approvalLiveState" title="列表不会自动刷新，点右侧按钮获取最新"><i></i> <span data-updated>未加载</span></span>
+          <button id="refreshApprovals" class="button ghost" type="button"><svg class="agent-icon harness-icon" data-icon="refresh" width="14" height="14" aria-hidden="true" focusable="false"></svg>刷新</button>
+          <button type="button" class="modal-close" data-approvals-close aria-label="关闭">×</button>
+        </div>
+      </header>
+      <section id="approvalsView" class="approvals-in-dialog">
+        <div id="approvalStats" class="approval-stats"></div>
+        <div id="approvalBatch" class="approval-batch" hidden></div>
+        <div id="approvalList" class="approval-list"></div>
+      </section>
+    </div>
+  </div>
+
   <script src="/app.js"></script>
   <script src="/app/assistant-models.js"></script>
   <script src="/app/access.js"></script>
@@ -1367,5 +1391,6 @@
   </div>
   </div>
   <script src="/orchestrate.js?v=20261109cli"></script>
+
 </body>
 </html>

@@ -12,11 +12,13 @@ func TestRailSidebarToggleSitsAboveSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 	html := string(htmlRaw)
-	bottom := strings.Index(html, `class="rail-bottom"`)
+	// 展开/收起按钮在 rail 顶部的工具条里，是这一行的第一个按钮；
+	// 它已不再位于底部设置之上。
+	head := strings.Index(html, `class="rail-head"`)
+	nav := strings.Index(html, `class="rail-nav"`)
 	toggle := strings.Index(html, `id="railSidebarToggle"`)
-	settings := strings.Index(html, `id="railSettingsEntry"`)
-	if bottom < 0 || toggle < bottom || settings < toggle {
-		t.Fatal("sidebar toggle must sit in the rail, directly above settings")
+	if head < 0 || nav < 0 || toggle < head || toggle > nav {
+		t.Fatal("sidebar toggle must sit in the rail head, before the nav")
 	}
 	button := html[strings.LastIndex(html[:toggle], "<button") : strings.Index(html[toggle:], "</button>")+toggle]
 	if strings.Contains(button, "data-view=") {
@@ -25,13 +27,21 @@ func TestRailSidebarToggleSitsAboveSettings(t *testing.T) {
 	if !strings.Contains(button, `data-icon="panel-left"`) || !strings.Contains(button, `aria-controls="platformRail"`) {
 		t.Fatal("sidebar toggle must use the panel-left icon and control the icon rail")
 	}
-	if !strings.Contains(button, `aria-expanded="false"`) || !strings.Contains(button, `data-tooltip="展开导航"`) {
-		t.Fatal("icon rail starts as icons and offers to expand")
+	// rail 默认展开，所以按钮初始就是「收起导航」。
+	if !strings.Contains(button, `aria-expanded="true"`) || !strings.Contains(button, `data-tooltip="收起导航"`) {
+		t.Fatal("icon rail expands by default and offers to collapse")
 	}
-	for _, label := range []string{"AI 工作台", "统计", "需求", "待我确认", "设置"} {
+	for _, label := range []string{"AI 工作台", "统计", "需求", "设置"} {
 		if !strings.Contains(html, `<span class="rail-label">`+label+`</span>`) {
 			t.Fatalf("expanded rail missing label %s", label)
 		}
+	}
+	// 待我确认不再是 rail 里的菜单项，而是顶部工具条上的弹窗入口。
+	if !strings.Contains(html, `id="railApprovalsBtn"`) || !strings.Contains(html, `aria-label="待我确认"`) {
+		t.Fatal("待我确认 must be a rail head action that opens the approvals dialog")
+	}
+	if strings.Contains(html, `data-view="approvals"`) {
+		t.Fatal("approvals must no longer be a navigable view")
 	}
 	for _, moved := range []string{"流程模板", "运行记录", "定时任务"} {
 		if strings.Contains(html, `<span class="rail-label">`+moved+`</span>`) {

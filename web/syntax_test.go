@@ -2546,7 +2546,9 @@ func TestCodexStyleLeftMiniRailLayout(t *testing.T) {
 
 	// 2. 左侧小栏承载日常入口：工作台、统计、需求、待我确认，以及角色与流程。
 	// 流程（sops）已从设置导航上提到 rail，与角色并列，因为它和日常派发直接相关。
-	for _, view := range []string{"collaboration", "observability", "issues", "approvals", "sops", "settings"} {
+	// 待我确认不再是 rail 里的菜单项，而是顶部工具条上的弹窗入口，
+	// 所以不在这个列表里。
+	for _, view := range []string{"collaboration", "observability", "issues", "sops", "settings"} {
 		needle := `data-view="` + view + `"`
 		sub := page[railIdx:sidebarIdx]
 		if !strings.Contains(sub, needle) {
@@ -2564,12 +2566,6 @@ func TestCodexStyleLeftMiniRailLayout(t *testing.T) {
 	if strings.Index(railNav, `data-view="observability"`) > strings.Index(railNav, `data-view="issues"`) {
 		t.Fatal("统计 must stay before 需求 in #platformRail")
 	}
-	if strings.Index(railNav, `data-view="issues"`) > strings.Index(railNav, `data-view="approvals"`) {
-		t.Fatal("需求列表 must sit before 待我确认 in #platformRail")
-	}
-	if strings.Index(railNav, `data-view="observability"`) > strings.Index(railNav, `data-view="approvals"`) {
-		t.Fatal("统计 must sit before 待我确认 in #platformRail")
-	}
 	if strings.Contains(page[sidebarIdx:], `data-view="observability"`) {
 		t.Fatal("settings navigation must not duplicate the 统计 entry")
 	}
@@ -2577,10 +2573,10 @@ func TestCodexStyleLeftMiniRailLayout(t *testing.T) {
 		t.Fatal("settings navigation must contain the runners entry")
 	}
 
-	// 3. 待我确认按钮包含审批徽标，且底部包含完整个人信息与弹窗入口
+	// 3. 待我确认入口在顶部工具条上，带审批徽标；底部包含完整个人信息与弹窗入口
 	railContent := page[railIdx:sidebarIdx]
-	if !strings.Contains(railContent, `id="approvalNavBadge"`) {
-		t.Fatal("#platformRail approvals button must contain #approvalNavBadge")
+	if !strings.Contains(railContent, `id="railApprovalsBtn"`) || !strings.Contains(railContent, `id="railApprovalBadge"`) {
+		t.Fatal("#platformRail must carry the approvals action with its badge in the rail head")
 	}
 	if !strings.Contains(railContent, `id="userProfileWrap"`) || !strings.Contains(railContent, `id="userProfilePopover"`) {
 		t.Fatal("#platformRail must host #userProfileWrap and #userProfilePopover at bottom")
