@@ -1547,13 +1547,11 @@ export default function App() {
             {sidebarSections.groups.length ? (
               <>
                 {sidebarSections.groups.map((group) => {
-                  const stored = collapsedProjects[group.projectId];
-                  const expanded =
-                    !!query ||
-                    (stored === undefined
-                      ? group.projectId === chat.projectId || !group.projectId
-                      : !stored);
-                  const showAll = !!query || !!expandedProjects[group.projectId];
+                  // 侧栏只列当前项目，所以这里只有一个分组，项目名已经在
+                  // 顶部标题里出现过一次，不必再用一个可折叠的分组头重复。
+                  // 直接平铺会话行；条目多时先显示前 N 条，再给「展开其余」。
+                  const key = group.projectId || "__personal__";
+                  const showAll = !!query || !!expandedProjects[key];
                   const sessions = showAll
                     ? group.sessions
                     : previewSessions(
@@ -1563,19 +1561,7 @@ export default function App() {
                       );
                   const hidden = group.sessions.length - sessions.length;
                   return (
-                    <SidebarSection
-                      key={group.projectId}
-                      title={group.name}
-                      icon={group.projectId ? "folder" : "user"}
-                      count={group.sessions.length}
-                      expanded={expanded}
-                      onToggle={() =>
-                        setCollapsedProjects((previous) => ({
-                          ...previous,
-                          [group.projectId]: expanded,
-                        }))
-                      }
-                    >
+                    <div className="session-list-flat" key={key}>
                       {sessions.map((session) => renderSession(session))}
                       {hidden > 0 ? (
                         <button
@@ -1584,7 +1570,7 @@ export default function App() {
                           onClick={() =>
                             setExpandedProjects((previous) => ({
                               ...previous,
-                              [group.projectId]: true,
+                              [key]: true,
                             }))
                           }
                         >
@@ -1598,14 +1584,14 @@ export default function App() {
                           onClick={() =>
                             setExpandedProjects((previous) => ({
                               ...previous,
-                              [group.projectId]: false,
+                              [key]: false,
                             }))
                           }
                         >
                           收起
                         </button>
                       ) : null}
-                    </SidebarSection>
+                    </div>
                   );
                 })}
               </>

@@ -1,7 +1,9 @@
 /* Shared conversation width beside the host's 56px icon rail. */
 .chat-shell {
   --sidebar-width: 304px;
-  --navigation-header-height: 78px;
+  /* 与宿主 .topbar 等高，侧栏标题才会和外层 header 落在同一条线上。
+     原来是 78px，比宿主多出 22px，那段空白就露在标题下面。 */
+  --navigation-header-height: 56px;
   --navigation-rail: #fff;
   --navigation-border: #e5e5e899;
   --navigation-secondary: #52525b;
@@ -279,6 +281,27 @@
   height: 32px;
   border-radius: 8px;
   color: var(--muted);
+}
+
+/* 平铺会话列表：侧栏只列当前项目，项目名已在顶部标题里出现过，
+   因此不再套一层可折叠的项目分组头，会话行直接排在列表里。
+   分组内的树形缩进（.session-project-group 的左边线与缩进）在这里
+   没有意义，行铺满整列即可。 */
+.chat-shell .session-list-flat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.chat-shell .session-list-flat .session-row {
+  min-height: 34px;
+  margin-left: 0;
+  padding-left: 8px;
+}
+
+/* 平铺列表里没有分组头，收起状态下的第一行也不需要顶部留白。 */
+.chat-shell .session-list-flat > .session-row:first-child {
+  margin-top: 2px;
 }
 
 .chat-shell .session-list {
