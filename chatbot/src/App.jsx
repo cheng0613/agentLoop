@@ -71,7 +71,6 @@ import {
 import { useLocalConversations } from "./useLocalConversations.js";
 import SessionContextMenu from "./SessionContextMenu";
 import { usePanelPresence } from "./usePanelPresence";
-import HomeWelcome from "./HomeWelcome";
 import GlassFolder from "./GlassFolder";
 import ProjectPicker from "./ProjectPicker";
 import ModelPicker from "./ModelPicker";
@@ -1860,11 +1859,7 @@ export default function App() {
               />
             </div>
           </div>
-        ) : (
-          // 工作台三层：品牌 → 输入框 → 快捷指令。任务看板留在「项目」页，
-          // 这里不再插一层，避免把「从哪开始」的三个动作挤散。
-          <HomeWelcome />
-        )}
+        ) : null}
         <div className="composer-region">
           <div className="composer-column">
             {chat.error && !(chat.generation?.failure && chat.error === chat.generation.error) ? (
