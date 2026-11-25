@@ -1414,6 +1414,52 @@ func TestRunWaitsForGateAndCompletes(t *testing.T) {
 	waitFor(t, s, r.ID, "succeeded")
 }
 
+// 门禁的放行动作必须能回答「谁批的」：批准人要进 decision.md 与运行事件。
+// 这里不启动真实执行（mock agent 在测试容器里跑不完），直接构造一个停在
+// waiting_approval 的运行来验证落库内容。
+func TestApproveRecordsActor(t *testing.T) {
+	e, st := cvEEngine(t)
+	e.mu.Lock()
+	e.executeRuns = false
+	e.mu.Unlock()
+
+	wf := domain.WorkflowDefinition{ID: "audit-wf", Name: "审计流程", SandboxProfileID: "local",
+		Nodes: []domain.WorkflowNode{{ID: "review", Type: "approval", Name: "独立评审"}}}
+	if err := st.PutWorkflow(wf); err != nil {
+		t.Fatal(err)
+	}
+	run := domain.Run{
+		ID: "run-audit", WorkflowID: wf.ID, Status: "waiting", WorkflowSnapshot: wf,
+		Nodes: map[string]*domain.NodeRun{"review": {NodeID: "review", Status: "waiting_approval"}},
+	}
+	if err := st.PutRun(run); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.ApproveAs(run.ID, "review", "admin", ""); err != nil {
+		t.Fatal(err)
+	}
+
+	current, _ := st.Run(run.ID)
+	var decision string
+	for _, artifact := range current.Artifacts {
+		if artifact.Name == "decision" && artifact.NodeID == "review" {
+			decision = artifact.Content
+		}
+	}
+	if !strings.Contains(decision, "Approved by: admin") {
+		t.Fatalf("decision artifact must name the approver, got %q", decision)
+	}
+	var found bool
+	for _, event := range current.Events {
+		if event.Type == "gate.approved" && strings.Contains(event.Message, "admin") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("gate.approved event must name the approver: %+v", current.Events)
+	}
+}
+
 func TestHumanGateFailureWaitsForApprove(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()

@@ -138,6 +138,12 @@ func (e *Engine) Pause(runID string) error {
 }
 
 func (e *Engine) Approve(runID, nodeID, humanContext string, expected ...NodeExpectation) error {
+	return e.ApproveAs(runID, nodeID, "", humanContext, expected...)
+}
+
+// ApproveAs 与 Approve 相同，但额外记录执行人（操作者登录名）。审计目的：
+// 门禁的放行动作必须能回答「谁批的」。actor 为空时行为与 Approve 一致。
+func (e *Engine) ApproveAs(runID, nodeID, actor, humanContext string, expected ...NodeExpectation) error {
 	e.stateMu.Lock()
 	defer e.stateMu.Unlock()
 	r, ok := e.repo.RunState(runID)
@@ -166,14 +172,22 @@ func (e *Engine) Approve(runID, nodeID, humanContext string, expected ...NodeExp
 	}
 	n.Status = "succeeded"
 	n.FinishedAt = time.Now().UTC()
+	actor = strings.TrimSpace(actor)
 	note := recordHumanContext(&r, nodeID, "人工批准继续", humanContext)
 	decision := "# Approval\n\nApproved by a human gate.\n"
+	if actor != "" {
+		decision += "\nApproved by: " + actor + "\n"
+	}
 	if note != "" {
 		decision += "\n" + note + "\n"
 	}
 	appendArtifact(&r, nodeID, n.Attempt, "decision", "decision.md", "text/markdown", []byte(decision))
-	e.event(&r, nodeID, "gate.approved", "人工门禁已通过")
-	appendControlTelemetry(&r, nodeID, "gate.approved", "人工门禁已通过")
+	message := "人工门禁已通过"
+	if actor != "" {
+		message += "（" + actor + "）"
+	}
+	e.event(&r, nodeID, "gate.approved", message)
+	appendControlTelemetry(&r, nodeID, "gate.approved", message)
 	r.Status = "running"
 	return e.persistControlDecision(runID, r, expected...)
 }
@@ -270,6 +284,11 @@ func (e *Engine) pass(runID, nodeID, humanContext string, expected ...NodeExpect
 }
 
 func (e *Engine) Reject(runID string, req domain.RejectRequest, expected ...NodeExpectation) error {
+	return e.RejectAs(runID, req, "", expected...)
+}
+
+// RejectAs 与 Reject 相同，但记录执行人。退回会重置下游节点，同样需要可追溯。
+func (e *Engine) RejectAs(runID string, req domain.RejectRequest, actor string, expected ...NodeExpectation) error {
 	e.stateMu.Lock()
 	defer e.stateMu.Unlock()
 	r, ok := e.repo.RunState(runID)
@@ -340,8 +359,13 @@ func (e *Engine) Reject(runID string, req domain.RejectRequest, expected ...Node
 			}
 		}
 	}
-	e.event(&r, req.NodeID, "gate.rejected", fmt.Sprintf("打回到 %s：%s", target, req.Reason))
-	appendControlTelemetry(&r, req.NodeID, "gate.rejected", fmt.Sprintf("打回到 %s：%s", target, req.Reason))
+	actor = strings.TrimSpace(actor)
+	rejectMessage := fmt.Sprintf("打回到 %s：%s", target, req.Reason)
+	if actor != "" {
+		rejectMessage += "（" + actor + "）"
+	}
+	e.event(&r, req.NodeID, "gate.rejected", rejectMessage)
+	appendControlTelemetry(&r, req.NodeID, "gate.rejected", rejectMessage)
 	r.Status = "running"
 	e.cancelLiveChildRuns(stale)
 	if err := e.persistControlDecision(runID, r, expected...); err != nil {

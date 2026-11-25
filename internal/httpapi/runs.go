@@ -261,7 +261,7 @@ func (h *runsHandlers) run(c *gin.Context) {
 			if rejectBlockedIssueRun(h.deps, c, id) {
 				return
 			}
-			respond(c, h.engine.Approve(id, req.NodeID, req.Context, decisionExpectation(req.NodeID, req.Expected)...))
+			respond(c, h.engine.ApproveAs(id, req.NodeID, h.runActorLogin(c), req.Context, decisionExpectation(req.NodeID, req.Expected)...))
 		}
 	case "/api/runs/:id/reject":
 		var req domain.RejectRequest
@@ -269,7 +269,7 @@ func (h *runsHandlers) run(c *gin.Context) {
 			if rejectBlockedIssueRun(h.deps, c, id) {
 				return
 			}
-			respond(c, h.engine.Reject(id, req, decisionExpectation(req.NodeID, req.Expected)...))
+			respond(c, h.engine.RejectAs(id, req, h.runActorLogin(c), decisionExpectation(req.NodeID, req.Expected)...))
 		}
 	case "/api/runs/:id/retry":
 		var req domain.HumanDecision
@@ -507,4 +507,16 @@ func decisionExpectation(nodeID string, expected *domain.NodeDecisionExpectation
 		return nil
 	}
 	return []engine.NodeExpectation{{NodeID: nodeID, Status: expected.Status, Attempt: expected.Attempt, ReworkCount: expected.ReworkCount}}
+}
+
+// runActorLogin 取当前请求的操作者登录名，用于批准/退回的审计记录。
+// 取不到时返回空串，审批本身照常执行。
+func (h *runsHandlers) runActorLogin(c *gin.Context) string {
+	if c == nil {
+		return ""
+	}
+	if user, ok := h.requestUser(c.Request, false); ok {
+		return strings.TrimSpace(user.LoginName)
+	}
+	return ""
 }

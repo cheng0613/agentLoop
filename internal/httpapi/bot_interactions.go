@@ -184,7 +184,7 @@ func (h *assistantHandlers) handleBotCardAction(ctx context.Context, bot domain.
 	note := "企业微信操作，平台账号：" + user.LoginName + "，发送者：" + item.SenderID
 	switch item.Action {
 	case "approve":
-		err = h.engine.Approve(delivery.RunID, delivery.NodeID, note, expected)
+		err = h.engine.ApproveAs(delivery.RunID, delivery.NodeID, user.LoginName, note, expected)
 	case "retry":
 		err = h.engine.Retry(delivery.RunID, delivery.NodeID, note, note, expected)
 	case "pass":

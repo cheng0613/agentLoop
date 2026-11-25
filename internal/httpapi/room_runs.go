@@ -390,7 +390,7 @@ func (h *roomsHandlers) decide(c *gin.Context) {
 	var err error
 	body := ""
 	if req.Action == "approve" {
-		err = h.engine.Approve(req.RunID, req.NodeID, req.Reason)
+		err = h.engine.ApproveAs(req.RunID, req.NodeID, author, req.Reason)
 		body = "批准了「" + nodeName + "」"
 	} else {
 		target := roomRejectTarget(run.WorkflowSnapshot, req.NodeID)
