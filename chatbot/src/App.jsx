@@ -382,6 +382,8 @@ export default function App() {
     sessionClickSuppressed = useRef(null),
     mentionPicker = useRef(),
     fileInput = useRef(),
+    // 图片有独立按钮：藏在「+」菜单里没人找得到，而贴图是最常用的附件。
+    imageInput = useRef(),
     scroll = useRef(),
     follow = useRef(true),
     draftReady = useRef(null),
@@ -2108,9 +2110,27 @@ export default function App() {
                         </Menu>
                       ) : null}
                     </div>
+                    <IconButton
+                      label="上传图片"
+                      disabled={uploading}
+                      onClick={() => imageInput.current?.click()}
+                    >
+                      <HarnessIcon name="image" size={18} />
+                    </IconButton>
                     <input
                       ref={fileInput}
                       type="file"
+                      multiple
+                      hidden
+                      onChange={(e) => {
+                        void upload([...e.target.files]);
+                        e.target.value = "";
+                      }}
+                    />
+                    <input
+                      ref={imageInput}
+                      type="file"
+                      accept="image/*"
                       multiple
                       hidden
                       onChange={(e) => {
