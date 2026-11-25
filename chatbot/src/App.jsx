@@ -71,7 +71,7 @@ import {
 import { useLocalConversations } from "./useLocalConversations.js";
 import SessionContextMenu from "./SessionContextMenu";
 import { usePanelPresence } from "./usePanelPresence";
-import ProjectPicker from "./ProjectPicker";
+import TaskBoard from "./TaskBoard";
 import ModelPicker from "./ModelPicker";
 import ModelProviderIcon, { hasProviderLogo } from "./ModelProviderIcon";
 import PermissionPicker, { rememberApprovalMode, storedApprovalMode } from "./PermissionPicker";
@@ -471,7 +471,7 @@ export default function App() {
   const projectName =
     chat.projects.find((p) => p.id === chat.projectId)?.name ||
     (chat.projectId && (chat.session?.projectName || chat.projectId)) ||
-    "平台对话";
+    "个人对话";
   const selectedModel = chat.models.find((m) => m.id === chat.model) || (!chat.local ? chat.modelDetails : null);
   const modelLabel =
     selectedModel?.name?.replace(/^Claude-/, "").replace(/^GPT-/, "") || "模型";
@@ -1829,7 +1829,9 @@ export default function App() {
               />
             </div>
           </div>
-        ) : null}
+        ) : (
+          <TaskBoard projectId={chat.projectId} onOpenTask={openTask} />
+        )}
         <div className="composer-region">
           <div className="composer-column">
             {chat.error && !(chat.generation?.failure && chat.error === chat.generation.error) ? (
@@ -1887,11 +1889,9 @@ export default function App() {
               >
                 {!conversationStarted ? (
                 <div className="composer-context">
-                  {/* 对话归属：默认「平台 · 不关联项目」，也可以选一个项目。
-                      宿主顶栏的项目切换只决定数据浏览范围，不强制这条对话
-                      绑定项目。 */}
-                  <ProjectPicker chat={chat} />
                   <ExecutionMachinePicker chat={chat} onManage={() => navigate("runners")} />
+                  {/* 项目不再出现在这里：切换由宿主顶栏负责，当前项目名在
+                      侧栏标题已经写过一次，重复第三遍只会让人分不清哪个能点。 */}
                   {showEnvironmentPicker && chat.projectId ? <ChevronRightSmall /> : null}
                   {showEnvironmentPicker ? <SandboxPicker chat={chat} onCreate={() => navigate("sandboxes", { action: "create", projectId: chat.projectId })} /> : null}
                 </div>

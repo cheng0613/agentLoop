@@ -24,7 +24,6 @@ describe("source modules", () => {
       import("../src/ArtifactPanel.jsx"),
       import("../src/ConversationStatusIcon.jsx"),
       import("../src/HarnessIcon.jsx"),
-      import("../src/ProjectPicker.jsx"),
       import("../src/IssueContext.jsx"),
       import("../src/MentionPicker.jsx"),
       import("../src/ModelPicker.jsx"),
@@ -45,7 +44,7 @@ describe("source modules", () => {
       import("../src/useLocalConversations.js"),
       import("../src/usePanelPresence.js"),
     ]);
-    expect(modules).toHaveLength(25);
+    expect(modules).toHaveLength(24);
     expect(modules.every(Boolean)).toBe(true);
   });
 });

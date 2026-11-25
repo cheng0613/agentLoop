@@ -97,16 +97,8 @@ const PROJECT_LIST_TOOLS = new Set([
   "projects_delete",
   "projects_restore",
 ]);
-const initialSearch =
-  typeof location !== "undefined" ? new URLSearchParams(location.search) : null;
-// 工作台默认开一条「平台对话」，不关联项目。只有从需求/@ 入口带着项目
-// 进来时才继承 URL 的 projectId；普通打开一律留空。
-const initialProject = (() => {
-  if (!initialSearch) return "";
-  const fromRequirement =
-    initialSearch.get("issueId") || initialSearch.get("mentionIssue");
-  return fromRequirement ? initialSearch.get("projectId") || "" : "";
-})();
+const initialProject =
+  new URLSearchParams(location.search).get("projectId") || "";
 export function useChat() {
   const stopRequestRef = useRef(null);
   const [user, setUser] = useState(null),
@@ -169,6 +161,8 @@ export function useChat() {
     sessionRef = useRef(session),
     projectRef = useRef(projectId),
     globalProject = useRef(initialProject),
+    // 宿主顶栏当前项目：只决定「下一条新对话」落在哪，不打断已打开的会话。
+    hostProjectRef = useRef(""),
     submittingRef = useRef(false),
     sandboxBusyRef = useRef(false),
     applyingRef = useRef(new Set()),
@@ -234,62 +228,14 @@ export function useChat() {
   const newChat = useCallback(() => {
     setDraftIssueId("");
     open(null);
-    // 工作台默认开一条「平台对话」：不关联任何项目。要归属项目，由用户在
-    // 输入框上方显式选择；宿主顶栏切项目只改变数据的浏览范围，不会把这条
-    // 草稿静默绑进去。
-    //
-    // 这里故意不调用 syncProject：它会通知宿主顶栏把全局过滤也切成空，
-    // 影响需求/运行等页面。平台对话只是这条对话自己的归属，宿主保持在
-    // 它当前的项目上。
-    if (projectRef.current) {
+    // 新对话落在宿主当前项目上：切过项目后点「新对话」，就是在新项目里开。
+    const host = hostProjectRef.current;
+    if (host && host !== projectRef.current) {
       setSandboxProfileId("");
-      setProjectId("");
+      setProjectId(host);
+      syncProject(host);
     }
-  }, [open]);
-  // 把当前对话移进某个项目（或从项目里摘出来回到平台对话）。
-  //
-  // 与 selectProject 的区别：这里不新开对话，也不改 CLI/沙箱，只改这条
-  // 对话的归属 —— 已经开始的会话直接改写 project_id，还没发出去的草稿
-  // 只改下一条消息的落点。工作台的归属选择器走这条路径。
-  const moveToProject = useCallback(
-    async (id) => {
-      const target = id || "";
-      const current = sessionRef.current;
-      if (!current?.id) {
-        if (target && target !== projectRef.current) setSandboxProfileId("");
-        setProjectId(target);
-        if (target) syncProject(target);
-        return;
-      }
-      if ((current.projectId || "") === target) return;
-      if (generation?.status === "running" || submittingRef.current) {
-        setError("请先停止当前生成，再切换项目。");
-        return;
-      }
-      // A run-owned or shared conversation belongs to its run/project; moving
-      // it would leave the run pointing at a different project.
-      if (current.runId || current.workspaceRunId || current.shared) {
-        setError("这条会话属于某个运行或共享会话，不能再换项目。请新建对话。");
-        return;
-      }
-      try {
-        const saved = await write(
-          sessionPath(current.id),
-          { ...current, projectId: target },
-          "PUT",
-        );
-        setSession(saved);
-        setProjectId(target);
-        // 只有移入项目时才让宿主顶栏跟过去；移出到「平台对话」保持宿主
-        // 当前的浏览项目不变。
-        if (target) syncProject(target);
-        await refreshSessions();
-      } catch (e) {
-        setError(e.message);
-      }
-    },
-    [generation?.status, refreshSessions, syncProject],
-  );
+  }, [open, syncProject]);
   const applyModelCatalog = useCallback((catalog) => {
     setModels(catalog.models || []);
     setCodeBuddyDefault({ id: catalog.default || "default", name: "默认", efforts: catalog.defaultEfforts });
@@ -567,10 +513,12 @@ export function useChat() {
       const current = sessionRef.current;
       const strategy = projectChange(current, id);
       setError("");
-      // 宿主切项目不再打断当前对话，也不给默认草稿绑定项目：会话仍属于它
-      // 自己的项目（引用、执行器、沙箱都按它算），草稿保持「平台对话」，
-      // 归属项目由输入框上方的选择器显式决定。
-      if (external) return;
+      // 宿主切项目不再打断当前对话。会话仍属于它自己的项目（引用、执行器、
+      // 沙箱都按它算），只有「新对话」才进入宿主的新项目。
+      if (external && current?.id) {
+        hostProjectRef.current = id;
+        return;
+      }
       if (strategy === "bind") {
         if (generation?.status === "running" || submittingRef.current) {
           setError("请先停止当前生成，再绑定项目。");
@@ -1504,7 +1452,6 @@ export function useChat() {
     open,
     newChat,
     selectProject,
-    moveToProject,
     startProjectDraft,
     send,
     stop,

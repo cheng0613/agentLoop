@@ -1,8 +1,7 @@
-// 不关联项目的会话属于平台本身（工作台默认开的就是这种「平台对话」）。
 export function sessionProjectName(projectId, projects) {
   return projectId
     ? projects.find((project) => project.id === projectId)?.name || projectId
-    : "平台对话";
+    : "个人对话";
 }
 
 // What a history search matches: the names shown for the row, the SOP a run
@@ -39,7 +38,7 @@ export function scheduledSession(session) {
 }
 
 // Project groups keep one fixed order, the order the project list itself comes
-// in: 平台对话 first, projects next, leftover IDs (a project the reader can no
+// in: 个人对话 first, projects next, leftover IDs (a project the reader can no
 // longer see) last. Opening a conversation, or a reply finishing in it, must
 // not move a project up the sidebar, so nothing here looks at recency.
 function compareProjectGroups(a, b, rank) {
