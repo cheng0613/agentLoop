@@ -98,6 +98,34 @@ func TestAssistantRiskyToolName(t *testing.T) {
 	}
 }
 
+// 人工门禁的放行动作在 assisted 模式下必须经过审查器：它是写操作，
+// 没有审查上下文时应当被拒绝，而不是直接执行。
+//
+// 注意：ConfirmDangerous 在生产路径里从未被置为 true，所以
+// assistantRiskyToolPattern 目前只影响工具是否出现在列表里；assisted 模式
+// 真正的门控是 ReviewWrites + 审查器。
+func TestApproveRequiresReviewInAssistedMode(t *testing.T) {
+	op, ok := assistantPublicOperations["runs_approve"]
+	if !ok {
+		t.Fatal("runs_approve must be a public platform operation")
+	}
+	if op.ReadOnly {
+		t.Fatal("runs_approve must be a write operation")
+	}
+	assisted := assistantExecModeForApproval(AssistantApprovalAssisted)
+	if !assisted.ReviewWrites {
+		t.Fatal("assisted mode must review writes")
+	}
+	// 没有注入审查器时，审查结果必须是不可用，绝不能放行。
+	if review := reviewAssistantAction(context.Background(), op.Name, op.Description, nil); review.allows() {
+		t.Fatal("a write without reviewer context must not be allowed")
+	}
+	// 只读工具不受影响，模型仍能了解门禁现状。
+	if !assistantPlatformToolAllowed(assisted, "runs_get") {
+		t.Fatal("read-only run tools must stay available in assisted mode")
+	}
+}
+
 func TestAssistantDraftRisky(t *testing.T) {
 	for _, tc := range []struct {
 		tool  string
