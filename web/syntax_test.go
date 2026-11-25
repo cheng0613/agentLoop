@@ -1030,8 +1030,10 @@ func TestRequirementDirectCreateUI(t *testing.T) {
 		t.Fatal(err)
 	}
 	page := string(html)
-	if !strings.Contains(page, `nav-label">项目配置`) {
-		t.Fatal("sidebar must label the projects page 项目配置")
+	// 项目配置不再是设置侧栏的独立入口：它并入 rail 的「项目」页，由卡片上的
+	// 「配置」打开，rail 通过 data-nav-match 在该页保持高亮。
+	if !strings.Contains(page, `data-nav-match="projects"`) {
+		t.Fatal("rail 项目 entry must also highlight on the projects view")
 	}
 	if !strings.Contains(page, `<script src="/app/composer.js"></script>`) {
 		t.Fatal("index.html must load the requirement composer script")
@@ -1162,23 +1164,21 @@ func TestTAPDImportUI(t *testing.T) {
 	if dashImport < 0 || dashNew < 0 || dashImport > dashNew {
 		t.Fatal("工作总览 must place 导入 TAPD to the left of 新建需求")
 	}
-	// 设置侧栏按「个人 / 项目 / 能力 / 环境 / 开放与平台」分组，各组内再列页面。
+	// 设置侧栏按「个人 / 协作 / 流程与任务 / 能力 / 环境 / 开放与平台」分组，各组内再列页面。
 	// 流程与角色已上提到左侧 rail，不再出现在这里。
-	projectGroup := strings.Index(page, `<p>项目</p>`)
+	// 项目配置已并入 rail 的「项目」页（卡片上的「配置」），设置侧栏
+	// 只留通道管理；这里断言「协作」组里入口的顺序。
+	collabGroup := strings.Index(page, `<p>协作</p>`)
 	abilityGroup := strings.Index(page, `<p>能力</p>`)
 	platformGroup := strings.Index(page, `<p>开放与平台</p>`)
-	projectsNav := strings.Index(page, `data-view="projects"`)
 	botsNav := strings.Index(page, `data-view="bots"`)
-	if projectGroup < 0 || abilityGroup < 0 || platformGroup < 0 {
-		t.Fatal("设置侧栏 must keep its 项目 / 能力 / 开放与平台 groups")
+	if collabGroup < 0 || abilityGroup < 0 || platformGroup < 0 {
+		t.Fatal("设置侧栏 must keep its 协作 / 能力 / 开放与平台 groups")
 	}
-	if !(projectGroup < projectsNav && projectsNav < abilityGroup) {
-		t.Fatal("项目配置 must sit under 项目, before 能力")
+	if !(collabGroup < botsNav && botsNav < abilityGroup) {
+		t.Fatal("通道管理 must sit under 协作, before 能力")
 	}
-	// 通道管理属于项目协作配置，与项目配置同组。
-	if !(projectGroup < botsNav && botsNav < abilityGroup) {
-		t.Fatal("通道管理 must sit under 项目, alongside 项目配置")
-	}
+
 	if !(abilityGroup < platformGroup) {
 		t.Fatal("能力 must sit before 开放与平台")
 	}

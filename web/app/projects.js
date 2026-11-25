@@ -427,6 +427,13 @@ async function leaveProjectAdminDetail(){
   if(!state.projectAdminDetailId)return true;
   if(!(await confirmDiscardProjectDraft()))return false;
   resetProjectAdminDetail();
+  // 从项目页点「配置」进来的，返回时回到项目页（同一个 rail 入口）。
+  if(state.projectAdminReturnTo==='dashboard'){
+    state.projectAdminReturnTo='';
+    if(location.hash!==projectAdminHash(''))history.pushState({paDetail:true},'',projectAdminHash(''));
+    switchView('dashboard');
+    return true;
+  }
   if(history.state?.paDetail)history.back();
   else if(location.hash!==projectAdminHash(''))history.pushState(null,'',projectAdminHash(''));
   renderProjectAdmin();

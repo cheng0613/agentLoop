@@ -2297,6 +2297,7 @@ function renderDashboard(){
           <div class="pb-title"><b>${escapeHTML(p.name||p.id)}</b><small>${escapeHTML(counts)}</small></div>
           <span class="pb-actions">
             <button type="button" class="button ghost small pb-open" data-open-project="${escapeHTML(p.id)}">进入</button>
+            <button type="button" class="button ghost small pb-config" data-config-project="${escapeHTML(p.id)}">配置</button>
             <button type="button" class="button ghost small pb-chat" data-chat-project="${escapeHTML(p.id)}">继续对话</button>
           </span>
         </div>
@@ -2329,6 +2330,9 @@ function renderDashboard(){
   });
   boardHost.querySelectorAll('[data-open-project]').forEach(el=>{
     el.onclick=e=>{e.preventDefault();e.stopPropagation();openProjectRoom(el.dataset.openProject)};
+  });
+  boardHost.querySelectorAll('[data-config-project]').forEach(el=>{
+    el.onclick=e=>{e.preventDefault();e.stopPropagation();openProjectConfig(el.dataset.configProject)};
   });
   // 产出清单按需加载：列表接口只带数量，展开时才去取最近一次运行的详情。
   boardHost.querySelectorAll('.pb-card').forEach(card=>{
@@ -2386,6 +2390,15 @@ async function loadProjectChat(card){
 
 // 项目房间：左栏列出该项目的需求（各挂最近一次 SOP 运行），右栏渲染所选
 // 运行的节点汇报流。点项目卡进入，左上角返回列表。
+// 项目配置：复用已有的项目详情（基本信息/仓库/成员/模型/高级五个 tab）。
+// 从项目页进入时记住来源，返回按钮回到项目页而不是设置里的列表。
+function openProjectConfig(projectId){
+  if(!projectId)return;
+  state.projectAdminReturnTo='dashboard';
+  openProjectAdminDetail(projectId);
+  switchView('projects');
+}
+
 function openProjectRoom(projectId){
   state.roomProjectId=projectId||state.projectFilter||'';
   state.roomRunId='';
