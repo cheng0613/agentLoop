@@ -2319,7 +2319,7 @@ function renderDashboard(){
 
   boardHost.innerHTML=projects.length
     ? group('进行中',ongoing,'所有项目都已闭环')+group('已完成',finished,'还没有闭环的项目')
-    : '<div class="empty-box">还没有项目。在「项目配置」里新建一个，或在 AI 工作台用快速接入创建。</div>';
+    : '<div class="empty-box">还没有项目。点右上角「＋ 新建项目」，或在 AI 工作台用「快速接入」创建。</div>';
 
   boardHost.querySelectorAll('[data-issue]').forEach(el=>{
     el.onclick=e=>{e.preventDefault();e.stopPropagation();openIssueDetail(el.dataset.issue)};

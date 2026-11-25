@@ -1123,6 +1123,8 @@ function bind(){
   $('#agentForm').addEventListener('input',()=>renderAgentPreview(state.agentDraft));
   $('#agentForm').addEventListener('change',()=>renderAgentPreview(state.agentDraft)); $('#refreshRuns').onclick=()=>refreshRuns(false);$('#runBackBtn')&&($('#runBackBtn').onclick=()=>showRunList());
 	$('#refreshDashboard').onclick=refreshDashboard;
+  // 项目页是一级入口，新建项目必须在这里就能做，而不是先去设置里找。
+  $('#dashNewProject').onclick=()=>openProjectWizard();
   $('#roomBack').onclick=()=>switchView('dashboard');
   $('#roomChat').onclick=()=>openProjectChat(state.roomProjectId||state.projectFilter);
   $('#roomChatFeed').onclick=()=>openRunConversation(state.roomRunId);
