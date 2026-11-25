@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { useChat } from "./useChat";
 import NativeApprovalPanel from "./NativeApprovalPanel";
+import SopGatePanel from "./SopGatePanel";
 import { AgentBrowserLinks } from "./agent-browser-links.js";
 import ActivityTrace, { ReplyTimeline } from "./ActivityTrace";
 import MessageInfo from "./MessageInfo";
@@ -1765,6 +1766,10 @@ export default function App() {
                   readOnly={chat.readOnly}
                 />
               ) : null}
+              <SopGatePanel chat={chat} onChange={() => {
+                if (follow.current && scroll.current)
+                  scroll.current.scrollTop = scroll.current.scrollHeight;
+              }} />
               <NativeApprovalPanel chat={chat} onChange={() => {
                 if (follow.current && scroll.current)
                   scroll.current.scrollTop = scroll.current.scrollHeight;

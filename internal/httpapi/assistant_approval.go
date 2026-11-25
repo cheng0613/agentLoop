@@ -47,7 +47,9 @@ func requireAssistantApprovalUser(c *gin.Context, currentID, approvalUserID int6
 	return true
 }
 
-var assistantRiskyToolPattern = regexp.MustCompile(`(_delete|_publish|_dispatch|_start|_cancel|_reject|_run|_restore|_pass|_retry|_pause|_resume|_reopen)$`)
+// _approve 与 _reject / _pass 同级：SOP 门禁停在「等人拍板」，让模型自己
+// 批准等于绕过门禁本身。assisted 模式下它必须转成待确认草稿。
+var assistantRiskyToolPattern = regexp.MustCompile(`(_delete|_publish|_dispatch|_start|_cancel|_reject|_approve|_run|_restore|_pass|_retry|_pause|_resume|_reopen)$`)
 
 // assistantRiskyToolName 判断平台写入工具是否属于危险操作（删除/发布/
 // 派发/启动类）。assisted 模式下这类工具在网关被拦截转为草稿。

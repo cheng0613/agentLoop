@@ -1,0 +1,69 @@
+/* SOP 人工门禁：会话内的就地批准 / 退回卡片 */
+.sop-gate {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 auto 10px;
+  width: 100%;
+  max-width: var(--chat-column-width, 820px);
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+.sop-gate-card {
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, #d9a01a 45%, var(--line, #e5e5e8));
+  border-radius: 12px;
+  background: color-mix(in srgb, #d9a01a 7%, var(--surface, #fff));
+}
+.sop-gate-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.sop-gate-head b { font-size: 13px; font-weight: 600; color: var(--text, #18181b); }
+.sop-gate-head span { color: var(--muted, #71717a); font-size: 11.5px; }
+.sop-gate-head svg { color: #8a6410; }
+.sop-gate-output {
+  margin: 0 0 10px;
+  color: var(--text, #18181b);
+  font-size: 12.5px;
+  line-height: 1.6;
+  max-height: 120px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+.sop-gate-actions { display: flex; gap: 8px; }
+.sop-gate-error { margin: 0; color: #a12b38; font-size: 12px; }
+[data-theme="dark"] .sop-gate-head svg,
+[data-theme="dark"] .sop-gate-error { color: #f0899a; }
+[data-theme="dark"] .sop-gate-card {
+  border-color: color-mix(in srgb, #f2c46d 40%, var(--line, #26262b));
+  background: color-mix(in srgb, #f2c46d 8%, var(--surface, #141417));
+}
+
+.sop-gate-reject {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line, #e5e5e8);
+}
+.sop-gate-reject label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted, #71717a);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.sop-gate-reject textarea {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 4px;
+  padding: 7px 9px;
+  border: 1px solid var(--line, #e5e5e8);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: var(--text, #18181b);
+  font: inherit;
+  font-size: 12.5px;
+  resize: vertical;
+}

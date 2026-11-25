@@ -85,7 +85,8 @@ func TestAssistantExecModeForApproval(t *testing.T) {
 }
 
 func TestAssistantRiskyToolName(t *testing.T) {
-	for _, tool := range []string{"agents_delete", "workflows_publish", "issues_dispatch", "runs_start", "schedule_jobs_run", "sync_start"} {
+	// runs_approve 是人工门禁的放行动作，必须和 _reject / _pass 一样受管。
+	for _, tool := range []string{"agents_delete", "workflows_publish", "issues_dispatch", "runs_start", "schedule_jobs_run", "sync_start", "runs_approve"} {
 		if !assistantRiskyToolName(tool) {
 			t.Fatalf("%q should be risky", tool)
 		}
