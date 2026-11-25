@@ -387,6 +387,7 @@ function bindOrchestrator() {
   if (!open || open.dataset.bound) return;
   open.dataset.bound = '1';
   bindAIOrchestratorModelPicker();
+  bindAIOrchestratorAttachments();
   open.onclick = () => setAIOrchestratorOpen($('#aiOrchestrator')?.hidden !== false);
   $('#closeAIOrchestrator').onclick = () => setAIOrchestratorOpen(false);
   $('#aiOrchestratorReset').onclick = resetAIOrchestrator;
@@ -957,6 +958,77 @@ async function readAssistantSSE(res, onEvent) {
   return result;
 }
 
+// ---- 编排助手的图片附件 -------------------------------------------
+// 附图会随消息带到 /api/assistant/chat；后端把文件物化到会话根目录并把
+// 原生路径写进提示词，模型据此读图。这里只负责上传与预览。
+let aiOrchestratorAttachments = [];
+const aiAttachmentPreviews = new Map();
+
+function aiAttachEl() { return $('#aiOrchestratorAttachList'); }
+
+function renderAIOrchestratorAttachments() {
+  const host = aiAttachEl();
+  if (!host) return;
+  host.hidden = !aiOrchestratorAttachments.length;
+  host.innerHTML = aiOrchestratorAttachments.map(item => `
+    <figure class="ai-attach" data-ai-attach="${escapeHTML(item.id)}">
+      <img src="${escapeHTML(aiAttachmentPreviews.get(item.id) || '')}" alt="${escapeHTML(item.name)}">
+      <button type="button" class="ai-attach-remove" data-ai-attach-remove="${escapeHTML(item.id)}" aria-label="移除 ${escapeHTML(item.name)}" title="移除">×</button>
+    </figure>`).join('');
+  host.querySelectorAll('[data-ai-attach-remove]').forEach(button => {
+    button.onclick = () => removeAIOrchestratorAttachment(button.dataset.aiAttachRemove);
+  });
+}
+
+function removeAIOrchestratorAttachment(id) {
+  aiOrchestratorAttachments = aiOrchestratorAttachments.filter(item => item.id !== id);
+  const preview = aiAttachmentPreviews.get(id);
+  if (preview) { URL.revokeObjectURL(preview); aiAttachmentPreviews.delete(id); }
+  renderAIOrchestratorAttachments();
+}
+
+async function uploadAIOrchestratorImages(fileList) {
+  const files = [...(fileList || [])].filter(file => file && String(file.type || '').startsWith('image/'));
+  if (!files.length) return toast('只能上传图片');
+  if (!state.projectFilter) return toast('先在顶栏选择项目');
+  for (const file of files) {
+    if (file.size > 10 * 1024 * 1024) { toast(`${file.name} 超过 10 MB`); continue; }
+    const body = new FormData();
+    body.append('file', file);
+    body.append('projectId', state.projectFilter);
+    try {
+      const uploaded = await api('/api/assistant/attachments', { method: 'POST', body });
+      if (!uploaded?.id) continue;
+      aiAttachmentPreviews.set(uploaded.id, URL.createObjectURL(file));
+      aiOrchestratorAttachments = aiOrchestratorAttachments.concat([uploaded]);
+      renderAIOrchestratorAttachments();
+    } catch (error) {
+      toast(error.message, 'err');
+    }
+  }
+}
+
+function clearAIOrchestratorAttachments() {
+  aiOrchestratorAttachments.forEach(item => {
+    const preview = aiAttachmentPreviews.get(item.id);
+    if (preview) URL.revokeObjectURL(preview);
+  });
+  for (const id of [...aiAttachmentPreviews.keys()]) aiAttachmentPreviews.delete(id);
+  aiOrchestratorAttachments = [];
+  renderAIOrchestratorAttachments();
+}
+
+function bindAIOrchestratorAttachments() {
+  const pick = $('#aiOrchestratorAttach');
+  const files = $('#aiOrchestratorFiles');
+  if (!pick || !files) return;
+  pick.onclick = () => files.click();
+  files.onchange = () => {
+    void uploadAIOrchestratorImages(files.files);
+    files.value = '';
+  };
+}
+
 async function runAIOrchestrator() {
   const input = $('#aiOrchestratorInput');
   const goal = input?.value.trim();
@@ -980,10 +1052,12 @@ async function runAIOrchestrator() {
   modelToggles.forEach(toggle => { toggle.disabled = true; });
   window.HuiPopover?.closeAll();
   input.value = '';
-  appendOrchestratorNote(goal, 'mine');
+  const attachments = aiOrchestratorAttachments.slice();
+  appendOrchestratorNote(attachments.length ? `${goal}（附图 ${attachments.length} 张）` : goal, 'mine');
+  clearAIOrchestratorAttachments();
   setAIBuildStatus(editing ? '正在按当前流程修改，画布先保持原样' : '正在连接 AI…');
   if (!editing) placeAIGhost();
-  const messages = history.messages.concat([{role: 'user', content: aiOrchestratePrompt(goal, canvas, referenced)}]);
+  const messages = history.messages.concat([{role: 'user', content: aiOrchestratePrompt(goal, canvas, referenced), ...(attachments.length ? {attachments} : {})}]);
   aiAbort = new AbortController();
   try {
     const res = await fetch('/api/assistant/chat', {

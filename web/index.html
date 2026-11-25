@@ -642,6 +642,7 @@
         <form id="aiOrchestratorForm" class="ai-orchestrator-form">
           <div class="ai-orchestrator-box">
             <textarea id="aiOrchestratorInput" rows="3" maxlength="2000" aria-label="描述要编排的流程" placeholder="告诉我你的目标，我来搞定…"></textarea>
+            <div id="aiOrchestratorAttachList" class="ai-orchestrator-attachments" hidden></div>
             <div class="ai-orchestrator-toolbar">
               <div id="aiOrchestratorRuntime" class="ai-orchestrator-runtime">
                 <div id="aiOrchestratorCLIPicker" class="ai-orchestrator-picker">
@@ -665,6 +666,8 @@
                   </div>
                 </div>
               </div>
+              <button type="button" id="aiOrchestratorAttach" class="fd-icon-btn ai-orchestrator-attach" data-tip="上传图片" aria-label="上传图片"><span data-fd-ic="plus" data-s="14"></span></button>
+              <input id="aiOrchestratorFiles" type="file" accept="image/*" multiple hidden>
               <button class="ai-orchestrator-send" type="submit" aria-label="发送编排要求" data-tip="在画布上编排"><span data-fd-ic="arrowUp" data-s="15"></span></button>
             </div>
           </div>
