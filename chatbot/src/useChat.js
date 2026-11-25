@@ -161,6 +161,8 @@ export function useChat() {
     sessionRef = useRef(session),
     projectRef = useRef(projectId),
     globalProject = useRef(initialProject),
+    // 宿主顶栏当前项目：只决定「下一条新对话」落在哪，不打断已打开的会话。
+    hostProjectRef = useRef(""),
     submittingRef = useRef(false),
     sandboxBusyRef = useRef(false),
     applyingRef = useRef(new Set()),
@@ -226,7 +228,14 @@ export function useChat() {
   const newChat = useCallback(() => {
     setDraftIssueId("");
     open(null);
-  }, [open]);
+    // 新对话落在宿主当前项目上：切过项目后点「新对话」，就是在新项目里开。
+    const host = hostProjectRef.current;
+    if (host && host !== projectRef.current) {
+      setSandboxProfileId("");
+      setProjectId(host);
+      syncProject(host);
+    }
+  }, [open, syncProject]);
   const applyModelCatalog = useCallback((catalog) => {
     setModels(catalog.models || []);
     setCodeBuddyDefault({ id: catalog.default || "default", name: "默认", efforts: catalog.defaultEfforts });
@@ -504,6 +513,12 @@ export function useChat() {
       const current = sessionRef.current;
       const strategy = projectChange(current, id);
       setError("");
+      // 宿主切项目不再打断当前对话。会话仍属于它自己的项目（引用、执行器、
+      // 沙箱都按它算），只有「新对话」才进入宿主的新项目。
+      if (external && current?.id) {
+        hostProjectRef.current = id;
+        return;
+      }
       if (strategy === "bind") {
         if (generation?.status === "running" || submittingRef.current) {
           setError("请先停止当前生成，再绑定项目。");
