@@ -758,7 +758,7 @@ func allModels() []any {
 		runPreviewRow{}, previewSessionRow{}, previewBlobRow{}, WorkspaceCheckpoint{}, workspaceCheckpointChunk{},
 		mrDeliveryStateRow{}, definitionRevisionRow{},
 		runnerRow{}, runnerTaskRow{}, runnerTaskEventRow{}, userRunnerPrefRow{},
-		assistantSessionRow{}, assistantTaskRow{}, assistantGenerationRow{}, assistantSessionReadRow{}, assistantPreferenceRow{}, assistantDiagnosticsRow{},
+		assistantSessionRow{}, assistantTaskRow{}, assistantGenerationRow{}, assistantSessionReadRow{}, assistantPreferenceRow{}, assistantDiagnosticsRow{}, domain.AssistantToolCall{},
 		chatRoomRow{}, chatMessageRow{},
 		requirementSpaceRow{}, spaceMemberRow{}, spaceArtifactRow{}, spaceArtifactRevisionRow{}, spaceThreadRow{},
 		engineInstanceRow{},

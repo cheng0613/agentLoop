@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"log"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -417,6 +418,7 @@ func (h *agentToolGateway) dispatch(ctx context.Context, session *AgentToolSessi
 		}
 		asst := h.assistant()
 		text, err := asst.callAssistantPlatform(ctx, session.User, session.ProjectID, call)
+		h.recordToolAudit(session, tool.UpstreamName, args, err)
 		if err != nil {
 			return "", err
 		}
@@ -546,4 +548,66 @@ func mcpCallMayWrite(kind string, call assistantMCPCall) bool {
 		return true
 	}
 	return !slices.ContainsFunc(mcpReadWords, func(word string) bool { return strings.Contains(name, word) })
+}
+
+// recordToolAudit 把一次平台工具调用记进审计表。只记事实，不阻断业务：
+// 写失败仅记日志。被审批模式拦下的调用也会到这里——调用方在 err 里给出
+// 拒绝原因，Outcome 记为 denied。
+func (h *agentToolGateway) recordToolAudit(session *AgentToolSession, tool string, args map[string]any, err error) {
+	if h == nil || session == nil {
+		return
+	}
+	asst := h.assistant()
+	if asst == nil || asst.repo == nil {
+		return
+	}
+	deferred := err != nil && strings.Contains(err.Error(), "不可在当前审批模式下直接调用")
+	outcome := "ok"
+	if err != nil {
+		outcome = "error"
+		if deferred {
+			outcome = "denied"
+		}
+	}
+	op, known := assistantPublicOperations[tool]
+	call := domain.AssistantToolCall{
+		At:        time.Now().UTC(),
+		UserID:    session.UserID,
+		UserName:  strings.TrimSpace(session.User.LoginName),
+		ProjectID: session.ProjectID,
+		SessionID: session.ChatSessionID,
+		RunID:     session.RunID,
+		Mode:      string(session.Mode),
+		Tool:      tool,
+		ReadOnly:  known && op.ReadOnly,
+		Outcome:   outcome,
+		Args:      auditArgsDigest(args),
+	}
+	if err != nil {
+		call.Error = truncateRunes(err.Error(), 500)
+	}
+	if recordErr := asst.repo.RecordAssistantToolCall(call); recordErr != nil {
+		log.Printf("tool audit: tool=%s user=%d: %v", tool, session.UserID, recordErr)
+	}
+}
+
+// auditArgsDigest 生成参数摘要：去掉明显的凭据字段并截断，避免把密钥写进审计表。
+func auditArgsDigest(args map[string]any) string {
+	if len(args) == 0 {
+		return ""
+	}
+	redacted := make(map[string]any, len(args))
+	for key, value := range args {
+		lower := strings.ToLower(key)
+		if strings.Contains(lower, "token") || strings.Contains(lower, "password") || strings.Contains(lower, "secret") || strings.Contains(lower, "key") {
+			redacted[key] = "***"
+			continue
+		}
+		redacted[key] = value
+	}
+	raw, err := json.Marshal(redacted)
+	if err != nil {
+		return ""
+	}
+	return truncateRunes(string(raw), 1000)
 }
