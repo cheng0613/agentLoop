@@ -50,7 +50,7 @@ import { isGeneratedArtifact, shouldRevealArtifactPanel } from "./artifact-autor
 import { IconButton, Dialog, Menu, CredentialAction } from "./ui";
 import { CLIInstallAction } from "./cli-install.jsx";
 import { credentialHint, openCredentialSettings } from "./credentials";
-import { groupSessionHistory, scheduledSession, sessionProjectName } from "./session-history.js";
+import { groupSessionHistory, idleRunConversation, scheduledSession, sessionProjectName } from "./session-history.js";
 import { runSessionState, sessionReplyStatus, sessionTooltip, sidebarReplyStatus } from "./session-status.js";
 import { unreadReply, useReadReplies } from "./session-unread.js";
 import MentionPicker from "./MentionPicker";
@@ -978,11 +978,24 @@ export default function App() {
       input.current?.setSelectionRange(value.caret, value.caret);
     });
   }
-  // 侧栏严格只列当前项目的会话，搜索也限定在这个范围内。
-  // 项目之间的切换由宿主 rail 负责，这里再列一遍别的项目是重复的。
-  const projectScopedSessions = (chat.sessions || []).filter(
-    (session) => (session.projectId || "") === (chat.projectId || ""),
-  );
+  // 侧栏以本项目为主，但不再把别的项目藏起来：切走项目后还能找到刚才
+  // 那段对话，是「项目绑定太重」最直接的解法。搜索放开到全部会话。
+  const allSessions = chat.sessions || [];
+  const scopedSessions = query.trim()
+    ? allSessions
+    : allSessions.filter(
+        (session) => (session.projectId || "") === (chat.projectId || ""),
+      );
+  // 其他项目的最近会话：排除当前项目、归档与闲置运行；只取最近几条。
+  const otherProjectSessions = query.trim()
+    ? []
+    : allSessions
+        .filter((session) => (session.projectId || "") !== (chat.projectId || ""))
+        .filter((session) => !session.archived)
+        .filter((session) => session.id === chat.activeId || !idleRunConversation(session))
+        .sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0))
+        .slice(0, 8);
+  const projectScopedSessions = scopedSessions;
   const sidebarSections = splitSidebarSections(
     projectScopedSessions,
     chat.projects,
@@ -1536,6 +1549,19 @@ export default function App() {
                   );
                 })}
               </>
+            ) : null}
+            {otherProjectSessions.length ? (
+              <div className="sidebar-other-projects">
+                <div className="sidebar-title">其他项目</div>
+                {otherProjectSessions.map((session) =>
+                  renderSession(session, {
+                    projectName: sessionProjectName(
+                      session.projectId,
+                      chat.projects,
+                    ),
+                  }),
+                )}
+              </div>
             ) : null}
             {!sidebarSections.pinnedSessions.length &&
             !sidebarSections.groups.length ? (

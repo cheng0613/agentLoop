@@ -699,3 +699,23 @@
   color: #f38989;
   background: rgb(243 137 137 / 16%);
 }
+
+/* 其他项目：本项目之外的最近会话，切走项目后还能找回来 */
+.chat-shell .sidebar-other-projects {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.chat-shell .sidebar-other-projects .sidebar-title {
+  margin-bottom: 2px;
+}
+.chat-shell .sidebar-other-projects .session-row {
+  min-height: 34px;
+}
+.chat-shell .sidebar-other-projects .session-project-tag {
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
