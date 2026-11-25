@@ -261,40 +261,6 @@ export function canManageProjectRepos(project, user) {
   if (String(user.platformRole || "").toLowerCase() === "admin") return true;
   return Boolean(project.ownerId) && Number(project.ownerId) === Number(user.id);
 }
-export const UNJOINED_PROJECTS_SECTION = "未加入的项目";
-// Projects the user can chat in keep their original order; the rest follow
-// under their own section without a per-row explanation.
-export function projectPickerOptions(projects, user, session) {
-  const available = [];
-  const unjoined = [];
-  const effect = {
-    bind: "绑定当前会话到此项目",
-    new: "在此项目新开对话",
-  };
-  for (const p of projects || []) {
-    if (canChatInProject(p, user)) {
-      available.push({
-        id: p.id,
-        label: p.name,
-        icon: "folder",
-        description: session ? effect[projectChange(session, p.id)] : undefined,
-      });
-    } else {
-      unjoined.push({
-        id: p.id,
-        label: p.name,
-        icon: "folder",
-        section: UNJOINED_PROJECTS_SECTION,
-        unavailable: true,
-      });
-    }
-  }
-  return [
-    { id: "", label: "个人对话", description: "不绑定项目", icon: "user" },
-    ...available,
-    ...unjoined,
-  ];
-}
 export function mergeEvents(previous, events) {
   let answer = previous.plainAnswer ?? previous.answer ?? "";
   let draftBuffer = previous.draftBuffer || "";

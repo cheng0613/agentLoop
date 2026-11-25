@@ -1,0 +1,480 @@
+/* Glass folder card.
+   Geometry and motion values come from the design spec:
+   stage 340×326 (272 plate + 54px of rising paper), front plate 340×198,
+   sheet 272×184 at left 34 / top 96. Everything scales from the stage width. */
+
+.gf {
+  --gf-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --gf-spring: cubic-bezier(0.34, 1.36, 0.5, 1);
+  position: relative;
+  width: 100%;
+  /* The stage is 340×326; keep that ratio as the grid column narrows so the
+     scaled card never leaves a band of empty space under it. */
+  aspect-ratio: 340 / 326;
+  overflow: visible;
+}
+
+/* Open sheets rise above the plate, so the slot needs to make room above the
+   card for them; the aspect ratio reserves it and the grid gap keeps the
+   neighbour columns clear. */
+
+.gf-scale {
+  position: absolute;
+  inset: 0;
+  transform: scale(var(--gf-scale, 1));
+  transform-origin: top left;
+  width: 340px;
+  height: 326px;
+}
+
+.gf-card {
+  --gf-lift: 0px;
+  --gf-fan: 0deg;
+  --gf-stack: 4px;
+  --gf-hinge: 0deg;
+  position: absolute;
+  inset: 0;
+  user-select: none;
+}
+
+/* Back plate ------------------------------------------------------------- */
+/* Stage: 340×326. Plate and glass share the same bottom edge (326), so no
+   strip of raw texture ever shows below the glass. The 54px band above the
+   glass (y=74..128) is where the sheets peek out. */
+.gf-back {
+  position: absolute;
+  left: 0;
+  top: 54px;
+  width: 340px;
+  height: 272px;
+  overflow: hidden;
+  /* The folder silhouette from the spec, as a clip on a real element. */
+  clip-path: path("M0 56A22 22 0 0 1 22 34L146 34C170 34 172 0 198 0L318 0A22 22 0 0 1 340 22L340 250A22 22 0 0 1 318 272L22 272A22 22 0 0 1 0 250Z");
+  filter: drop-shadow(0 14px 22px rgba(20, 20, 24, 0.16));
+}
+.gf-texture {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 20% 10%, #ffffff55, transparent 60%),
+    linear-gradient(160deg, var(--gf-fallback-a, #e9c2b8), var(--gf-fallback-b, #22395e));
+}
+.gf-texture-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.gf-card[data-variant="aurora"] { --gf-fallback-a: #e9c2b8; --gf-fallback-b: #22395e; }
+.gf-card[data-variant="ember"] { --gf-fallback-a: #3d5f68; --gf-fallback-b: #a3201a; }
+.gf-card[data-variant="dusk"] { --gf-fallback-a: #8f6c9c; --gf-fallback-b: #120c18; }
+.gf-card[data-variant="glacier"] { --gf-fallback-a: #e9f1f8; --gf-fallback-b: #5c7d9c; }
+.gf-card[data-variant="verdant"] { --gf-fallback-a: #dfe8d3; --gf-fallback-b: #5a6f47; }
+
+/* Sheet stack ------------------------------------------------------------ */
+.gf-sheets {
+  position: absolute;
+  left: 34px;
+  /* Plate top (54) + paper top inside the plate (96) = 150; the top 22px of
+     the sheet stays above the glass edge (128) so it peeks out. */
+  top: 150px;
+  width: 272px;
+  /* 176 so the paper's bottom sits on the plate bottom (326) instead of
+     hanging 8px below it. The visible top is what matters; the rest is behind
+     the glass. */
+  height: 176px;
+  z-index: 5;
+  pointer-events: none;
+  transform: translateY(var(--gf-lift));
+  transition: transform 0.75s var(--gf-ease);
+}
+.gf-sheet {
+  position: absolute;
+  inset: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff, #f7f5f2);
+  box-shadow:
+    0 1px 2px rgba(20, 20, 24, 0.08),
+    0 6px 16px -8px rgba(20, 20, 24, 0.22);
+  transform:
+    translateY(calc(var(--gf-stack) * var(--depth) * -1))
+    rotate(calc(var(--gf-fan) * var(--depth) * 0.5));
+  transition:
+    transform 0.75s var(--gf-ease) calc(var(--depth) * 40ms),
+    opacity 0.4s var(--gf-ease);
+}
+.gf-sheet.is-entering {
+  animation: gf-sheet-drop 0.85s var(--gf-spring);
+}
+@keyframes gf-sheet-drop {
+  from {
+    transform: translateY(-190px) rotate(-9deg);
+    opacity: 0.2;
+  }
+}
+.gf-sheet-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ecebe7;
+  font-size: 12.5px;
+  color: #2a2a2e;
+}
+.gf-sheet-head span:last-child {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  color: #8a8a92;
+  white-space: nowrap;
+}
+.gf-sheet-list {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+}
+.gf-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 6px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: #3a3a40;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+}
+.gf-sheet-ghost {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+.gf-sheet-ghost > span {
+  height: 22px;
+  border-radius: 6px;
+  background: #efece7;
+}
+.gf-file > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.gf-file > small {
+  margin-left: auto;
+  font-size: 10px;
+  color: #8a8a92;
+}
+
+/* Front glass plate ------------------------------------------------------ */
+.gf-front-wrap {
+  position: absolute;
+  left: 0;
+  /* Plate top (54) + front-plate top inside the plate (74) = 128; the glass
+     bottom then lands on the plate bottom (326), leaving no bare texture. */
+  top: 128px;
+  width: 340px;
+  height: 198px;
+  z-index: 10;
+  pointer-events: none;
+  transform: perspective(760px) rotateX(var(--gf-hinge));
+  transform-origin: 50% 100%;
+  transition: transform 0.8s var(--gf-ease);
+  /* No `filter` here: a filter on the ancestor forms a new backdrop root and
+     would cancel the glass's backdrop-filter. The shadow lives on the outline
+     SVG instead, which sits beside the pane rather than above it. */
+}
+.gf-front-glass {
+  position: absolute;
+  inset: 0;
+  /* Real frosting: the pane blurs the sheets it covers, never a screenshot.
+     A clipped HTML element is required — backdrop-filter has no effect on an
+     SVG <path>. */
+  clip-path: path("M0 22A22 22 0 0 1 22 0L118 0C144 0 146 32 172 32L318 32A22 22 0 0 1 340 54L340 176A22 22 0 0 1 318 198L22 198A22 22 0 0 1 0 176Z");
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 26%),
+    linear-gradient(118deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.08) 46%, rgba(255, 255, 255, 0.22));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+.gf-glare {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    40% 60% at var(--gf-glare-x, 30%) var(--gf-glare-y, 20%),
+    rgba(255, 255, 255, 0.55),
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.gf-front {
+  position: absolute;
+  inset: 0;
+  width: 340px;
+  height: 198px;
+  overflow: visible;
+  filter: drop-shadow(0 14px 22px rgba(20, 20, 24, 0.16));
+}
+.gf-front-edge {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.7);
+  stroke-width: 1.2;
+}
+
+/* Hit area + overlay --------------------------------------------------- */
+/* The hit area follows the scaled stage (so the whole glass is clickable),
+   while the label and buttons live in .gf-overlay in real pixels on top of
+   the glass — that keeps 18px type readable in a narrow column. */
+.gf-hit {
+  position: absolute;
+  left: 6px;
+  top: 134px;
+  width: 328px;
+  height: 186px;
+  z-index: 11;
+  padding: 0;
+  border: 0;
+  border-radius: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+.gf-hit:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: -4px;
+}
+.gf-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+.gf-overlay > * {
+  pointer-events: auto;
+}
+/* 标题放玻璃左下角，占满整行；操作按钮挪到右上角，避免在窄列里和标题
+   抢同一行宽度把名字挤成省略号。 */
+.gf-label {
+  position: absolute;
+  left: calc(100% * 28 / 340);
+  right: calc(100% * 20 / 340);
+  bottom: calc(100% * 26 / 326);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.gf-label-title {
+  overflow: hidden;
+  color: #1c1c22;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.gf-label-meta {
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  color: rgba(28, 28, 34, 0.6);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.gf-count {
+  position: absolute;
+  right: calc(100% * 14 / 340);
+  bottom: calc(100% * 52 / 326);
+  display: grid;
+  place-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.65);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9.5px;
+  color: #3a3a42;
+}
+
+/* 操作按钮：玻璃右上角，竖排更省横向空间。 */
+.gf-add,
+.gf-more {
+  position: absolute;
+  right: calc(100% * 14 / 340);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #2a2a32;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.6s var(--gf-spring);
+}
+.gf-add {
+  top: calc(100% * 146 / 326);
+}
+.gf-more {
+  top: calc(100% * 180 / 326);
+}
+.gf-add svg {
+  transition: transform 0.6s var(--gf-spring);
+}
+.gf-add:hover svg,
+.gf-add:focus-visible svg {
+  transform: rotate(90deg);
+}
+.gf-add:hover,
+.gf-add:focus-visible,
+.gf-more:hover,
+.gf-more:focus-visible {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Readable file panel ---------------------------------------------------- */
+.gf-panel {
+  /* Drops below its own folder. The workbench scrolls, so the panel extends
+     the scroll area instead of covering the composer above. */
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 80;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--line, #e5e5e8);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  box-shadow: 0 18px 40px rgba(16, 16, 20, 0.18);
+}
+.gf-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px 8px;
+  border-bottom: 1px solid var(--line, #ecebe7);
+}
+.gf-panel-head strong {
+  flex: 1;
+  overflow: hidden;
+  color: var(--text, #18181b);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.gf-panel-close {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted, #71717a);
+  cursor: pointer;
+}
+.gf-panel-close:hover,
+.gf-panel-close:focus-visible {
+  background: var(--hover, #f1f1f1);
+  outline: none;
+}
+.gf-panel-list {
+  display: grid;
+  gap: 2px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.gf-panel-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--text, #18181b);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.gf-panel-file:hover,
+.gf-panel-file:focus-visible {
+  background: var(--hover, #f1f1f1);
+  outline: none;
+}
+.gf-panel-file > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.gf-panel-file > small {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--muted, #71717a);
+  white-space: nowrap;
+}
+
+/* Popover menu ----------------------------------------------------------- */
+.gf-menu {
+  position: fixed;
+  z-index: 90;
+  display: grid;
+  padding: 6px;
+  border: 1px solid var(--line, #e5e5e8);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  box-shadow: 0 12px 32px rgba(16, 16, 20, 0.18);
+}
+.gf-menu button {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--text, #18181b);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.gf-menu button:hover,
+.gf-menu button:focus-visible {
+  background: var(--hover, #f1f1f1);
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gf-sheets,
+  .gf-sheet,
+  .gf-front-wrap,
+  .gf-add,
+  .gf-add svg {
+    transition: none !important;
+  }
+  .gf-sheet.is-entering {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 800px) {
+  .gf {
+    max-width: 340px;
+    margin: 0 auto;
+  }
+}

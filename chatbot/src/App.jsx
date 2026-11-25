@@ -72,7 +72,8 @@ import { useLocalConversations } from "./useLocalConversations.js";
 import SessionContextMenu from "./SessionContextMenu";
 import { usePanelPresence } from "./usePanelPresence";
 import HomeWelcome from "./HomeWelcome";
-import TaskBoard from "./TaskBoard";
+import GlassFolder from "./GlassFolder";
+import ProjectPicker from "./ProjectPicker";
 import ModelPicker from "./ModelPicker";
 import ModelProviderIcon, { hasProviderLogo } from "./ModelProviderIcon";
 import PermissionPicker, { rememberApprovalMode, storedApprovalMode } from "./PermissionPicker";
@@ -148,37 +149,66 @@ function useTitleReveal(sessionId, title, revealId) {
     : null;
 }
 
+// 工作台下方的一行四个快捷指令文件夹。每个文件夹里放着可以直接落地的
+// 起手式；点开纸张选一条，就把它写进输入框（或直接打开对应向导）。
 const homeStarters = [
   {
     id: "quick-access",
     icon: "sparkles",
-    tone: "blue",
+    variant: "aurora",
     title: "快速接入",
+    caption: "3 步起跑",
     description: "提供最低限度的鉴权与仓库，用默认角色与 SOP 立即开始。",
-    steps: ["鉴权", "仓库", "默认 SOP"],
+    files: [
+      { id: "auth", name: "鉴权", meta: "账号与密钥", tone: "paper" },
+      { id: "repo", name: "仓库", meta: "Git 绑定", tone: "dusk" },
+      { id: "sop", name: "默认 SOP", meta: "产品 / 前端 / 后端", tone: "ember" },
+    ],
   },
-  // New users asked how to hook up a test environment and how roles and SOPs
-  // work; these two cards start a guided conversation instead of dropping them
-  // on a settings page.
   {
     id: "environment",
     icon: "terminal",
-    tone: "violet",
+    variant: "verdant",
     title: "接入测试环境",
+    caption: "执行链路",
     description: "助手先查执行机器、镜像和沙箱，再按缺口一步步带你配好。",
-    steps: ["执行机器", "镜像", "沙箱"],
+    files: [
+      { id: "runner", name: "执行机器", meta: "本地 / 云端", tone: "paper" },
+      { id: "image", name: "镜像", meta: "容器环境", tone: "glacier" },
+      { id: "sandbox", name: "沙箱", meta: "隔离运行", tone: "dusk" },
+    ],
     prompt:
       "带我一步步接入测试环境：先查看当前项目已有的执行机器、容器镜像、环境脚本和沙箱，告诉我还缺什么、按什么顺序配、每一步在哪里操作；能由你提交的配置，直接起草出来给我。",
   },
   {
     id: "sop",
     icon: "workflow",
-    tone: "green",
+    variant: "ember",
     title: "选用 SOP 与角色",
+    caption: "流程编排",
     description: "了解产品、前端、后端三套交付 SOP 和其中的角色，按需求推荐一套。",
-    steps: ["产品", "前端", "后端"],
+    files: [
+      { id: "product", name: "产品 SOP", meta: "需求 → 方案", tone: "paper" },
+      { id: "frontend", name: "前端 SOP", meta: "设计 → 实现", tone: "glacier" },
+      { id: "backend", name: "后端 SOP", meta: "接口 → 交付", tone: "dusk" },
+    ],
     prompt:
       "我准备写需求了。平台内置的产品、前端、后端交付 SOP 分别适合什么场景、好在哪里、里面有哪些角色？请结合当前项目推荐一套，并告诉我怎么绑定和派发第一条需求。我的需求是：",
+  },
+  {
+    id: "issue",
+    icon: "new-request",
+    variant: "dusk",
+    title: "起一条需求",
+    caption: "从想法到任务",
+    description: "把一句话需求交给 SOP，先澄清再拆解，产出直接进入项目。",
+    files: [
+      { id: "clarify", name: "需求澄清", meta: "先问清再动手", tone: "paper" },
+      { id: "plan", name: "方案拆解", meta: "节点与角色", tone: "ember" },
+      { id: "dispatch", name: "派发任务", meta: "交给 SOP 执行", tone: "glacier" },
+    ],
+    prompt:
+      "我有一条新需求，帮我先做需求澄清：列出必须确认的问题和验收标准，再按当前项目的 SOP 拆成可执行的节点与角色。我的需求是：",
   },
 ];
 
@@ -472,7 +502,7 @@ export default function App() {
   const projectName =
     chat.projects.find((p) => p.id === chat.projectId)?.name ||
     (chat.projectId && (chat.session?.projectName || chat.projectId)) ||
-    "个人对话";
+    "平台对话";
   const selectedModel = chat.models.find((m) => m.id === chat.model) || (!chat.local ? chat.modelDetails : null);
   const modelLabel =
     selectedModel?.name?.replace(/^Claude-/, "").replace(/^GPT-/, "") || "模型";
@@ -1831,10 +1861,9 @@ export default function App() {
             </div>
           </div>
         ) : (
-          <>
-            <HomeWelcome />
-            <TaskBoard projectId={chat.projectId} onOpenTask={openTask} />
-          </>
+          // 工作台三层：品牌 → 输入框 → 快捷指令。任务看板留在「项目」页，
+          // 这里不再插一层，避免把「从哪开始」的三个动作挤散。
+          <HomeWelcome />
         )}
         <div className="composer-region">
           <div className="composer-column">
@@ -1893,9 +1922,11 @@ export default function App() {
               >
                 {!conversationStarted ? (
                 <div className="composer-context">
+                  {/* 对话归属：默认「平台 · 不关联项目」，也可以选一个项目。
+                      宿主顶栏的项目切换只决定数据浏览范围，不强制这条对话
+                      绑定项目。 */}
+                  <ProjectPicker chat={chat} />
                   <ExecutionMachinePicker chat={chat} onManage={() => navigate("runners")} />
-                  {/* 项目不再出现在这里：切换由宿主顶栏负责，当前项目名在
-                      侧栏标题已经写过一次，重复第三遍只会让人分不清哪个能点。 */}
                   {showEnvironmentPicker && chat.projectId ? <ChevronRightSmall /> : null}
                   {showEnvironmentPicker ? <SandboxPicker chat={chat} onCreate={() => navigate("sandboxes", { action: "create", projectId: chat.projectId })} /> : null}
                 </div>
@@ -2252,40 +2283,23 @@ export default function App() {
           </div>
         </div>
         {!chat.activeId && !chat.readOnly ? (
-          <section className="home-starters" aria-label="可以这样开始">
-            <div className="home-starter-grid">
-              {homeStarters.map((starter, index) => (
-                <button
-                  type="button"
-                  className={`home-starter home-starter-${starter.tone}`}
-                  key={starter.id || starter.title}
-                  style={{ "--card-index": index }}
-                  onClick={() => handleStarter(starter)}
-                >
-                  <span className="home-starter-top">
-                    <span className="home-starter-icon">
-                      <HarnessIcon name={starter.icon} size={21} />
-                    </span>
-                    <HarnessIcon
-                      name="chevron-right"
-                      className="home-starter-arrow"
-                      size={16}
-                      aria-hidden="true"
-                    />
-                  </span>
-                  <strong>{starter.title}</strong>
-                  <span className="home-starter-description">
-                    {starter.description}
-                  </span>
-                  <span className="home-starter-flow" aria-hidden="true">
-                    {starter.steps.map((step) => (
-                      <span key={step}>
-                        <i />
-                        {step}
-                      </span>
-                    ))}
-                  </span>
-                </button>
+          <section className="home-starters" aria-label="快捷指令">
+            <div className="home-starter-heading">
+              <span>快捷指令</span>
+              <small>点开文件夹，挑一条开始</small>
+            </div>
+            <div className="home-folder-grid">
+              {homeStarters.map((starter) => (
+                <div className="home-folder-slot" key={starter.id}>
+                  <GlassFolder
+                    title={starter.title}
+                    caption={starter.caption}
+                    variant={starter.variant}
+                    files={starter.files}
+                    onSelect={(file) => handleStarter({ ...starter, file })}
+                  />
+                  <p className="home-folder-caption">{starter.description}</p>
+                </div>
               ))}
             </div>
           </section>

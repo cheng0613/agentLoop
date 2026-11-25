@@ -39,7 +39,7 @@ test("history is separated by project ID in one fixed order", () => {
     archived: false,
     pinned: ["商城旧会话"],
   });
-  // 个人对话 first, then the project list order, then projects not in the list.
+  // 平台对话 first, then the project list order, then projects not in the list.
   assert.deepEqual(
     groups.map((group) => group.projectId),
     ["", "mall", "pay", "mall-copy", "missing"],
@@ -50,7 +50,7 @@ test("history is separated by project ID in one fixed order", () => {
   );
   assert.equal(groups[3].name, "积分商城");
   assert.equal(groups[4].name, "missing");
-  assert.equal(groups[0].name, "个人对话");
+  assert.equal(groups[0].name, "平台对话");
   assert.equal(sessions[0].id, "商城旧会话");
 });
 
@@ -103,7 +103,7 @@ test("archive and search retain project boundaries and omit empty groups", () =>
 
 test("personal view keeps its own group without treating unknown projects as personal", () => {
   const groups = groupSessionHistory(sessions, []);
-  assert.equal(groups[0].name, "个人对话");
+  assert.equal(groups[0].name, "平台对话");
   assert.equal(groups[0].sessions.length, 1);
   assert.equal(groups.find((group) => group.projectId === "mall").name, "mall");
 });

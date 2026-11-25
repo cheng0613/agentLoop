@@ -5,8 +5,8 @@
 
 .chat-shell.home-shell .empty-conversation {
   justify-content: safe center;
-  padding-top: clamp(24px, 4vh, 52px);
-  padding-bottom: clamp(28px, 5vh, 56px);
+  padding-top: clamp(20px, 3vh, 40px);
+  padding-bottom: clamp(24px, 4vh, 48px);
 }
 
 .chat-shell.home-shell .empty-conversation > :is(.home-welcome, .composer-region, .home-starters) {
@@ -19,8 +19,8 @@
   justify-content: center;
   width: 100%;
   max-width: 768px;
-  min-height: 104px;
-  margin: 0 auto 28px;
+  min-height: 96px;
+  margin: 0 auto 20px;
   padding: 0;
   border: 0;
   background: transparent;

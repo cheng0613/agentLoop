@@ -554,7 +554,7 @@ export default function SidePanel({
               <h2>会话产物</h2>
               <small>
                 {chat.projects.find((p) => p.id === projectId)?.name ||
-                  "个人对话"}
+                  "平台对话"}
               </small>
             </div>
             {!artifacts.length ? (
