@@ -342,14 +342,9 @@ describe("App", () => {
     fireEvent.keyDown(document, { key: "k", ctrlKey: true });
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     fireEvent.keyDown(document, { key: "Escape" });
-    // 快捷指令改成了玻璃文件夹：先展开，再从面板里选一条。
-    await user.click(screen.getByRole("button", { name: "展开 接入测试环境" }));
-    const envPanel = await screen.findByRole("group", { name: "接入测试环境 的文件" });
-    await user.click(within(envPanel).getByRole("button", { name: /执行机器/ }));
+    await user.click(screen.getByText("接入测试环境"));
     expect(screen.getByRole("textbox").value).toMatch(/^带我一步步接入测试环境/);
-    await user.click(screen.getByRole("button", { name: "展开 选用 SOP 与角色" }));
-    const sopPanel = await screen.findByRole("group", { name: "选用 SOP 与角色 的文件" });
-    await user.click(within(sopPanel).getByRole("button", { name: /产品 SOP/ }));
+    await user.click(screen.getByText("选用 SOP 与角色"));
     expect(screen.getByRole("textbox").value).toMatch(/产品、前端、后端交付 SOP/);
   });
 
