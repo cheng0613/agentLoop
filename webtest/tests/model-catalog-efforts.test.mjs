@@ -1,6 +1,11 @@
-import test from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadApp, settle } from '../lib/load-app.mjs';
+
+// 35646ba 把模型 CLI 的个人凭据行改为只读展示（配置统一到平台管理「共享模型凭据」），
+// 个人设置里不再渲染 data-credential-catalog 目录编辑器，以下 4 个用例暂以 skip 保留：
+// 若该编辑器在别的界面复活，把 skip 去掉即可恢复覆盖。
+const skip = (name, options, fn) => test(name, { ...options, skip: '个人设置模型目录编辑器已随 35646ba 移除' }, fn);
 
 const levels = ['low', 'medium', 'high', 'xhigh', 'max', 'ultra'];
 const catalogs = {
@@ -36,7 +41,7 @@ function input(app, element, value) {
   element.dispatchEvent(new app.window.Event('input', { bubbles:true }));
 }
 
-test('model effort edits save independently of ID and name, and automatic differs from default-only', async t => {
+skip('model effort edits save independently of ID and name, and automatic differs from default-only', async t => {
   const {app,row,catalog} = await editor(t, [{id:'gateway',reasoningEfforts:['high','low']}, {id:'legacy'}]);
   const save = () => row.querySelector('[data-credential-act="save"]');
   assert.equal(save().disabled, true, 'opening a stored catalog never reorders it into a dirty state');
@@ -60,7 +65,7 @@ test('model effort edits save independently of ID and name, and automatic differ
   assert.equal(fresh.querySelector('[data-catalog-effort-levels]').hidden, true);
 });
 
-test('re-probing changes automatic capabilities and keeps explicit overrides', async t => {
+skip('re-probing changes automatic capabilities and keeps explicit overrides', async t => {
   const {app,row,catalog} = await editor(t, [
     {id:'automatic',name:'My name',discoveredReasoningEfforts:['low']},
     {id:'custom',discoveredReasoningEfforts:['low'],reasoningEfforts:['low']},
@@ -90,7 +95,7 @@ test('re-probing changes automatic capabilities and keeps explicit overrides', a
   ]);
 });
 
-test('metadata-only refresh is dirty and leaves Cursor model-ID mappings intact', async t => {
+skip('metadata-only refresh is dirty and leaves Cursor model-ID mappings intact', async t => {
   const {app,catalog} = await editor(t, [{id:'family',efforts:{high:'family-high',low:'family-low'},defaultEffort:'low'}], 'cursor');
   const row = catalog.querySelector('[data-catalog-row]');
   input(app, row.querySelector('[data-catalog-effort-mode]'), 'custom');
@@ -101,7 +106,7 @@ test('metadata-only refresh is dirty and leaves Cursor model-ID mappings intact'
   assert.deepEqual(payload[0].reasoningEfforts, ['high']);
 });
 
-test('late CLI capabilities fill in missing choices without replacing unsaved effort edits', async t => {
+skip('late CLI capabilities fill in missing choices without replacing unsaved effort edits', async t => {
   let finish;
   const pending=new Promise(resolve=>{finish=resolve});
   const {app,catalog}=await editor(t,[{id:'slow-model',reasoningEfforts:['high']}],'codex',()=>pending);

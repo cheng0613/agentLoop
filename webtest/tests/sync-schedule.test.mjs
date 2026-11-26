@@ -360,13 +360,15 @@ test('AI schedule navigation separates existing tasks and preserves editor kind 
     { id: 'ai-other', projectId: 'other-project', name: 'Other AI job', skipDispatch: true, assistantPrompt: 'Other project', intervalSec: 3600 }
   ];
   app.router.get('/api/schedule-jobs', tasks);
-  assert.equal(app.document.querySelector('.rail-btn[data-view="aiSchedules"]'), null, '定时任务 lives in the settings sidebar, not the rail');
-  app.document.querySelector('#configurationNav .nav[data-view="aiSchedules"]').click();
+  assert.equal(app.document.querySelector('.rail-btn[data-view="aiSchedules"]'), null, '定时任务 lives under the 流程 rail entry, not as its own rail button');
+  assert.ok(app.document.querySelector('.rail-btn[data-view="sops"][data-nav-match~="aiSchedules"]'), '定时任务 highlights the 流程 rail entry');
+  app.evaluate(`switchView('aiSchedules')`);
   await settle(4);
   assert.equal(app.evaluate('state.currentView'), 'aiSchedules');
   assert.equal(app.window.location.hash, '#/aiSchedules');
   assert.equal(app.document.body.classList.contains('no-sidebar'), false);
-  assert.equal(app.document.body.classList.contains('management-mode'), true);
+  // 阶段1 导航重排后定时任务归入「流程」入口，不再属于设置侧边栏的管理视图。
+  assert.equal(app.document.body.classList.contains('management-mode'), false);
   assert.match(app.document.querySelector('#aiScheduleJobList').textContent, /Existing AI job/);
   assert.doesNotMatch(app.document.querySelector('#aiScheduleJobList').textContent, /Existing trigger|Other AI job/);
   assert.equal(app.document.querySelector('#scheduleJobCount').textContent, '已启用');

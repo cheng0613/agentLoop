@@ -161,7 +161,7 @@ func TestGitDiscoveryStopsBeforeParentRepository(t *testing.T) {
 	if _, err := C(ctx, workspace, "init", "-q"); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := C(ctx, workspace, "rev-parse", "--show-toplevel"); err != nil || got != workspace {
+	if got, err := C(ctx, workspace, "rev-parse", "--show-toplevel"); err != nil || filepath.ToSlash(strings.TrimSpace(got)) != filepath.ToSlash(workspace) {
 		t.Fatalf("own checkout unavailable: %s %v", got, err)
 	}
 }

@@ -66,6 +66,11 @@ vi.mock("../src/runs.js", async (original) => ({
 vi.mock("mermaid", () => ({
   default: { initialize: vi.fn(), render: vi.fn(async () => ({ svg: "<svg />" })) },
 }));
+// 工作台任务看板挂载即轮询 /api/tasks、/api/runs、/api/issues，会污染
+// 下面用 fetch 调用次数断言「需求交接」行为的用例；这里渲染为空。
+vi.mock("../src/TaskBoard.jsx", () => ({
+  default: () => null,
+}));
 
 import App from "../src/App.jsx";
 

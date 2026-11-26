@@ -208,7 +208,7 @@ test('boot exchanges an authentication callback, cleans the URL, and loads the s
   assert.equal(app.evaluate(`state.projectFilter`), 'project-1');
   assert.doesNotMatch(app.window.location.search, /code=/);
   assert.match(app.window.location.hash, /issues/);
-  assert.equal(app.document.querySelector('#pageTitle').textContent, '需求列表');
+  assert.equal(app.document.querySelector('#pageTitle').textContent, '需求');
 });
 
 test('boot selects a project the signed-in user belongs to before an unrelated first project', async (t) => {

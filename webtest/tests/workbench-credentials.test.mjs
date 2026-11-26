@@ -37,7 +37,9 @@ test('credential wizard focuses the first field on its own but never pulls focus
   const wizard = app.document.querySelector('#credentialWizard');
   const pane = () => wizard.querySelector('.credential-pane:not(.is-leaving)');
   const afterFocusTimers = () => new Promise((resolve) => setTimeout(resolve, 300));
-  wizard.querySelector('[data-wizard-kind="codexApiKey"]').click();
+  // Codex/Claude Code 凭据已由平台共享模型凭据统一管理（35646ba），向导里
+  // 不再出现；改用仍向成员开放的 OpenCode（同样有 Base URL 字段）验证焦点行为。
+  wizard.querySelector('[data-wizard-kind="agentCli.opencode"]').click();
   wizard.querySelector('[data-wizard-next]').click();
   await afterFocusTimers();
   assert.equal(app.document.activeElement, pane().querySelector('input[name="secret"]'));
@@ -95,7 +97,7 @@ test('CodeBuddy wizard picks the network environment from a list and its key lin
   assert.deepEqual(saved.body, { codeBuddyApiKey: 'ck_placeholder', codeBuddyInternetEnvironment: 'internal' });
 });
 
-test('CodeBuddy inline editor changes only the network environment and keeps the key link in step', async (t) => {
+test('CodeBuddy configured row shows its network environment without an inline editor', async (t) => {
   const app = await loadApp();
   t.after(app.close);
   app.evaluate(`
@@ -107,22 +109,15 @@ test('CodeBuddy inline editor changes only the network environment and keeps the
   await app.evaluate(`renderPersonalSettings()`);
   const row = app.document.querySelector('[data-credential-row="codeBuddyApiKey"]');
   assert.match(row.querySelector('.credential-row-who small').textContent, /网络环境iOA/);
+  // 模型 CLI 行不再内联编辑（35646ba）：点击只读展示，不出现编辑器。
   row.querySelector('.credential-row-main').click();
-  const select = row.querySelector('select[name="extra"]');
-  const save = row.querySelector('[data-credential-act="save"]');
-  assert.equal(select.value, 'ioa');
-  assert.equal(save.disabled, true);
-  select.value = '';
-  select.dispatchEvent(new app.window.Event('input', { bubbles: true }));
-  assert.equal(save.disabled, false);
-  assert.equal(row.querySelector('[data-credential-key-link]').getAttribute('href'), 'https://www.codebuddy.ai/profile/keys');
-  save.click();
-  await settle(6);
-  const saved = app.router.calls.find((call) => call.path === '/api/users/1/credentials');
-  assert.deepEqual(saved.body, { codeBuddyApiKey: '', codeBuddyInternetEnvironment: '' });
+  await settle(2);
+  assert.equal(row.querySelector('select[name="extra"]'), null, 'model CLI rows render no inline editor');
+  assert.equal(row.querySelector('[data-credential-act="save"]'), null);
+  assert.match(row.textContent, /已启用/);
 });
 
-test('CodeBuddy inline editor rewrites an old china value to internal without retyping the key', async (t) => {
+test('CodeBuddy row flags an unrecognized stored environment value', async (t) => {
   const app = await loadApp();
   t.after(app.close);
   app.evaluate(`
@@ -133,18 +128,11 @@ test('CodeBuddy inline editor rewrites an old china value to internal without re
   app.router.put('/api/users/1/credentials', { id: 1, username: 'tester', codeBuddyApiKeyConfigured: true, codeBuddyInternetEnvironment: 'internal' });
   await app.evaluate(`renderPersonalSettings()`);
   const row = () => app.document.querySelector('[data-credential-row="codeBuddyApiKey"]');
+  // 旧值 china 已不再合法：行内提示无法识别（按国际站连接），无内联编辑器可改写。
   assert.match(row().querySelector('.credential-row-who small').textContent, /「china」无法识别/);
   row().querySelector('.credential-row-main').click();
-  const select = row().querySelector('select[name="extra"]');
-  const save = row().querySelector('[data-credential-act="save"]');
-  assert.equal(select.value, 'internal', 'the old value preselects what it meant');
-  assert.equal(save.disabled, false, 'the stored text still needs rewriting, so saving is allowed as shown');
-  assert.match(row().querySelector('[data-credential-env-hint]').textContent, /「china」无法识别/);
-  save.click();
-  await settle(6);
-  const saved = app.router.calls.find((call) => call.path === '/api/users/1/credentials');
-  assert.deepEqual(saved.body, { codeBuddyApiKey: '', codeBuddyInternetEnvironment: 'internal' });
-  assert.match(row().querySelector('.credential-row-who small').textContent, /网络环境国内站/);
+  await settle(2);
+  assert.equal(row().querySelector('select[name="extra"]'), null);
 });
 
 test('credential panel filters, expands, validates, reveals secrets, and confirms deletion', async (t) => {
